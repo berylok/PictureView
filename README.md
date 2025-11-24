@@ -4,6 +4,18 @@ PictureView 是由C++代码的QT6开发框架+第三方库OpenCV图像解码 运
 沉浸大图模式，幻灯浏览，缩略图浏览；还可以粘贴图片，以及投影式画布模式。
 代码设计校准：deepseek AI 图标创意：豆包AI。牛马：berylok
 
+缩略图模式文件夹与ZIP压缩包：
+<img width="802" height="632" alt="批注 2025-11-24 133341" src="https://github.com/user-attachments/assets/b12a74d4-57fb-417d-9e9e-703146af5d06" />
+
+压缩包内部缩略图：
+
+<img width="799" height="630" alt="批注 2025-11-24 133251" src="https://github.com/user-attachments/assets/f651d800-21d4-4e40-b636-cb93415bb979" />
+
+单张大图片模式：
+
+<img width="802" height="632" alt="批注 2025-11-24 133530" src="https://github.com/user-attachments/assets/09e6a20b-a088-401a-9f77-2da4fc3636f5" />
+
+
 环境配置：
 主要：使用PictureView.pro在QT环境加载项目。
 其他：Cmake已更新至1.4 for ubuntu(linux) 

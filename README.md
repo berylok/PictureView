@@ -1,8 +1,7 @@
-这是使用Qt开发的基于开源GPL3，你可以免费使用并且修改它；简单的运行在windows桌面的看图及浏览的小程序。
-PictureView 是由C++代码的QT6开发框架+第三方库OpenCV图像解码（当前使用QT6内置图像解码） 运行于windows平台。
+PictureView 是由C++代码的QT6开发框架运行于windows平台。
 1.4增加基础的压缩包读取（依赖libarchive第三方库）
 沉浸大图模式，幻灯浏览，缩略图浏览；还可以粘贴图片，以及投影式画布模式。
-代码设计校准：deepseek AI 图标创意：豆包AI。牛马：berylok
+技术顾问：deepseek AI 图标创意：豆包AI。开发：berylok
 
 缩略图模式文件夹与ZIP压缩包：
 <img width="802" height="632" alt="批注 2025-11-24 133341" src="https://github.com/user-attachments/assets/b12a74d4-57fb-417d-9e9e-703146af5d06" />
@@ -16,15 +15,13 @@ PictureView 是由C++代码的QT6开发框架+第三方库OpenCV图像解码（�
 <img width="802" height="632" alt="批注 2025-11-24 133530" src="https://github.com/user-attachments/assets/09e6a20b-a088-401a-9f77-2da4fc3636f5" />
 
 
-环境配置：
-主要：windows平台，使用PictureView.pro在QT环境加载项目。
-其他：Cmake已更新至1.4 for ubuntu(linux) 
+编译环境配置：
+1，windows平台：使用PictureView.pro在QT环境加载项目。
+
+
+2：Cmake已更新至1.4 for ubuntu(linux) 
 更新：2025年11月22日11时24分
 修复缩略图部分错误，修改esc可退出程序，原enter切换不变。
-
-QT6内置图像解码
-未来其它需求可能会继续使用OpenCV（图像解码）
-libarchive（压缩包 仅读取。）
 
 
 v1.4.0.0支持ZIP压缩包(+libarchive)

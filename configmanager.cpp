@@ -5,7 +5,7 @@
 #include <QDebug>
 
 // Config 结构体的默认构造函数
-ConfigManager::Config::Config() :
+configmanager::Config::Config() :
     windowPosition(QPoint(100, 100)),
     windowSize(QSize(800, 600)),
     windowMaximized(false),
@@ -13,8 +13,8 @@ ConfigManager::Config::Config() :
     titleBarVisible(true),
     alwaysOnTop(false) {}
 
-// ConfigManager 构造函数
-ConfigManager::ConfigManager(const QString& filename)
+// configmanager 构造函数
+configmanager::configmanager(const QString& filename)
 {
     // 使用 Qt 的标准配置路径
     QString configDir = QApplication::applicationDirPath();
@@ -24,7 +24,7 @@ ConfigManager::ConfigManager(const QString& filename)
 }
 
 // 保存配置到文件
-bool ConfigManager::saveConfig(const Config& config)
+bool configmanager::saveConfig(const Config& config)
 {
     QSettings settings(configPath, QSettings::IniFormat);
 
@@ -52,7 +52,7 @@ bool ConfigManager::saveConfig(const Config& config)
 }
 
 // 从文件加载配置
-ConfigManager::Config ConfigManager::loadConfig()
+configmanager::Config configmanager::loadConfig()
 {
     Config config;
     QSettings settings(configPath, QSettings::IniFormat);
@@ -91,7 +91,7 @@ ConfigManager::Config ConfigManager::loadConfig()
 }
 
 // 获取配置文件路径
-QString ConfigManager::getConfigPath() const
+QString configmanager::getConfigPath() const
 {
     return configPath;
 }

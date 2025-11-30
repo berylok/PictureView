@@ -114,11 +114,11 @@ private:
     // ini配置管理相关
     void loadConfiguration();  // 加载配置
     void saveConfiguration();  // 保存配置
-    void applyConfiguration(const ConfigManager::Config &config);  // 应用配置
+    void applyConfiguration(const configmanager::Config &config);  // 应用配置
     // 添加当前配置对象
-    ConfigManager::Config currentConfig;
+    configmanager::Config currentConfig;
     // 配置管理器
-    ConfigManager *configManager;
+    configmanager *configmanager;
 
     //多线程互斥体
 private:
@@ -288,15 +288,6 @@ private:
     int previousImageIndex;
     ViewMode previousViewMode;
     void openSelectedImage();
-
-
-    QPixmap createDefaultArchiveThumbnail();  // 添加这行
-
-private:
-    QImage loadImageSafely(const QString &filePath);
-    void increaseImageMemoryLimit();
-    void checkImageFormatSupport();
-
 };
 
 #endif // IMAGEWIDGET_H

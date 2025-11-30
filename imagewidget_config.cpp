@@ -12,14 +12,14 @@ void ImageWidget::closeEvent(QCloseEvent *event)
 
 void ImageWidget::loadConfiguration()
 {
-    ConfigManager::Config config = configManager->loadConfig();
+    configmanager::Config config = configmanager->loadConfig();
     currentConfig.lastOpenPath = config.lastOpenPath;
     applyConfiguration(config);
 }
 
 void ImageWidget::saveConfiguration()
 {
-    ConfigManager::Config config;
+    configmanager::Config config;
 
     // 保存窗口状态
     config.windowPosition = this->pos();
@@ -29,10 +29,10 @@ void ImageWidget::saveConfiguration()
     config.titleBarVisible = !(this->windowFlags() & Qt::FramelessWindowHint);
     config.lastOpenPath = currentConfig.lastOpenPath;
 
-    configManager->saveConfig(config);
+    configmanager->saveConfig(config);
 }
 
-void ImageWidget::applyConfiguration(const ConfigManager::Config &config)
+void ImageWidget::applyConfiguration(const configmanager::Config &config)
 {
     // 保存当前窗口状态
     bool wasMaximized = isMaximized();
@@ -138,24 +138,16 @@ void ImageWidget::toggleTransparentBackground()
     bool currentState = testAttribute(Qt::WA_TranslucentBackground);
 
     if (currentState) {
-        // 关闭透明背景
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
-        setStyleSheet(""); // 清除透明样式
         qDebug("透明背景 关闭");
     } else {
-        // 开启透明背景
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
-        setStyleSheet("background: transparent;"); // 设置透明样式
         qDebug("透明背景 开启");
     }
 
-    // 强制重绘
     update();
-    repaint();
-
-    // 保存配置
     saveConfiguration();
 }
 

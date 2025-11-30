@@ -96,7 +96,7 @@ set_target_properties(PictureView PROPERTIES
     OUTPUT_NAME "PictureView"
     MACOSX_BUNDLE_BUNDLE_NAME "PictureView"
     MACOSX_BUNDLE_COPYRIGHT "Copyright @ 2025 berylok"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.berylok.PictureView"
+    MACOSX_BUNDLE_GUI_IDENTIFIER ""
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
     WIN32_EXECUTABLE TRUE
@@ -107,7 +107,7 @@ if(UNIX AND NOT APPLE)
     # 设置图标
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.ico")
         set_target_properties(PictureView PROPERTIES
-            MACOSX_BUNDLE_ICON_FILE PictureView.png
+            MACOSX_BUNDLE_ICON_FILE PictureView.ico
         )
     endif()
 

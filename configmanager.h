@@ -1,11 +1,11 @@
-#ifndef CONFIGMANAGER_H
-#define CONFIGMANAGER_H
+#ifndef configmanager_H
+#define configmanager_H
 
 #include <QString>
 #include <QPoint>
 #include <QSize>
 
-class ConfigManager
+class configmanager
 {
 public:
     // 配置结构体
@@ -31,7 +31,7 @@ public:
         Config();
     };
 
-    ConfigManager(const QString& filename = "viewer_config.ini");
+    configmanager(const QString& filename = "viewer_config.ini");
 
     // 保存配置到文件
     bool saveConfig(const Config& config);
@@ -46,4 +46,4 @@ private:
     QString configPath;
 };
 
-#endif // CONFIGMANAGER_H
+#endif // configmanager_H

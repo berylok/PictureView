@@ -114,11 +114,11 @@ private:
     // ini配置管理相关
     void loadConfiguration();  // 加载配置
     void saveConfiguration();  // 保存配置
-    void applyConfiguration(const configmanager::Config &config);  // 应用配置
+    void applyConfiguration(const ConfigManager::Config &config);  // 应用配置
     // 添加当前配置对象
-    configmanager::Config currentConfig;
+    ConfigManager::Config currentConfig;
     // 配置管理器
-    configmanager *configmanager;
+    ConfigManager *configManager;
 
     //多线程互斥体
 private:
@@ -288,6 +288,33 @@ private:
     int previousImageIndex;
     ViewMode previousViewMode;
     void openSelectedImage();
+
+
+    QPixmap createDefaultArchiveThumbnail();
+
+private:
+    // 鼠标穿透控制
+    // void enableMousePassthrough();
+    // void disableMousePassthrough();
+    void updateMousePassthroughRegion();
+    bool shouldPassthroughMouse(const QPoint& pos) const; // 判断是否应该穿透
+
+    bool isInImageArea(const QPoint& pos) const;
+    void updateCanvasModePassthrough(); // 新增：专门处理画布模式的穿透
+
+    QRect getImageDisplayRect() const; // 获取图片实际显示区域
+    void cleanImageEdges(); // 清理图片边缘
+
+    void clearAllPassthrough();
+
+private:
+    // 保存窗口状态
+    bool wasMaximizedBeforeCanvas;
+    QRect normalGeometryBeforeCanvas;
+    Qt::WindowFlags windowFlagsBeforeCanvas;
+
+private:
+    void restoreNormalWindowState(); // 添加这行
 };
 
 #endif // IMAGEWIDGET_H

@@ -1,6 +1,5 @@
 // imagewidget_keyboard.cpp
 #include "imagewidget.h"
-#include "qapplication.h"
 #include <QKeyEvent>
 #include <QScrollBar>
 #include <QDebug>
@@ -146,9 +145,7 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
             event->accept();
             break;
         case Qt::Key_Escape:
-            // switchToThumbnailView();
-            // 直接退出程序
-            QApplication::quit();
+               close();     //esc直接退出程序
             break;
         case Qt::Key_Space:
             toggleSlideshow();

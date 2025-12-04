@@ -143,8 +143,33 @@ void ImageWidget::actualSize()
 {
     if (pixmap.isNull()) return;
 
+    // 获取当前鼠标位置
+    QPointF mousePos = mapFromGlobal(QCursor::pos());
+
+    // 获取当前视图中心
+    QPointF viewCenter(width() / 2.0, height() / 2.0);
+
+    // 计算鼠标相对于视图中心的位置
+    QPointF relativeMousePos = mousePos - viewCenter;
+
+    // 如果当前不是实际大小，保存当前的偏移量
+    static QPointF lastPanOffset = panOffset;
+    static double lastScaleFactor = scaleFactor;
+
+    if (scaleFactor != 1.0) {
+        lastPanOffset = panOffset;
+        lastScaleFactor = scaleFactor;
+
+        // 计算以鼠标为中心切换到实际大小时的偏移
+        // 公式：新偏移 = 鼠标位置 - 视图中心 - (鼠标位置 - 视图中心 - 旧偏移)/旧缩放因子
+        QPointF imagePos = (mousePos - viewCenter - panOffset) / lastScaleFactor;
+        panOffset = mousePos - viewCenter - imagePos * 1.0;
+    } else {
+        // 如果当前已经是实际大小，重置偏移
+        panOffset = QPointF(0, 0);
+    }
+
     scaleFactor = 1.0;
-    panOffset = QPointF(0, 0);
     currentViewStateType = ActualSize; // 设置为实际大小模式
 
     update();
@@ -167,17 +192,17 @@ void ImageWidget::wheelEvent(QWheelEvent *event)
 
         scaleFactor = qBound(0.03, scaleFactor, 8.0);
 
+        // 获取鼠标位置
         QPointF mousePos = event->position();
-        QPointF imagePos =
-            (mousePos - QPointF(width() / 2, height() / 2) - panOffset) /
-            oldScaleFactor;
-        panOffset = mousePos - QPointF(width() / 2, height() / 2) -
-                    imagePos * scaleFactor;
+        QPointF viewCenter(width() / 2.0, height() / 2.0);
+
+        // 计算以鼠标为中心的缩放偏移
+        QPointF imagePos = (mousePos - viewCenter - panOffset) / oldScaleFactor;
+        panOffset = mousePos - viewCenter - imagePos * scaleFactor;
 
         update();
     }
 }
-
 
 void ImageWidget::resizeEvent(QResizeEvent *event)
 {
@@ -194,3 +219,10 @@ void ImageWidget::resizeEvent(QResizeEvent *event)
         // adjustImageSize();
     }
 }
+
+
+
+
+
+
+

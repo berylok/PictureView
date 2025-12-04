@@ -40,7 +40,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     }
 
     if (currentViewMode == SingleView) {
-        contextMenu.addAction(tr("返回缩略图(Enter/Esc)"), this,
+        contextMenu.addAction(tr("返回缩略图(Enter)"), this,
                               &ImageWidget::switchToThumbnailView);
         contextMenu.addSeparator();
 
@@ -255,7 +255,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
             &ImageWidget::showShortcutHelp);
 
     contextMenu.addSeparator();
-    contextMenu.addAction(tr("退出"), this, &QWidget::close);
+    contextMenu.addAction(tr("退出（Esc）"), this, &QWidget::close);
 
     contextMenu.exec(globalPos);
 }

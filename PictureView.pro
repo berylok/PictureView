@@ -10,8 +10,8 @@ unix:!macx {
 # Windows 或其他情况
 win32 {
     LIBS += -larchive
-    INCLUDEPATH += "J:\vcpkg\installed\x64-windows\include"  # 修改为实际路径
-    LIBS += -L"J:\vcpkg\installed\x64-windows\lib"
+    INCLUDEPATH += "c:\vcpkg\installed\x64-windows\include"  # 修改为实际路径
+    LIBS += -L"c:\vcpkg\installed\x64-windows\lib"
 }
 
 SOURCES += main.cpp \
@@ -73,7 +73,7 @@ linux {
 RC_ICONS = icons/PictureView.ico
 
 # 基本应用信息
-VERSION = 1.4.0.0
+VERSION = 1.4.2.1
 QMAKE_TARGET_COMPANY = "berylok"
 QMAKE_TARGET_DESCRIPTION = "berylok app"
 QMAKE_TARGET_COPYRIGHT = "Copyright @ 2025 berylok"

@@ -37,11 +37,16 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     isVerticallyFlipped(false),
     isArchiveMode(false)
 {
-    // 创建缩略图部件
-    thumbnailWidget = new ThumbnailWidget(this);
+
+    // 创建缩略图部件 - 使用统一的构造函数
+    thumbnailWidget = new ThumbnailWidget(this, this);  // imageWidget, parent
+    // // 创建缩略图部件
+    // thumbnailWidget = new ThumbnailWidget(this);
+
+    // thumbnailWidget = new ThumbnailWidget(nullptr, this);  // 如果构造函数需要两个参数    // 设置 ImageWidget 指针
 
     // 创建配置管理器
-    configmanager = new configmanager("image_viewer_config.ini");
+    configManager = new ConfigManager("image_viewer_config.ini");
 
     // 创建主布局
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -99,7 +104,7 @@ ImageWidget::~ImageWidget()
     delete slideshowTimer;
     delete thumbnailWidget;
     delete scrollArea;
-    delete configmanager;
+    delete configManager;
 }
 
 void ImageWidget::setCurrentDir(const QDir &dir)
@@ -114,10 +119,16 @@ void ImageWidget::ensureWindowVisible()
         showNormal();
     }
 
-    // 确保窗口可见
-    show();
-    raise();
-    activateWindow();
+    // 只有在窗口不可见时才调用 show()
+    if (!isVisible()) {
+        show();
+        raise();
+        activateWindow();
+    } else {
+        // 如果已经可见，只需要激活
+        raise();
+        activateWindow();
+    }
 
     // 设置焦点到缩略图部件
     thumbnailWidget->setFocus();

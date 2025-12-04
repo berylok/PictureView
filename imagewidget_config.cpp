@@ -1,6 +1,7 @@
 // imagewidget_config.cpp
 #include "imagewidget.h"
 #include <QCloseEvent>
+#include <QGuiApplication>
 
 void ImageWidget::closeEvent(QCloseEvent *event)
 {
@@ -12,14 +13,14 @@ void ImageWidget::closeEvent(QCloseEvent *event)
 
 void ImageWidget::loadConfiguration()
 {
-    configmanager::Config config = configmanager->loadConfig();
+    ConfigManager::Config config = configManager->loadConfig();
     currentConfig.lastOpenPath = config.lastOpenPath;
     applyConfiguration(config);
 }
 
 void ImageWidget::saveConfiguration()
 {
-    configmanager::Config config;
+    ConfigManager::Config config;
 
     // 保存窗口状态
     config.windowPosition = this->pos();
@@ -29,19 +30,31 @@ void ImageWidget::saveConfiguration()
     config.titleBarVisible = !(this->windowFlags() & Qt::FramelessWindowHint);
     config.lastOpenPath = currentConfig.lastOpenPath;
 
-    configmanager->saveConfig(config);
+    configManager->saveConfig(config);
 }
 
-void ImageWidget::applyConfiguration(const configmanager::Config &config)
+// imagewidget_config.cpp - 修改 applyConfiguration 方法
+void ImageWidget::applyConfiguration(const ConfigManager::Config &config)
 {
     // 保存当前窗口状态
     bool wasMaximized = isMaximized();
-    QRect normalGeometry;
-    if (!wasMaximized) {
-        normalGeometry = geometry();
+    QRect normalGeometry = geometry();
+
+    // 检查保存的几何信息是否有效
+    QRect savedGeometry = QRect(config.windowPosition, config.windowSize);
+    QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+
+    // 如果保存的位置不在屏幕内，使用默认位置
+    if (!screenGeometry.contains(savedGeometry.topLeft())) {
+        savedGeometry.moveTopLeft(QPoint(100, 100));
     }
 
-    // 第一步：设置透明背景（不影响窗口标志）
+    // 如果保存的大小不合理，使用默认大小
+    if (savedGeometry.width() < 100 || savedGeometry.height() < 100) {
+        savedGeometry.setSize(QSize(800, 600));
+    }
+
+    // 第一步：设置窗口属性（透明背景）
     if (config.transparentBackground) {
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
@@ -50,45 +63,52 @@ void ImageWidget::applyConfiguration(const configmanager::Config &config)
         setAutoFillBackground(true);
     }
 
-    // 第二步：设置标题栏状态（独立于透明背景）
+    // 第二步：在设置窗口几何之前，先设置标题栏标志
+    // 重要：先恢复为正常窗口状态再设置标志
+    bool needRestoreMaximized = false;
+
+    if (wasMaximized || config.windowMaximized) {
+        // 如果当前或配置要求最大化，先显示为正常窗口
+        //showNormal();
+        needRestoreMaximized = true;
+    }
+
+    // 设置标题栏标志
     Qt::WindowFlags flags = windowFlags();
     flags &= ~Qt::FramelessWindowHint;
     if (!config.titleBarVisible) {
         flags |= Qt::FramelessWindowHint;
     }
 
-    // 设置置顶状态
     if (config.alwaysOnTop) {
         flags |= Qt::WindowStaysOnTopHint;
     } else {
         flags &= ~Qt::WindowStaysOnTopHint;
     }
 
-    // 应用窗口标志
+    // 只有在标志确实改变时才设置
     if (flags != windowFlags()) {
         setWindowFlags(flags);
+        // 设置窗口几何
+        move(savedGeometry.topLeft());
+        resize(savedGeometry.size());
+        show(); // 必须重新显示
     }
 
-    // 设置窗口位置和大小
-    if (!config.windowPosition.isNull() && !config.windowMaximized) {
-        move(config.windowPosition);
-    }
-
-    if (!config.windowSize.isEmpty() && !config.windowMaximized) {
-        resize(config.windowSize);
-    }
-
-    // 设置窗口最大化状态
-    if (config.windowMaximized) {
-        showMaximized();
-    } else {
+    // 第三步：应用窗口位置和大小
+    if (!config.windowMaximized) {
+        move(savedGeometry.topLeft());
+        resize(savedGeometry.size());
         showNormal();
-        if (normalGeometry.isNull() && !config.windowPosition.isNull() &&
-            !config.windowSize.isEmpty()) {
-            move(config.windowPosition);
-            resize(config.windowSize);
-        }
+        qDebug() << "应用配置：窗口正常大小";
+    } else {
+        // 如果是最大化，先设置正常大小再最大化
+        move(savedGeometry.topLeft());
+        resize(savedGeometry.size());
+        showMaximized();
+        qDebug() << "应用配置：窗口最大化";
     }
+
     update();
 }
 
@@ -138,16 +158,24 @@ void ImageWidget::toggleTransparentBackground()
     bool currentState = testAttribute(Qt::WA_TranslucentBackground);
 
     if (currentState) {
+        // 关闭透明背景
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
+        setStyleSheet(""); // 清除透明样式
         qDebug("透明背景 关闭");
     } else {
+        // 开启透明背景
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
+        setStyleSheet("background: transparent;"); // 设置透明样式
         qDebug("透明背景 开启");
     }
 
+    // 强制重绘
     update();
+    repaint();
+
+    // 保存配置
     saveConfiguration();
 }
 

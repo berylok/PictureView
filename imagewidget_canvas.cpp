@@ -134,17 +134,33 @@ void ImageWidget::enableMousePassthrough()
     SetWindowLongPtr((HWND)winId(), GWL_EXSTYLE,
                      GetWindowLongPtr((HWND)winId(), GWL_EXSTYLE) | WS_EX_TRANSPARENT);
 #endif
+
+#ifndef Q_OS_LINUX
+#endif
+
     mousePassthrough = true;
 }
 
+// 在 #ifdef Q_OS_LINUX 块之外，添加一个通用的实现（适用于 Windows 或其他平台）
+
 void ImageWidget::disableMousePassthrough()
 {
+    qDebug() << "禁用鼠标穿透 - Windows 或其他平台";
+
 #ifdef Q_OS_WIN
+    // Windows 专用逻辑
     SetWindowLongPtr((HWND)winId(), GWL_EXSTYLE,
                      GetWindowLongPtr((HWND)winId(), GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
+
+    // 清除透明鼠标事件属性
+    setAttribute(Qt::WA_TransparentForMouseEvents, false);
+#endif
+
+#ifndef Q_OS_LINUX
 #endif
     mousePassthrough = false;
 }
+
 
 bool ImageWidget::isCanvasModeEnabled()
 {

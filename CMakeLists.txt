@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.4.0 LANGUAGES CXX)
+project(PictureView VERSION 1.4.2.1 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -107,7 +107,7 @@ if(UNIX AND NOT APPLE)
     # 设置图标
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.ico")
         set_target_properties(PictureView PROPERTIES
-            MACOSX_BUNDLE_ICON_FILE PictureView.ico
+            MACOSX_BUNDLE_ICON_FILE PictureView.png
         )
     endif()
 

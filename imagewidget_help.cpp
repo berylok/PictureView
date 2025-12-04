@@ -113,8 +113,8 @@ void ImageWidget::showAboutDialog()
     // 创建自定义对话框
     QDialog helpDialog(this);
     helpDialog.setWindowTitle(tr("图片查看器 - 帮助"));
-    helpDialog.setMinimumSize(700, 750);
-    helpDialog.setMaximumSize(900, 900);
+    helpDialog.setMinimumSize(600, 800);  // 稍微增加尺寸以适应更多内容
+    helpDialog.setMaximumSize(1100, 1100);
 
     // 设置对话框样式
     helpDialog.setStyleSheet(
@@ -201,11 +201,11 @@ void ImageWidget::showAboutDialog()
     titleLabel->setAlignment(Qt::AlignCenter);
 
     // 版本信息
-    QLabel *versionLabel = new QLabel(tr("版本 1.4.0.0"), aboutTab);
+    QLabel *versionLabel = new QLabel(tr("版本 1.4.2.1"), aboutTab);
     versionLabel->setStyleSheet("font-size: 14px; color: #666666; font-weight: bold;");
     versionLabel->setAlignment(Qt::AlignCenter);
 
-    QLabel *developerLabel = new QLabel(tr("开发者: 幸运人的珠宝 berylok"), aboutTab);
+    QLabel *developerLabel = new QLabel(tr("技术顾问：DeepSeek 图标创意：DouBao 开发者: 幸运人的珠宝 berylok"), aboutTab);
     developerLabel->setStyleSheet("font-size: 12px; color: #888888;");
     developerLabel->setAlignment(Qt::AlignCenter);
 
@@ -234,6 +234,13 @@ void ImageWidget::showAboutDialog()
                            "<p>• " + tr("操作系统: Windows 7 或更高版本") + "</p>"
                                                  "<p>• " + tr("内存: 至少 512MB RAM") + "</p>"
                                        "<p>• " + tr("磁盘空间: 至少 50MB 可用空间") + "</p>"
+
+                                               "<h3>" + tr("开源组件") + "</h3>"
+                           "<p>• <b>Qt 框架</b> - " + tr("跨平台应用程序开发框架") + "</p>"
+                                         "<p>• <b>zlib</b> - " + tr("数据压缩库") + "</p>"
+                             "<p>• <b>libpng</b> - " + tr("PNG图像处理库") + "</p>"
+                                "<p>• <b>libjpeg-turbo</b> - " + tr("JPEG图像处理库") + "</p>"
+         "<p>• <b>libarchive</b> - " + tr("读写压缩格式") + "</p>"
         );
 
     aboutLayout->addWidget(titleLabel);
@@ -368,10 +375,110 @@ void ImageWidget::showAboutDialog()
 
     guideLayout->addWidget(guideText);
 
+    // === 许可证标签页 ===
+    QWidget *licenseTab = new QWidget();
+    QVBoxLayout *licenseLayout = new QVBoxLayout(licenseTab);
+
+    QTextEdit *licenseText = new QTextEdit(licenseTab);
+    licenseText->setReadOnly(true);
+    licenseText->setHtml(
+        "<h2 style='color: #0078d4;'>" + tr("软件许可证") + "</h2>"
+
+                                                            "<div style='background-color: #e8f4f8; border: 1px solid #b8d8e8; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
+                                                            "<h3 style='margin-top: 0; color: #0078d4;'>" + tr("图片查看器许可证") + "</h3>"
+                                   "<p><strong>" + tr("图片查看器") + "</strong> " + tr("基于 GNU 通用公共许可证第三版 (GPL v3) 发布。") + "</p>"
+                                                                                                  "<p>" + tr("这是一个自由软件，您可以：") + "</p>"
+                                             "<ul>"
+                                             "<li>" + tr("自由地运行此程序，无论出于何种目的") + "</li>"
+                                                     "<li>" + tr("研究和修改此程序的源代码") + "</li>"
+                                           "<li>" + tr("重新分发此程序的副本") + "</li>"
+                                       "<li>" + tr("分发您修改后的版本") + "</li>"
+                                     "</ul>"
+                                     "</div>"
+
+                                     "<h3>📜 " + tr("GPL v3 条款摘要") + "</h3>"
+                                  "<p><strong>" + tr("重要提示：这不是完整的许可证文本，仅供参考。完整许可证请访问 ") +
+        "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>https://www.gnu.org/licenses/gpl-3.0.html</a></strong></p>"
+
+        "<table border='0' cellspacing='5' cellpadding='5' width='100%' style='margin-bottom: 15px;'>"
+        "<tr style='background-color: #f5f5f5;'>"
+        "<td width='30%'><b>" + tr("您的自由") + "</b></td>"
+                           "<td width='70%'><b>" + tr("相应义务") + "</b></td>"
+                           "</tr>"
+                           "<tr>"
+                           "<td>" + tr("使用自由") + "</td>"
+                           "<td>" + tr("无限制 - 您可以出于任何目的运行此软件") + "</td>"
+                                                        "</tr>"
+                                                        "<tr>"
+                                                        "<td>" + tr("学习与修改自由") + "</td>"
+                                 "<td>" + tr("必须保持许可证声明和版权信息") + "</td>"
+                                               "</tr>"
+                                               "<tr>"
+                                               "<td>" + tr("重新分发自由") + "</td>"
+                               "<td>" + tr("必须提供完整源代码，包括所有修改") + "</td>"
+                                                   "</tr>"
+                                                   "<tr>"
+                                                   "<td>" + tr("分发修改版本") + "</td>"
+                               "<td>" + tr("必须同样采用GPL v3许可证") + "</td>"
+                                           "</tr>"
+                                           "</table>"
+
+                                           "<hr style='margin: 25px 0; border: 1px solid #cccccc;'>"
+
+                                           "<div style='background-color: #f0f8ff; border: 1px solid #a8d8ff; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
+                                           "<h3 style='margin-top: 0; color: #0078d4;'>" + tr("Qt 框架许可证") + "</h3>"
+                                "<p><strong>" + tr("本软件使用 Qt 框架开发。") + "</strong></p>"
+                                           "<p>" + tr("Qt 在以下许可证下可用：") + "</p>"
+                                          "<ul>"
+                                          "<li><strong>" + tr("GNU LGPL v3:") + "</strong> " + tr("用于开源开发") + "</li>"
+                                                                   "<li><strong>" + tr("商业许可证:") + "</strong> " + tr("用于商业和专有开发") + "</li>"
+                                                                        "</ul>"
+                                                                        "<p>" + tr("本软件基于 Qt 的开源版本构建，遵循 LGPL v3 许可证条款。") + "</p>"
+                                                                          "<p>" + tr("Qt 是 The Qt Company Ltd. 的注册商标。") + "</p>"
+                                                         "</div>"
+
+                                                         "<h3>🔗 " + tr("许可证链接") + "</h3>"
+                             "<ul>"
+                             "<li>" + tr("GPL v3 完整文本: ") +
+        "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>https://www.gnu.org/licenses/gpl-3.0.html</a></li>"
+        "<li>" + tr("LGPL v3 完整文本: ") +
+        "<a href='https://www.gnu.org/licenses/lgpl-3.0.html'>https://www.gnu.org/licenses/lgpl-3.0.html</a></li>"
+        "<li>" + tr("Qt 许可证信息: ") +
+        "<a href='https://www.qt.io/licensing/'>https://www.qt.io/licensing/</a></li>"
+        "<li>" + tr("自由软件基金会: ") +
+        "<a href='https://www.fsf.org/'>https://www.fsf.org/</a></li>"
+        "</ul>"
+
+        "<h3>⚖️ " + tr("重要声明") + "</h3>"
+                           "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px;'>"
+                           "<p><strong>" + tr("免责声明:") + "</strong> " +
+        tr("本软件按原样提供，不提供任何明示或暗示的担保，包括但不限于对适销性和特定用途适用性的暗示担保。") + "</p>"
+                                                                                                               "<p><strong>" + tr("版权声明:") + "</strong> " +
+        tr("版权所有 © 2024 幸运人的珠宝 berylok。保留所有权利。") + "</p>"
+                                                                     "<p><strong>" + tr("Qt 声明:") + "</strong> " +
+        tr("Qt 是 The Qt Company Ltd. 及其子公司和关联公司的注册商标。") + "</p>"
+                                                                           "</div>"
+
+                                                                           "<div style='background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; padding: 15px; margin-top: 20px;'>"
+                                                                           "<h4 style='margin-top: 0;'>" + tr("开源贡献") + "</h4>"
+                           "<p>" + tr("此软件是开源社区的一部分。我们鼓励：") + "</p>"
+                                                       "<ul>"
+                                                       "<li>" + tr("报告错误和改进建议") + "</li>"
+                                     "<li>" + tr("贡献代码改进") + "</li>"
+                               "<li>" + tr("翻译和本地化") + "</li>"
+                               "<li>" + tr("分享使用体验") + "</li>"
+                               "</ul>"
+                               "<p>" + tr("感谢您支持开源软件！") + "</p>"
+                                       "</div>"
+        );
+
+    licenseLayout->addWidget(licenseText);
+
     // 添加标签页
     tabWidget->addTab(aboutTab, tr("关于"));
     tabWidget->addTab(shortcutsTab, tr("快捷键"));
     tabWidget->addTab(guideTab, tr("使用指南"));
+    tabWidget->addTab(licenseTab, tr("许可证"));
 
     // 按钮区域
     QDialogButtonBox *buttonBox = new QDialogButtonBox(&helpDialog);

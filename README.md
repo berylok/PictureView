@@ -21,10 +21,12 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 编译环境配置：
 1，windows平台：使用PictureView.pro在QT环境加载项目。
 
-2：Cmake已更新至1.4 for ubuntu(linux) 
-修复缩略图部分错误，修改esc可退出程序，原enter切换不变。
+2：Cmake  for ubuntu(linux) 
 
-2025年12月4日 添加缺失的许可证信息。修补带标题窗口的错误。版本1.421
+
+2025年12月6日 更新仅针对Linux系统； x11桌面投影画布 以正确工作；调整透明度为快捷键pageup、pagedown；旋转为ctrl+；镜像为shift+；v1.430
+
+2025年12月4日 添加缺失的许可证信息。修补带标题窗口的错误。v1.421
 
 2025年11月30日 归档整理。已知linix系统透明穿透及画布问题。目前有些许瑕疵，待完善。
 

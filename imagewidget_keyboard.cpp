@@ -77,24 +77,6 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
             // 菜单键显示上下文菜单
             showContextMenu(this->mapToGlobal(QPoint(width()/2, height()/2)));
             break;
-        case Qt::Key_PageUp:
-            // PageUp：增加透明度（变得更不透明）
-            {
-                double currentOpacity = windowOpacity();
-                double newOpacity = qMin(1.0, currentOpacity + 0.1);
-                setWindowOpacity(newOpacity);
-                event->accept();
-            }
-            break;
-        case Qt::Key_PageDown:
-            // PageDown：减少透明度（变得更透明）
-            {
-                double currentOpacity = windowOpacity();
-                double newOpacity = qMax(0.1, currentOpacity - 0.1);
-                setWindowOpacity(newOpacity);
-                event->accept();
-            }
-            break;
         default:
             // 忽略其他所有按键
             event->ignore();
@@ -130,22 +112,40 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
             break;
         case Qt::Key_PageUp:
             if (event->modifiers() & Qt::ControlModifier) {
-                mirrorVertical();
-            } else {
+                // Ctrl+PageUp: 逆时针旋转90度
                 rotate90CCW();
+                event->accept();
+            } else if (event->modifiers() & Qt::ShiftModifier) {
+                // Shift+PageUp: 垂直镜像
+                mirrorVertical();
+                event->accept();
+            } else {
+                // PageUp：增加透明度（变得更不透明）
+                double currentOpacity = windowOpacity();
+                double newOpacity = qMin(1.0, currentOpacity + 0.1);
+                setWindowOpacity(newOpacity);
+                event->accept();
             }
-            event->accept();
             break;
         case Qt::Key_PageDown:
             if (event->modifiers() & Qt::ControlModifier) {
-                mirrorHorizontal();
-            } else {
+                // Ctrl+PageDown: 顺时针旋转90度
                 rotate90CW();
+                event->accept();
+            } else if (event->modifiers() & Qt::ShiftModifier) {
+                // Shift+PageDown: 水平镜像
+                mirrorHorizontal();
+                event->accept();
+            } else {
+                // PageDown：减少透明度（变得更透明）
+                double currentOpacity = windowOpacity();
+                double newOpacity = qMax(0.1, currentOpacity - 0.1);
+                setWindowOpacity(newOpacity);
+                event->accept();
             }
-            event->accept();
             break;
         case Qt::Key_Escape:
-               close();     //esc直接退出程序
+            close();     //esc直接退出程序
             break;
         case Qt::Key_Space:
             toggleSlideshow();

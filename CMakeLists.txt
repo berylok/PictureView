@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.4.2.1 LANGUAGES CXX)
+project(PictureView VERSION 1.4.3.0 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -7,6 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 查找 Qt6 包
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent)
+
+# 查找 X11 库 (仅Linux/Unix系统需要，且非macOS)
+if(UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+    # 可选但推荐：也查找 Xext 扩展库，某些X11功能需要它
+    # find_package(X11 COMPONENTS Xext)
+endif()
 
 # 启用 Qt 的自动处理
 qt_standard_project_setup()
@@ -53,6 +60,9 @@ qt_add_executable(PictureView
     ${SOURCES}
     ${HEADERS}
     platform_compat.h
+    canvasoverlay.h canvasoverlay.cpp
+
+
 )
 
 # 设置资源前缀（必须在 qt_add_resources 之前）
@@ -74,6 +84,24 @@ target_link_libraries(PictureView PRIVATE
     Qt6::Concurrent
     ${LIBARCHIVE_LIBRARIES}
 )
+
+# # 在Linux平台单独链接X11库
+# if(UNIX AND NOT APPLE AND X11_FOUND)
+#     target_link_libraries(PictureView PRIVATE ${X11_LIBRARIES})
+#     if(X11_Xext_FOUND)
+#         target_link_libraries(PictureView PRIVATE ${X11_Xext_LIBRARY})
+#     endif()
+# endif()
+if(UNIX AND NOT APPLE AND X11_FOUND)
+    # 明确链接 X11 库，确保 X11 库在 Qt 库之后链接
+    target_link_libraries(PictureView PRIVATE
+        ${X11_LIBRARIES}
+    )
+    # 如果找到 Xext，也需要链接
+    if(X11_Xext_FOUND)
+        target_link_libraries(PictureView PRIVATE ${X11_Xext_LIBRARY})
+    endif()
+endif()
 
 # 包含目录
 target_include_directories(PictureView PRIVATE

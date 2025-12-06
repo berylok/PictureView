@@ -5,16 +5,53 @@
 #include <QTranslator>
 #include <QLibraryInfo>
 #include <QDir>
+#include <QDebug>  // 添加QDebug头文件
+#include <QGuiApplication>  // 添加QGuiApplication头文件用于平台检测
+// 设置程序字体
+#include <QFontDatabase>
 
 int main(int argc, char *argv[])
 {
+    // === 在创建QApplication之前先检测环境变量 ===
+    qDebug() << "=== 程序启动 - 环境检测 ===";
+    qDebug() << "命令行参数:";
+    for (int i = 0; i < argc; ++i) {
+        qDebug() << "  argv[" << i << "]:" << argv[i];
+    }
+
+    // 创建QApplication
     QApplication app(argc, argv);
 
+    // 加载字体
+    int fontId = QFontDatabase::addApplicationFont("/usr/share/fonts/noto/NotoColorEmoji.ttf");
+    if (fontId != -1) {
+        QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
+        if (!fontFamilies.empty()) {
+            QFont font(fontFamilies.at(0), 12);
+            app.setFont(font);
+        }
+    }
+
+    // 设置备选字体
+    QFont defaultFont("Noto Sans CJK SC", 12);
+    app.setFont(defaultFont);
+
+
+    // === 在设置应用程序信息后检测Qt平台 ===
     // 设置应用程序信息
     app.setApplicationName("PictureView");
-    app.setApplicationVersion("1.4.2.1");
+    app.setApplicationVersion("1.4.3.0");
     app.setOrganizationName("berylok");
 
+    // 打印环境信息
+    qDebug() << "=== 环境检测结果 ===";
+    qDebug() << "Qt运行平台:" << QGuiApplication::platformName();
+    qDebug() << "QT_QPA_PLATFORM环境变量:" << qgetenv("QT_QPA_PLATFORM");
+    qDebug() << "XDG_SESSION_TYPE环境变量:" << qgetenv("XDG_SESSION_TYPE");
+    qDebug() << "DISPLAY环境变量:" << qgetenv("DISPLAY");
+    qDebug() << "==================";
+
+    // ... 以下是你原有的代码，保持不变 ...
     // 创建翻译器
     QTranslator appTranslator;
     QTranslator qtTranslator;
@@ -100,7 +137,7 @@ int main(int argc, char *argv[])
             QMessageBox::warning(
                 nullptr, QCoreApplication::translate("main", "Error"),
                 QCoreApplication::translate("main", "File does not exist:\n%1")
-                                                                           .arg(filePath));
+                    .arg(filePath));
         }
     }
 

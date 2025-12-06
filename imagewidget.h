@@ -17,6 +17,10 @@
 
 #include "archivehandler.h"
 
+#ifdef Q_OS_LINUX
+#include "canvasoverlay.h"
+#endif
+
 class ImageWidget : public QWidget
 {
     Q_OBJECT
@@ -315,6 +319,30 @@ private:
 
 private:
     void restoreNormalWindowState(); // 添加这行
+
+
+
+//#ifdef Q_OS_LINUX
+private:
+    // 画布模式相关
+    // 新增：覆盖层窗口
+
+    //class CanvasOverlay;
+    CanvasOverlay* canvasOverlay = nullptr;
+
+    // 图片数据
+    QImage currentImage;
+
+private:
+    // 优化透明度检测
+    bool checkPixelTransparencyOptimized(const QPointF& imagePos) const;
+    void updateTransparencyOutline();
+
+    // 新增：鼠标穿透状态管理
+    void updateMousePassthroughState(const QPoint& mousePos);
+    void updateCursorForPassthrough(bool shouldPassthrough);
+//#endif
+
 };
 
 #endif // IMAGEWIDGET_H

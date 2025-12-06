@@ -1,27 +1,51 @@
 // imagewidget_canvas.cpp
 #include "imagewidget.h"
+#include "canvasoverlay.h"
+#include "qpainter.h"
 #include <QScreen>
 #include <QGuiApplication>
+
 #ifdef _WIN32
+
 #include <windows.h>
+
 #else
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include <QGuiApplication>
+// **关键修复：包含必要的X11头文件**
+extern "C" {
+#include <X11/Xlib.h>
+#include <X11/extensions/shape.h>
+}
+
 #endif
+
+
 
 void ImageWidget::createControlPanel()
 {
     if (!controlPanel) {
-        controlPanel = new CanvasControlPanel();
+        // 注意：如果覆盖层存在，将控制面板作为覆盖层的子窗口
+        QWidget* parentForPanel = canvasOverlay ? static_cast<QWidget*>(canvasOverlay) : static_cast<QWidget*>(this);
+
+        controlPanel = new CanvasControlPanel(parentForPanel);
         connect(controlPanel, &CanvasControlPanel::exitCanvasMode, this,
                 &ImageWidget::onExitCanvasMode);
         positionControlPanel();
         controlPanel->show();
-        qDebug() << "控制面板已创建";
+
+        // 确保控制面板不会被穿透
+        controlPanel->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+
+        qDebug() << "控制面板已创建，父窗口:" << (canvasOverlay ? "覆盖层" : "主窗口");
     }
 }
+
 
 void ImageWidget::destroyControlPanel()
 {
@@ -56,89 +80,194 @@ void ImageWidget::onExitCanvasMode()
 
 void ImageWidget::toggleCanvasMode()
 {
+
+
     if (canvasMode) {
         disableCanvasMode();
     } else {
+        // 获取当前主窗口的透明度
+        qreal mainWindowOpacity = this->windowOpacity();
+        qDebug() << "切换画布模式，主窗口透明度:" << mainWindowOpacity;
+
         enableCanvasMode();
     }
 }
 
 void ImageWidget::enableCanvasMode()
 {
-    qDebug() << "启用画布模式";
+    qDebug() << "启用画布模式（使用覆盖层）";
+
+    // 添加调试信息
+    qDebug() << "pixmap 是否为空:" << pixmap.isNull();
+    qDebug() << "pixmap 尺寸:" << pixmap.size();
+    qDebug() << "currentImage 是否为空:" << currentImage.isNull();
+    qDebug() << "currentImage 尺寸:" << currentImage.size();
+
+    if (canvasMode) return;
+
     canvasMode = true;
 
-    // 先隐藏窗口
-    hide();
+    // 获取当前主窗口的透明度
+    qreal mainWindowOpacity = windowOpacity();
+    qDebug() << "主窗口当前透明度:" << mainWindowOpacity;
 
-    // 保存当前窗口状态
-    bool wasMaximized = isMaximized();
-    QRect normalGeometry = geometry();
+    // 1. 创建 CanvasOverlay 的 DisplayState
+    CanvasOverlay::DisplayState displayState;
 
-    // 设置窗口标志
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-
-    // 设置窗口背景为透明
-    setAttribute(Qt::WA_NoSystemBackground, true);
-    setAttribute(Qt::WA_TranslucentBackground, false);
-    setStyleSheet("background-color: rgba(0, 0, 0, 0);");
-
-    // 设置初始半透明状态
-    setWindowOpacity(0.7);
-
-    // 恢复窗口显示
-    if (wasMaximized) {
-        showMaximized();
+    // 优先使用 pixmap，如果 pixmap 为空，尝试使用 currentImage
+    if (!pixmap.isNull()) {
+        displayState.image = pixmap.toImage();  // 将 QPixmap 转换为 QImage
+        qDebug() << "使用 pixmap 创建 DisplayState，尺寸:" << pixmap.size();
+    } else if (!currentImage.isNull()) {
+        displayState.image = currentImage;
+        qDebug() << "使用 currentImage 创建 DisplayState，尺寸:" << currentImage.size();
     } else {
-        if (normalGeometry.isValid() && !normalGeometry.isEmpty()) {
-            setGeometry(normalGeometry);
-        } else {
-            QScreen *screen = QGuiApplication::primaryScreen();
-            QRect screenGeometry = screen->availableGeometry();
-            setGeometry(screenGeometry);
-        }
-        showNormal();
+        qWarning() << "pixmap 和 currentImage 都为空，无法显示图片";
     }
 
-    // 启用鼠标穿透
-    enableMousePassthrough();
+    displayState.scaleFactor = scaleFactor;
+    displayState.panOffset = panOffset;
+    displayState.windowOpacity = mainWindowOpacity;  // 将透明度存储到DisplayState中
 
-    // 创建控制面板
+    // 计算图片显示区域
+    if (!displayState.image.isNull()) {
+        QSize scaledSize = displayState.image.size() * scaleFactor;
+        QRect imageRect = QRect(QPoint(0, 0), scaledSize);
+        imageRect.moveCenter(rect().center() + panOffset.toPoint());
+        displayState.imageRect = imageRect;
+        qDebug() << "计算出的图片显示区域:" << imageRect;
+    }
+
+    // 2. 创建并配置覆盖层窗口
+    // 将主窗口透明度传递给CanvasOverlay构造函数
+    canvasOverlay = new CanvasOverlay(this, mainWindowOpacity);
+    canvasOverlay->setGeometry(geometry());
+    canvasOverlay->setDisplayState(displayState);
+
+    // 3. 隐藏原窗口
+    hide();
+
+    // 4. 显示覆盖层
+    canvasOverlay->show();
+    canvasOverlay->activateWindow();
+    canvasOverlay->raise();
+
+    // 5. 创建控制面板
     createControlPanel();
 
-    // 确保窗口获得焦点
-    activateWindow();
-    raise();
+    // 6. 确保控制面板在最前面
+    if (controlPanel) {
+        controlPanel->raise();
+        controlPanel->activateWindow();
+    }
+
+    qDebug() << "画布模式已启用（覆盖层方案），透明度:" << mainWindowOpacity;
 }
 
 void ImageWidget::disableCanvasMode()
 {
-    qDebug() << "禁用画布模式";
+    qDebug() << "禁用画布模式（覆盖层方案）";
+
+    if (!canvasMode) return;
+
     canvasMode = false;
 
-    // 禁用鼠标穿透
-    disableMousePassthrough();
-    setWindowOpacity(1.0);
-
-    // 销毁控制面板
+    // 1. 销毁控制面板
     destroyControlPanel();
 
-    // 恢复正常的窗口属性
-    loadConfiguration();
-    update();
+    // 2. 销毁覆盖层窗口
+    if (canvasOverlay) {
+        canvasOverlay->hide();
+        canvasOverlay->deleteLater();
+        canvasOverlay = nullptr;
+    }
+
+    // 3. 恢复原窗口显示
+    show();
+    activateWindow();
+    raise();
+
+    // 4. 恢复窗口属性
+    setWindowOpacity(1.0);
+
+    qDebug() << "画布模式已禁用";
 }
 
 void ImageWidget::enableMousePassthrough()
 {
+    qDebug() << "启用鼠标穿透 - Qt6 Linux/X11";
+    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+
+
 #ifdef Q_OS_WIN
     SetWindowLongPtr((HWND)winId(), GWL_EXSTYLE,
                      GetWindowLongPtr((HWND)winId(), GWL_EXSTYLE) | WS_EX_TRANSPARENT);
+#elif defined(Q_OS_LINUX)
+    qDebug() << "检测到Linux平台，Qt平台:" << QGuiApplication::platformName();
+
+    if (QGuiApplication::platformName().contains("xcb")) {
+        qDebug() << "✓ 确认为X11环境";
+
+        // **尝试使用XOpenDisplay（传统方式）**
+        qDebug() << "尝试使用XOpenDisplay打开显示连接...";
+        Display *display = XOpenDisplay(nullptr);
+
+        if (display) {
+            qDebug() << "✓ XOpenDisplay成功";
+
+            // **检查XShape扩展是否可用**
+            int event_base, error_base;
+            int has_shape = XShapeQueryExtension(display, &event_base, &error_base);
+            qDebug() << "XShape扩展支持:" << (has_shape ? "可用" : "不可用");
+
+            if (has_shape) {
+                Window windowId = (Window)winId();
+                qDebug() << "窗口ID:" << windowId;
+
+                // **检查窗口是否已映射（显示在屏幕上）**
+                XWindowAttributes attrs;
+                if (XGetWindowAttributes(display, windowId, &attrs)) {
+                    qDebug() << "窗口映射状态:" << (attrs.map_state == IsViewable ? "已映射" : "未映射");
+                    qDebug() << "窗口尺寸:" << attrs.width << "x" << attrs.height;
+                }
+
+                // **执行鼠标穿透**
+                qDebug() << "执行XShapeCombineRectangles...";
+                XShapeCombineRectangles(display, windowId, ShapeInput,
+                                        0, 0, nullptr, 0, ShapeSet, YXBanded);
+                XFlush(display);
+                qDebug() << "✓ X11鼠标穿透设置完成";
+
+                // **注意：这里不能关闭display，需要在disableMousePassthrough中处理**
+            } else {
+                qWarning() << "✗ X服务器不支持XShape扩展，无法实现高级鼠标穿透";
+            }
+
+            // **同时也尝试Qt原生接口（作为备选）**
+            qDebug() << "尝试Qt原生接口...";
+            if (auto *x11App = qApp->nativeInterface<QNativeInterface::QX11Application>()) {
+                Display *qtDisplay = x11App->display();
+                qDebug() << "Qt原生接口获取的Display:" << (qtDisplay ? "有效" : "无效");
+            }
+
+        } else {
+            qCritical() << "✗ XOpenDisplay失败!";
+            qDebug() << "可能原因:";
+            qDebug() << "  1. 不在图形环境中运行";
+            qDebug() << "  2. 没有正确的DISPLAY设置";
+        }
+    } else {
+        qDebug() << "非X11环境，仅使用Qt标准穿透属性";
+    }
 #endif
 
-#ifndef Q_OS_LINUX
-#endif
+    // **验证Qt属性是否生效**
+    bool isTransparent = testAttribute(Qt::WA_TransparentForMouseEvents);
+    qDebug() << "Qt属性WA_TransparentForMouseEvents:"
+             << (isTransparent ? "已设置" : "未设置");
 
     mousePassthrough = true;
+    qDebug() << "=== 启用鼠标穿透函数结束 ===";
 }
 
 // 在 #ifdef Q_OS_LINUX 块之外，添加一个通用的实现（适用于 Windows 或其他平台）
@@ -152,11 +281,30 @@ void ImageWidget::disableMousePassthrough()
     SetWindowLongPtr((HWND)winId(), GWL_EXSTYLE,
                      GetWindowLongPtr((HWND)winId(), GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
 
+
     // 清除透明鼠标事件属性
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
-#endif
+#elif defined(Q_OS_LINUX)
+    if (qApp->platformName() == "xcb") {
+        if (auto *x11Application = qApp->nativeInterface<QNativeInterface::QX11Application>()) {
+            Display *display = x11Application->display();
+            Window windowId = static_cast<Window>(winId());
 
-#ifndef Q_OS_LINUX
+            if (display && windowId) {
+                // 恢复整个窗口的输入区域
+                XRectangle rect;
+                rect.x = 0;
+                rect.y = 0;
+                rect.width = width();
+                rect.height = height();
+
+                XShapeCombineRectangles(display, windowId, ShapeInput,
+                                        0, 0, &rect, 1, ShapeSet, YXBanded);
+                XFlush(display);
+                qDebug() << "X11鼠标穿透已禁用";
+            }
+        }
+    }
 #endif
     mousePassthrough = false;
 }

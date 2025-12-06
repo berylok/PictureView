@@ -1,4 +1,4 @@
-// imagewidget_help.cpp
+﻿// imagewidget_help.cpp
 #include "imagewidget.h"
 #include <QMessageBox>
 #include <QApplication>
@@ -116,11 +116,12 @@ void ImageWidget::showAboutDialog()
     helpDialog.setMinimumSize(600, 800);  // 稍微增加尺寸以适应更多内容
     helpDialog.setMaximumSize(1100, 1100);
 
-    // 设置对话框样式
+    // 设置对话框样式 - 添加字体支持
     helpDialog.setStyleSheet(
         "QDialog { "
         "   background-color: white; "
         "   color: black; "
+        "   font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Microsoft YaHei UI', 'Arial Unicode MS', 'Noto Color Emoji', sans-serif; "
         "}"
         "QTabWidget::pane { "
         "   border: 1px solid #cccccc; "
@@ -136,6 +137,7 @@ void ImageWidget::showAboutDialog()
         "   margin-right: 2px; "
         "   border-top-left-radius: 4px; "
         "   border-top-right-radius: 4px; "
+        "   font-family: 'Segoe UI', 'Microsoft YaHei UI', sans-serif; "
         "}"
         "QTabBar::tab:selected { "
         "   background-color: #0078d4; "
@@ -147,6 +149,7 @@ void ImageWidget::showAboutDialog()
         "QLabel { "
         "   color: black; "
         "   background-color: transparent; "
+        "   font-family: inherit; "
         "}"
         "QTextEdit { "
         "   background-color: #f8f8f8; "
@@ -156,6 +159,7 @@ void ImageWidget::showAboutDialog()
         "   color: #333333; "
         "   font-size: 9pt; "
         "   selection-background-color: #0078d4; "
+        "   font-family: inherit; "
         "}"
         "QPushButton { "
         "   background-color: #0078d4; "
@@ -165,6 +169,7 @@ void ImageWidget::showAboutDialog()
         "   border-radius: 4px; "
         "   font-weight: bold; "
         "   min-width: 80px; "
+        "   font-family: 'Segoe UI', 'Microsoft YaHei UI', sans-serif; "
         "}"
         "QPushButton:hover { "
         "   background-color: #106ebe; "
@@ -201,7 +206,7 @@ void ImageWidget::showAboutDialog()
     titleLabel->setAlignment(Qt::AlignCenter);
 
     // 版本信息
-    QLabel *versionLabel = new QLabel(tr("版本 1.4.2.1"), aboutTab);
+    QLabel *versionLabel = new QLabel(tr("版本 1.4.3.0"), aboutTab);
     versionLabel->setStyleSheet("font-size: 14px; color: #666666; font-weight: bold;");
     versionLabel->setAlignment(Qt::AlignCenter);
 
@@ -215,7 +220,7 @@ void ImageWidget::showAboutDialog()
     featuresText->setHtml(
         "<h3>" + tr("主要特性") + "</h3>"
                                   "<table width='100%' cellspacing='5' cellpadding='5'>"
-                                  "<tr><td width='50%'><b>📁 " + tr("文件管理") + "</b></td><td width='50%'><b>🎨 " + tr("视图功能") + "</b></td></tr>"
+                                  "<tr><td width='50%'><b>📁" + tr("文件管理") + "</b></td><td width='50%'><b>🎨 " + tr("视图功能") + "</b></td></tr>"
                                                                                 "<tr><td>• " + tr("支持多种图片格式") + "</td><td>• " + tr("缩略图浏览模式") + "</td></tr>"
                                                                           "<tr><td>• " + tr("压缩包直接查看") + "</td><td>• " + tr("单张图片模式") + "</td></tr>"
                                                                       "<tr><td>• " + tr("文件夹拖拽支持") + "</td><td>• " + tr("画布透明模式") + "</td></tr>"
@@ -231,7 +236,7 @@ void ImageWidget::showAboutDialog()
                             "<p><b>" + tr("压缩包格式:") + "</b> ZIP, RAR, 7Z, TAR, GZ, BZ2</p>"
 
                               "<h3>" + tr("系统要求") + "</h3>"
-                           "<p>• " + tr("操作系统: Windows 7 或更高版本") + "</p>"
+                           "<p>• " + tr("操作系统: Windows 7 或更高版本 、Ubuntu 或其它Linux发行版") + "</p>"
                                                  "<p>• " + tr("内存: 至少 512MB RAM") + "</p>"
                                        "<p>• " + tr("磁盘空间: 至少 50MB 可用空间") + "</p>"
 

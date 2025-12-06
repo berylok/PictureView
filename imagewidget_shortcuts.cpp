@@ -56,35 +56,34 @@ void ImageWidget::createShortcutActions()
              << "Ctrl+V (粘贴图片), "
              << "F1 (关于)";
 
-    // 新增编辑快捷键
-    // 旋转快捷键：Ctrl+R 顺时针旋转90度
+    // 新增编辑快捷键 - 已更新为新的组合键
+    // 旋转快捷键：Ctrl+PageDown 顺时针旋转90度
     QAction *rotateCwAction = new QAction(tr("顺时针旋转"), this);
-    rotateCwAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
+    rotateCwAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageDown));
     rotateCwAction->setShortcutContext(Qt::ApplicationShortcut);
     connect(rotateCwAction, &QAction::triggered, this,
             &ImageWidget::rotate90CW);
     this->addAction(rotateCwAction);
 
-    // 旋转快捷键：Ctrl+Shift+R 逆时针旋转90度
+    // 旋转快捷键：Ctrl+PageUp 逆时针旋转90度
     QAction *rotateCcwAction = new QAction(tr("逆时针旋转"), this);
-    rotateCcwAction->setShortcut(
-        QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_R));
+    rotateCcwAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageUp));
     rotateCcwAction->setShortcutContext(Qt::ApplicationShortcut);
     connect(rotateCcwAction, &QAction::triggered, this,
             &ImageWidget::rotate90CCW);
     this->addAction(rotateCcwAction);
 
-    // 水平镜像快捷键：Ctrl+H
+    // 水平镜像快捷键：Shift+PageDown
     QAction *mirrorHAction = new QAction(tr("水平镜像"), this);
-    mirrorHAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_H));
+    mirrorHAction->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_PageDown));
     mirrorHAction->setShortcutContext(Qt::ApplicationShortcut);
     connect(mirrorHAction, &QAction::triggered, this,
             &ImageWidget::mirrorHorizontal);
     this->addAction(mirrorHAction);
 
-    // 垂直镜像快捷键：Ctrl+Shift+V
+    // 垂直镜像快捷键：Shift+PageUp
     QAction *mirrorVAction = new QAction(tr("垂直镜像"), this);
-    mirrorVAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
+    mirrorVAction->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_PageUp));
     mirrorVAction->setShortcutContext(Qt::ApplicationShortcut);
     connect(mirrorVAction, &QAction::triggered, this,
             &ImageWidget::mirrorVertical);
@@ -99,9 +98,34 @@ void ImageWidget::createShortcutActions()
     this->addAction(resetTransformAction);
 
     qDebug() << "编辑快捷键已创建: "
-             << "Ctrl+R (顺时针旋转), "
-             << "Ctrl+Shift+R (逆时针旋转), "
-             << "Ctrl+H (水平镜像), "
-             << "Ctrl+Shift+V (垂直镜像), "
+             << "Ctrl+PageDown (顺时针旋转), "
+             << "Ctrl+PageUp (逆时针旋转), "
+             << "Shift+PageDown (水平镜像), "
+             << "Shift+PageUp (垂直镜像), "
              << "Ctrl+0 (重置变换)";
+
+    // 新增透明度调整快捷键（仅在菜单中显示，实际处理在keyPressEvent中）
+    QAction *increaseOpacityAction = new QAction(tr("增加透明度（更不透明）"), this);
+    increaseOpacityAction->setShortcut(QKeySequence(Qt::Key_PageUp));
+    increaseOpacityAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(increaseOpacityAction, &QAction::triggered, this, [this]() {
+        double currentOpacity = windowOpacity();
+        double newOpacity = qMin(1.0, currentOpacity + 0.1);
+        setWindowOpacity(newOpacity);
+    });
+    this->addAction(increaseOpacityAction);
+
+    QAction *decreaseOpacityAction = new QAction(tr("减少透明度（更透明）"), this);
+    decreaseOpacityAction->setShortcut(QKeySequence(Qt::Key_PageDown));
+    decreaseOpacityAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(decreaseOpacityAction, &QAction::triggered, this, [this]() {
+        double currentOpacity = windowOpacity();
+        double newOpacity = qMax(0.1, currentOpacity - 0.1);
+        setWindowOpacity(newOpacity);
+    });
+    this->addAction(decreaseOpacityAction);
+
+    qDebug() << "透明度快捷键已创建: "
+             << "PageUp (增加透明度), "
+             << "PageDown (减少透明度)";
 }

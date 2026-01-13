@@ -22,6 +22,10 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 
 2026年1月13日 现在ubuntu或者debian可以下载打包的AppImage执行文件。
 
+<a href="[PictureView1.4-x86_64_ubuntu_x11_beta.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.4-x86_64_ubuntu_x11_beta.zip)" download>下载 ubuntu/debian PictureView1.4</a>
+
+<a href="[PictureView1.421_2025_12_4_win_release.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.421_2025_12_4_win_release.zip)" download>下载 windows PictureView1.4</a>
+
 编译环境配置：
 1，windows平台：使用PictureView.pro在QT环境加载项目。
 

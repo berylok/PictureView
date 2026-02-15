@@ -128,11 +128,11 @@ void ImageWidget::enableCanvasMode()
     canvasOverlay->setDisplayState(displayState);
 
 
-    // // 新增：根据主窗口当前透明度调整覆盖层透明度
-    // double currentMainOpacity = windowOpacity();  // 获取主窗口当前透明度
-    // double targetOpacity = (currentMainOpacity > 0.7) ? 0.7 : currentMainOpacity;
-    // canvasOverlay->setWindowOpacity(targetOpacity);
-    // qDebug() << "设置覆盖层透明度为:" << targetOpacity;
+    // 新增：根据主窗口当前透明度调整覆盖层透明度
+    double currentMainOpacity = windowOpacity();  // 获取主窗口当前透明度
+    double targetOpacity = currentMainOpacity;//(currentMainOpacity > 0.7) ? 0.7 : currentMainOpacity;
+    canvasOverlay->setWindowOpacity(targetOpacity);
+    qDebug() << "设置覆盖层透明度为:" << targetOpacity;
 
     // 3. 隐藏原窗口
     hide();

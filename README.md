@@ -20,6 +20,11 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 
 
 
+2026年2月15日 在x11上的无边框图片模式，因窗口管理器不支持形状置顶，导致置顶无法穿透望悉知。如果一定要使用置顶建议使用投影画布。
+提示：下载的AppImage需要先右键属性打开执行能力才能运行。
+
+[PictureView1.5x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.5-x86_64_ubuntu_x11.AppImage)
+
 2026年1月13日 现在ubuntu或者debian可以下载打包的AppImage执行文件。
 
 [PictureView1.4-x86_64_ubuntu_x11_beta.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.4-x86_64_ubuntu_x11_beta.zip)

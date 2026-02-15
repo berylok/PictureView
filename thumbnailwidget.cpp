@@ -22,7 +22,7 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     : QWidget(parent),
     imageWidget(imageWidget),
     thumbnailSize(250, 250),
-    thumbnailSpacing(7),
+    thumbnailSpacing(17),
     selectedIndex(-1),
     loadedCount(0),
     totalCount(0),
@@ -173,7 +173,7 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
 {
     QString cacheKey = getCacheKey(fileName);
 
-    qDebug() << "加载缩略图:" << fileName << "缓存键:" << cacheKey;
+    //qDebug() << "加载缩略图:" << fileName << "缓存键:" << cacheKey;
 
     // 快速缓存检查
     if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
@@ -225,7 +225,7 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
         } else {
             // 普通文件 - 使用高效加载
             QString fullPath = currentDir.absoluteFilePath(fileName);
-            qDebug() << "加载普通文件:" << fullPath;
+            //qDebug() << "加载普通文件:" << fullPath;
 
             if (QFile::exists(fullPath)) {
                 result = loadImageFileFast(fullPath);
@@ -298,7 +298,7 @@ QPixmap ThumbnailWidget::loadImageFileFast(const QString &filePath)
 
         QImage image;
         if (reader.read(&image)) {
-            qDebug() << "QImageReader 加载成功:" << filePath << "原始尺寸:" << image.size();
+            //qDebug() << "QImageReader 加载成功:" << filePath << "原始尺寸:" << image.size();
 
             if (image.isNull()) {
                 qDebug() << "QImageReader 读取的图像为空:" << filePath;
@@ -756,6 +756,8 @@ void ThumbnailWidget::setCacheSize(int maxSizeMB)
 // 鼠标和键盘事件处理保持不变...
 void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
 {
+    qDebug() << "ThumbnailWidget 鼠标按下，位置:" << event->pos();
+
     if (event->button() == Qt::LeftButton) {
         selectThumbnailAtPosition(event->pos());
         setFocus();

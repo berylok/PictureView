@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.4.3.0 LANGUAGES CXX)
+project(PictureView VERSION 1.5.0 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -72,7 +72,6 @@ set_target_properties(PictureView PROPERTIES
 
 # 添加资源文件 - 指定 PREFIX
 qt_add_resources(PictureView "app_resources"
-    PREFIX "/"
     FILES "app.qrc"
 )
 

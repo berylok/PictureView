@@ -5,16 +5,16 @@
 #include <QDebug>
 
 // Config 结构体的默认构造函数
-configmanager::Config::Config() :
-    windowPosition(QPoint(100, 100)),
-    windowSize(QSize(800, 600)),
-    windowMaximized(false),
-    transparentBackground(false),
-    titleBarVisible(true),
-    alwaysOnTop(false) {}
+// ConfigManager::Config::Config() :
+//     windowPosition(QPoint(100, 100)),
+//     windowSize(QSize(800, 600)),
+//     windowMaximized(false),
+//     transparentBackground(false),
+//     titleBarVisible(true),
+//     alwaysOnTop(false) {}
 
-// configmanager 构造函数
-configmanager::configmanager(const QString& filename)
+// ConfigManager 构造函数
+ConfigManager::ConfigManager(const QString& filename)
 {
     // 使用 Qt 的标准配置路径
     QString configDir = QApplication::applicationDirPath();
@@ -24,7 +24,7 @@ configmanager::configmanager(const QString& filename)
 }
 
 // 保存配置到文件
-bool configmanager::saveConfig(const Config& config)
+bool ConfigManager::saveConfig(const Config& config)
 {
     QSettings settings(configPath, QSettings::IniFormat);
 
@@ -47,12 +47,21 @@ bool configmanager::saveConfig(const Config& config)
     settings.setValue("LastOpenPath", config.lastOpenPath);
     settings.endGroup();
 
+
+    // 新增：保存状态信息
+    settings.beginGroup("State");
+    settings.setValue("LastViewMode", config.lastViewMode);
+    settings.setValue("LastImageIndex", config.lastImageIndex);
+    settings.setValue("LastImagePath", config.lastImagePath);
+    settings.endGroup();
+
+
     settings.sync();
     return (settings.status() == QSettings::NoError);
 }
 
 // 从文件加载配置
-configmanager::Config configmanager::loadConfig()
+ConfigManager::Config ConfigManager::loadConfig()
 {
     Config config;
     QSettings settings(configPath, QSettings::IniFormat);
@@ -86,12 +95,19 @@ configmanager::Config configmanager::loadConfig()
     config.lastOpenPath = settings.value("LastOpenPath", config.lastOpenPath).toString();
     settings.endGroup();
 
+    // 新增：加载状态信息
+    settings.beginGroup("State");
+    config.lastViewMode = settings.value("LastViewMode", 0).toInt();
+    config.lastImageIndex = settings.value("LastImageIndex", -1).toInt();
+    config.lastImagePath = settings.value("LastImagePath", "").toString();
+    settings.endGroup();
+
     qDebug() << "Config loaded from:" << configPath;
     return config;
 }
 
 // 获取配置文件路径
-QString configmanager::getConfigPath() const
+QString ConfigManager::getConfigPath() const
 {
     return configPath;
 }

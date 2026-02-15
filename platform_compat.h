@@ -79,17 +79,29 @@ public:
         return (intptr_t)ShellExecuteA(0, "open", "explorer", param.toLocal8Bit().constData(), NULL, SW_SHOWNORMAL) > 32;
 #else
         QFileInfo fileInfo(filePath);
-        QString folderPath = fileInfo.dir().absolutePath();
+        QString folder = fileInfo.path();
+        QString fileName = fileInfo.fileName();
 
-        // 尝试不同的文件管理器
-        QStringList fileManagers = {"nautilus", "dolphin", "thunar", "pcmanfm", "nemo"};
-        for (const QString& manager : fileManagers) {
-            if (QProcess::execute("which", {manager}) == 0) {
-                return QProcess::startDetached(manager, {folderPath});
+        // 定义支持的文件管理器及其参数
+        struct {
+            const char* name;
+            QStringList args;
+        } managers[] = {
+            {"nautilus", {"--select", filePath}},   // GNOME
+            {"dolphin",  {"--select", filePath}},   // KDE
+            {"nemo",     {"--select", filePath}},   // Cinnamon
+            {"thunar",   {folder}},                 // XFCE（不支持选中，仅打开文件夹）
+            {"pcmanfm",  {folder}},                 // LXDE（同上）
+        };
+
+        for (const auto& mgr : managers) {
+            if (QProcess::execute("which", {mgr.name}) == 0) {
+                return QProcess::startDetached(mgr.name, mgr.args);
             }
         }
 
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
+        // 终极回退：用默认应用打开文件夹
+        return QDesktopServices::openUrl(QUrl::fromLocalFile(folder));
 #endif
     }
 

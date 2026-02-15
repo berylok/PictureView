@@ -16,10 +16,8 @@
 #include "canvascontrolpanel.h"  // 添加控制面板头文件
 
 #include "archivehandler.h"
-
-#ifdef Q_OS_LINUX
 #include "canvasoverlay.h"
-#endif
+
 
 class ImageWidget : public QWidget
 {
@@ -114,7 +112,7 @@ private:
     QScrollArea *scrollArea;
     ThumbnailWidget *thumbnailWidget;
     QDir currentDir;
-
+public:
     // ini配置管理相关
     void loadConfiguration();  // 加载配置
     void saveConfiguration();  // 保存配置
@@ -123,7 +121,9 @@ private:
     ConfigManager::Config currentConfig;
     // 配置管理器
     ConfigManager *configManager;
-
+public:
+    int getLastViewMode() const { return currentConfig.lastViewMode; }
+    int getLastImageIndex() const { return currentConfig.lastImageIndex; }
     //多线程互斥体
 private:
     QMutex cacheMutex; // 用于保护 imageCache 的访问
@@ -321,11 +321,11 @@ private:
     void restoreNormalWindowState(); // 添加这行
 
 
-
-//#ifdef Q_OS_LINUX
 private:
     // 画布模式相关
+
     // 新增：覆盖层窗口
+
 
     //class CanvasOverlay;
     CanvasOverlay* canvasOverlay = nullptr;
@@ -334,14 +334,16 @@ private:
     QImage currentImage;
 
 private:
-    // 优化透明度检测
-    bool checkPixelTransparencyOptimized(const QPointF& imagePos) const;
-    void updateTransparencyOutline();
+    void updateMask();                       // 更新窗口掩码
+    bool m_maskDirty;                      // 标记是否需要更新掩码
 
-    // 新增：鼠标穿透状态管理
-    void updateMousePassthroughState(const QPoint& mousePos);
-    void updateCursorForPassthrough(bool shouldPassthrough);
-//#endif
+    void setMask(const QRegion &region) ;
+    void clearMask() ;
+
+private:
+    void clearX11Shape();            // 清除输入形状（全窗口可点）
+    void setX11ShapeRect(const QRect &rect); // 设置单一矩形形状
+    void setX11Shape(const QRegion &region); // 设置复杂形状（多个矩形）
 
 };
 

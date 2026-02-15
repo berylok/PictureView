@@ -14,7 +14,20 @@ void ImageWidget::closeEvent(QCloseEvent *event)
 void ImageWidget::loadConfiguration()
 {
     ConfigManager::Config config = configManager->loadConfig();
+    qDebug() << "加载配置：透明背景 =" << config.transparentBackground;
+
+    // 同步所有字段到 currentConfig
+    currentConfig.windowPosition = config.windowPosition;
+    currentConfig.windowSize = config.windowSize;
+    currentConfig.windowMaximized = config.windowMaximized;
+    currentConfig.transparentBackground = config.transparentBackground;
+    currentConfig.titleBarVisible = config.titleBarVisible;
+    currentConfig.alwaysOnTop = config.alwaysOnTop;
     currentConfig.lastOpenPath = config.lastOpenPath;
+    currentConfig.lastViewMode = config.lastViewMode;
+    currentConfig.lastImageIndex = config.lastImageIndex;
+    currentConfig.lastImagePath = config.lastImagePath;
+
     applyConfiguration(config);
 }
 
@@ -22,15 +35,28 @@ void ImageWidget::saveConfiguration()
 {
     ConfigManager::Config config;
 
-    // 保存窗口状态
-    config.windowPosition = this->pos();
-    config.windowSize = this->size();
-    config.windowMaximized = this->isMaximized();
-    config.transparentBackground = this->testAttribute(Qt::WA_TranslucentBackground);
-    config.titleBarVisible = !(this->windowFlags() & Qt::FramelessWindowHint);
+    // 窗口状态
+    config.windowPosition = pos();
+    config.windowSize = size();
+    config.windowMaximized = isMaximized();
+
+    // 透明背景状态：使用用户偏好，而不是当前窗口属性
+    config.transparentBackground = currentConfig.transparentBackground;
+
+    // 标题栏状态
+    config.titleBarVisible = !(windowFlags() & Qt::FramelessWindowHint);
+    config.alwaysOnTop = (windowFlags() & Qt::WindowStaysOnTopHint) != 0;
+
+    // 最近打开路径
     config.lastOpenPath = currentConfig.lastOpenPath;
 
+    // 视图模式等
+    config.lastViewMode = (currentViewMode == SingleView) ? 1 : 0;
+    config.lastImageIndex = currentImageIndex;
+    config.lastImagePath = currentImagePath;
+
     configManager->saveConfig(config);
+    qDebug() << "保存配置：透明背景 =" << config.transparentBackground;
 }
 
 // imagewidget_config.cpp - 修改 applyConfiguration 方法
@@ -145,12 +171,38 @@ void ImageWidget::toggleTitleBar()
 
 void ImageWidget::toggleAlwaysOnTop()
 {
+    // 保存当前透明背景状态和视图模式
+    bool wasTranslucent = testAttribute(Qt::WA_TranslucentBackground);
+    bool wasSingleView = (currentViewMode == SingleView);
+
+    // 切换置顶标志
     if (windowFlags() & Qt::WindowStaysOnTopHint) {
         setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
     } else {
         setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     }
+
+    // 重新显示窗口（setWindowFlags 会隐藏窗口，需要重新显示）
     show();
+
+    // 恢复透明背景属性（如果之前开启）
+    if (wasTranslucent) {
+        setAttribute(Qt::WA_TranslucentBackground, true);
+        setAutoFillBackground(false);
+    } else {
+        setAttribute(Qt::WA_TranslucentBackground, false);
+        setAutoFillBackground(true);
+    }
+
+    // 如果处于单图模式且有图片，重新应用掩码
+    if (wasSingleView && !pixmap.isNull() && wasTranslucent) {
+        updateMask();   // 重新生成掩码
+    } else {
+        clearMask();    // 确保掩码被清除（例如缩略图模式）
+    }
+
+    // 保存配置
+    saveConfiguration();
 }
 
 void ImageWidget::toggleTransparentBackground()
@@ -158,25 +210,24 @@ void ImageWidget::toggleTransparentBackground()
     bool currentState = testAttribute(Qt::WA_TranslucentBackground);
 
     if (currentState) {
-        // 关闭透明背景
+        // 关闭
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
-        setStyleSheet(""); // 清除透明样式
+        clearMask();
+        currentConfig.transparentBackground = false;
         qDebug("透明背景 关闭");
     } else {
-        // 开启透明背景
+        // 开启
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
-        setStyleSheet("background: transparent;"); // 设置透明样式
+        if (currentViewMode == SingleView && !pixmap.isNull()) {
+            updateMask();
+        }
+        currentConfig.transparentBackground = true;
         qDebug("透明背景 开启");
     }
-
-    // 强制重绘
+    saveConfiguration(); // 立即保存
     update();
-    repaint();
-
-    // 保存配置
-    saveConfiguration();
 }
 
 void ImageWidget::setWindowOpacityValue(double opacity)

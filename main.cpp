@@ -7,8 +7,6 @@
 #include <QDir>
 #include <QDebug>  // 添加QDebug头文件
 #include <QGuiApplication>  // 添加QGuiApplication头文件用于平台检测
-// 设置程序字体
-#include <QFontDatabase>
 
 int main(int argc, char *argv[])
 {
@@ -22,25 +20,10 @@ int main(int argc, char *argv[])
     // 创建QApplication
     QApplication app(argc, argv);
 
-    // 加载字体
-    int fontId = QFontDatabase::addApplicationFont("/usr/share/fonts/noto/NotoColorEmoji.ttf");
-    if (fontId != -1) {
-        QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
-        if (!fontFamilies.empty()) {
-            QFont font(fontFamilies.at(0), 12);
-            app.setFont(font);
-        }
-    }
-
-    // 设置备选字体
-    QFont defaultFont("Noto Sans CJK SC", 12);
-    app.setFont(defaultFont);
-
-
     // === 在设置应用程序信息后检测Qt平台 ===
     // 设置应用程序信息
     app.setApplicationName("PictureView");
-    app.setApplicationVersion("1.4.3.0");
+    app.setApplicationVersion("1.5.0");
     app.setOrganizationName("berylok");
 
     // 打印环境信息
@@ -117,6 +100,9 @@ int main(int argc, char *argv[])
 
     ImageWidget window;
 
+    // 加载配置（必须在处理命令行参数之前）
+    window.loadConfiguration();
+
     if (argc > 1) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
         qDebug() << QCoreApplication::translate("main", "Opening file:") << filePath;
@@ -131,13 +117,12 @@ int main(int argc, char *argv[])
                 window.switchToSingleView();
             }
         } else {
-            qWarning() << QCoreApplication::translate("main",
-                                                      "File does not exist:")
-                       << filePath;
-            QMessageBox::warning(
-                nullptr, QCoreApplication::translate("main", "Error"),
-                QCoreApplication::translate("main", "File does not exist:\n%1")
-                    .arg(filePath));
+            // 无命令行参数：根据保存的视图模式恢复
+            if (window.getLastViewMode() == 1) {  // 1 表示 SingleView
+                window.switchToSingleView(window.getLastImageIndex());
+            } else {
+                window.switchToThumbnailView();
+            }
         }
     }
 

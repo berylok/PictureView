@@ -5,6 +5,8 @@
 #include <QMessageBox>
 #include <QClipboard>
 #include <QApplication>
+#include <QProcess>
+#include "platform_compat.h"
 
 void ImageWidget::showContextMenu(const QPoint &globalPos)
 {
@@ -92,13 +94,71 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
             contextMenu.addAction(tr("打开图片(Enter)"), this, &ImageWidget::openSelectedImage);
             contextMenu.addSeparator();
 
+
             contextMenu.addAction(tr("删除选中图片 (Del)"), this, &ImageWidget::deleteSelectedThumbnail);
             contextMenu.addSeparator();
         }
     }
 
+
     // 打开文件菜单
     QMenu *openfileshowMenu = contextMenu.addMenu(tr("文件..."));
+
+
+    // 获取当前有效图片路径的辅助 lambda
+    auto getCurrentImagePath = [this]() -> QString {
+        if (currentViewMode == SingleView) {
+            return currentImagePath;
+        } else {
+            int selected = thumbnailWidget->getSelectedIndex();
+            if (selected >= 0 && selected < imageList.size()) {
+                if (isArchiveMode) return QString();
+                return currentDir.absoluteFilePath(imageList.at(selected));
+            }
+            return QString();
+        }
+    };
+
+    // 1. 在新窗口打开图片
+    QAction *openInNewWindowAction = new QAction(tr("在新窗口打开图片"), this);
+    QString imgPath = getCurrentImagePath();  // 用于初始启用状态
+    bool hasValidImage = !imgPath.isEmpty() && QFile::exists(imgPath) && !isArchiveMode;
+    openInNewWindowAction->setVisible(hasValidImage);
+
+    connect(openInNewWindowAction, &QAction::triggered, this,
+            [this, getCurrentImagePath]() {  // 按值捕获 getCurrentImagePath
+                QString path = getCurrentImagePath();
+                if (!path.isEmpty() && QFile::exists(path)) {
+                    QString program = QCoreApplication::applicationFilePath();
+                    QStringList arguments;
+                    arguments << path;
+                    QProcess::startDetached(program, arguments);
+                } else {
+                    QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
+                }
+            });
+    openfileshowMenu->addAction(openInNewWindowAction);
+
+    // 2. 打开图片所在文件夹
+    QAction *showInFolderAction = new QAction(tr("打开图片所在文件夹"), this);
+    showInFolderAction->setVisible(hasValidImage);
+
+    connect(showInFolderAction, &QAction::triggered, this,
+            [this, getCurrentImagePath]() {  // 同样捕获
+                QString path = getCurrentImagePath();
+                if (!path.isEmpty() && QFile::exists(path)) {
+                    PlatformCompat::showInFolder(path);
+                } else {
+                    QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
+                }
+            });
+    openfileshowMenu->addAction(showInFolderAction);
+
+    openfileshowMenu->addSeparator();
+
+
+
+
     QAction *openfileshowAction =
         openfileshowMenu->addAction(tr("打开文件夹 (Ctrl+O)"));
     connect(openfileshowAction, &QAction::triggered, this,
@@ -113,6 +173,8 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         QAction *showAction1 =
             openfileshowMenu->addAction(tr("保存图片 (Ctrl+S)"));
         connect(showAction1, &QAction::triggered, this, &ImageWidget::saveImage);
+
+        openfileshowMenu->addSeparator();
 
         QAction *showAction2 =
             openfileshowMenu->addAction(tr("拷贝图片至剪切板 (Ctrl+C)"));
@@ -258,6 +320,13 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     contextMenu.addAction(tr("退出（Esc）"), this, &QWidget::close);
 
     contextMenu.exec(globalPos);
+
+    if (canvasMode && canvasOverlay && canvasOverlay->isVisible()) {
+        QTimer::singleShot(0, canvasOverlay, [this]() {
+            canvasOverlay->forceStayOnTop();
+            qDebug() << "菜单关闭：强制覆盖层置顶";
+        });
+    }
 }
 void ImageWidget::openSelectedImage()
 {

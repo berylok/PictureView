@@ -77,6 +77,24 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
             // 菜单键显示上下文菜单
             showContextMenu(this->mapToGlobal(QPoint(width()/2, height()/2)));
             break;
+        case Qt::Key_PageUp:
+            // PageUp：增加透明度（变得更不透明）
+            {
+                double currentOpacity = windowOpacity();
+                double newOpacity = qMin(1.0, currentOpacity + 0.1);
+                setWindowOpacity(newOpacity);
+                event->accept();
+            }
+            break;
+        case Qt::Key_PageDown:
+            // PageDown：减少透明度（变得更透明）
+            {
+                double currentOpacity = windowOpacity();
+                double newOpacity = qMax(0.1, currentOpacity - 0.1);
+                setWindowOpacity(newOpacity);
+                event->accept();
+            }
+            break;
         default:
             // 忽略其他所有按键
             event->ignore();

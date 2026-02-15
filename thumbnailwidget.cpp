@@ -22,7 +22,7 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     : QWidget(parent),
     imageWidget(imageWidget),
     thumbnailSize(250, 250),
-    thumbnailSpacing(17),
+    thumbnailSpacing(7),
     selectedIndex(-1),
     loadedCount(0),
     totalCount(0),

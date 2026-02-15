@@ -384,16 +384,23 @@ void ImageWidget::setX11ShapeRect(const QRect &rect)
     if (!display) return;
     Window windowId = (Window)winId();
     if (windowId) {
-        XRectangle xr;
-        xr.x = static_cast<short>(rect.x());
-        xr.y = static_cast<short>(rect.y());
-        xr.width = static_cast<unsigned short>(rect.width());
-        xr.height = static_cast<unsigned short>(rect.height());
+        XRectangle xr = { (short)rect.x(), (short)rect.y(),
+                         (unsigned short)rect.width(), (unsigned short)rect.height() };
         XShapeCombineRectangles(display, windowId, ShapeInput, 0, 0, &xr, 1, ShapeSet, YXBanded);
         XFlush(display);
-        qDebug() << "X11 形状设置为矩形:" << rect;
+
+        // 读取当前输入形状并打印
+        int count = 0;
+        int ordering = 0;
+        XRectangle *rects = XShapeGetRectangles(display, windowId, ShapeInput, &count, &ordering);
+        qDebug() << "实际 X11 输入形状矩形数:" << count;
+        for (int i = 0; i < count; ++i) {
+            qDebug() << "  " << rects[i].x << rects[i].y << rects[i].width << rects[i].height;
+        }
+        XFree(rects);
+
+        XCloseDisplay(display);
     }
-    XCloseDisplay(display);
 #endif
 }
 

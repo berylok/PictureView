@@ -36,6 +36,7 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     isHorizontallyFlipped(false),
     isVerticallyFlipped(false),
     isArchiveMode(false)
+
 {
 
     // 创建缩略图部件 - 使用统一的构造函数
@@ -94,6 +95,8 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
 
     // 初始重绘以确保无残影
     update();
+
+
 }
 
 ImageWidget::~ImageWidget()
@@ -101,9 +104,9 @@ ImageWidget::~ImageWidget()
     // 确保销毁控制面板
     destroyControlPanel();
 
-    delete slideshowTimer;
-    delete thumbnailWidget;
-    delete scrollArea;
+    // delete slideshowTimer;      // ⚠️ 有父对象，Qt 会自动删除
+    // delete thumbnailWidget;     // ⚠️ 有父对象，Qt 会自动删除
+    // delete scrollArea;          // ⚠️ 有父对象，Qt 会自动删除
     delete configManager;
 }
 

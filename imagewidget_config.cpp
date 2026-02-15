@@ -2,6 +2,10 @@
 #include "imagewidget.h"
 #include <QCloseEvent>
 #include <QGuiApplication>
+#ifdef Q_OS_LINUX
+#include <X11/Xlib.h>
+#include <X11/extensions/shape.h>
+#endif
 
 void ImageWidget::closeEvent(QCloseEvent *event)
 {
@@ -171,37 +175,47 @@ void ImageWidget::toggleTitleBar()
 
 void ImageWidget::toggleAlwaysOnTop()
 {
-    // 保存当前透明背景状态和视图模式
     bool wasTranslucent = testAttribute(Qt::WA_TranslucentBackground);
     bool wasSingleView = (currentViewMode == SingleView);
+    bool hadImage = !pixmap.isNull();
 
-    // 切换置顶标志
-    if (windowFlags() & Qt::WindowStaysOnTopHint) {
-        setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
+    Qt::WindowFlags flags = windowFlags();
+    if (flags & Qt::WindowStaysOnTopHint) {
+        flags &= ~Qt::WindowStaysOnTopHint;
     } else {
-        setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+        flags |= Qt::WindowStaysOnTopHint;
     }
-
-    // 重新显示窗口（setWindowFlags 会隐藏窗口，需要重新显示）
+    setWindowFlags(flags);
     show();
 
-    // 恢复透明背景属性（如果之前开启）
-    if (wasTranslucent) {
-        setAttribute(Qt::WA_TranslucentBackground, true);
-        setAutoFillBackground(false);
+    setAttribute(Qt::WA_TranslucentBackground, wasTranslucent);
+    setAutoFillBackground(!wasTranslucent);
+
+    if (wasSingleView && hadImage && wasTranslucent) {
+        updateMask();  // 第一次设置形状
+        qDebug() << "置顶切换后重新生成掩码";
+
+        // 延迟再次设置形状，给窗口管理器时间
+        QTimer::singleShot(200, this, [this]() {
+            if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
+                updateMask();  // 第二次设置
+                qDebug() << "置顶切换后延迟再次生成掩码";
+
+#ifdef Q_OS_LINUX
+                // 同步 X11 请求，确保处理完毕
+                Display *display = XOpenDisplay(nullptr);
+                if (display) {
+                    XSync(display, False);
+                    XCloseDisplay(display);
+                }
+#endif
+            }
+        });
     } else {
-        setAttribute(Qt::WA_TranslucentBackground, false);
-        setAutoFillBackground(true);
+        clearX11Shape();
+        clearMask();
     }
 
-    // 如果处于单图模式且有图片，重新应用掩码
-    if (wasSingleView && !pixmap.isNull() && wasTranslucent) {
-        updateMask();   // 重新生成掩码
-    } else {
-        clearMask();    // 确保掩码被清除（例如缩略图模式）
-    }
-
-    // 保存配置
     saveConfiguration();
 }
 

@@ -30,7 +30,7 @@ CanvasOverlay::CanvasOverlay(ImageWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground, true);
     setFocusPolicy(Qt::NoFocus);
 
-    setWindowOpacity(0.7);
+    //setWindowOpacity(0.7);
     qDebug() << "CanvasOverlay 窗口已创建（Tool类型，更稳定置顶）";
 }
 
@@ -51,23 +51,23 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
     QPainter painter(this);
 
     qDebug() << "CanvasOverlay::paintEvent - 开始绘制";
-    qDebug() << "  窗口尺寸:" << size();
-    qDebug() << "  图片是否为空:" << m_displayState.image.isNull();
-    qDebug() << "  图片尺寸:" << m_displayState.image.size();
-    qDebug() << "  缩放比例:" << m_displayState.scaleFactor;
-    qDebug() << "  平移偏移:" << m_displayState.panOffset;
+    // qDebug() << "  窗口尺寸:" << size();
+    // qDebug() << "  图片是否为空:" << m_displayState.image.isNull();
+    // qDebug() << "  图片尺寸:" << m_displayState.image.size();
+    // qDebug() << "  缩放比例:" << m_displayState.scaleFactor;
+    // qDebug() << "  平移偏移:" << m_displayState.panOffset;
 
-    // 1. 填充背景（比主窗口稍暗）
-    painter.fillRect(rect(), QColor(25, 25, 35, 180));
+    // // 1. 填充背景（比主窗口稍暗）
+    // painter.fillRect(rect(), QColor(25, 25, 35, 180));
 
-    // 2. 绘制网格背景
-    painter.setPen(QPen(QColor(60, 60, 80, 50), 1));
-    for (int x = 0; x < width(); x += 50) {
-        painter.drawLine(x, 0, x, height());
-    }
-    for (int y = 0; y < height(); y += 50) {
-        painter.drawLine(0, y, width(), y);
-    }
+    // // 2. 绘制网格背景
+    // painter.setPen(QPen(QColor(60, 60, 80, 50), 1));
+    // for (int x = 0; x < width(); x += 50) {
+    //     painter.drawLine(x, 0, x, height());
+    // }
+    // for (int y = 0; y < height(); y += 50) {
+    //     painter.drawLine(0, y, width(), y);
+    // }
 
     // 3. 如果有图片，按照主窗口的显示方式绘制
     if (!m_displayState.image.isNull()) {
@@ -132,10 +132,10 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
 
             painter.drawImage(targetRect, scaledImage);
 
-            // 绘制边框和信息
-            painter.setPen(QPen(QColor(200, 200, 255, 150), 2));
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRect(targetRect);
+            // // 绘制边框和信息
+            // painter.setPen(QPen(QColor(200, 200, 255, 150), 2));
+            // painter.setBrush(Qt::NoBrush);
+            // painter.drawRect(targetRect);
         }
     } else if (!m_displayPixmap.isNull()) {
         // 备用：使用QPixmap绘制
@@ -149,23 +149,23 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
                                            scaledSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
 
-    // 4. 绘制窗口装饰
-    // 标题区域
-    QRect titleRect(0, 0, width(), 35);
-    QLinearGradient titleGradient(0, 0, 0, titleRect.height());
-    titleGradient.setColorAt(0, QColor(50, 60, 90, 220));
-    titleGradient.setColorAt(1, QColor(40, 50, 80, 220));
-    painter.fillRect(titleRect, titleGradient);
+    // // 4. 绘制窗口装饰
+    // // 标题区域
+    // QRect titleRect(0, 0, width(), 35);
+    // QLinearGradient titleGradient(0, 0, 0, titleRect.height());
+    // titleGradient.setColorAt(0, QColor(50, 60, 90, 220));
+    // titleGradient.setColorAt(1, QColor(40, 50, 80, 220));
+    // painter.fillRect(titleRect, titleGradient);
 
-    // 标题文字
-    painter.setPen(QColor(220, 230, 255, 230));
-    painter.setFont(QFont("Arial", 11, QFont::Bold));
-    painter.drawText(titleRect.adjusted(10, 0, -10, 0), Qt::AlignVCenter, "画布模式 - 图片置顶显示");
+    // // 标题文字
+    // painter.setPen(QColor(220, 230, 255, 230));
+    // painter.setFont(QFont("Arial", 11, QFont::Bold));
+    // painter.drawText(titleRect.adjusted(10, 0, -10, 0), Qt::AlignVCenter, "画布模式 - 图片置顶显示");
 
-    // 窗口边框
-    painter.setPen(QPen(QColor(80, 120, 200, 200), 3));
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRect(rect().adjusted(1, 1, -2, -2));
+    // // 窗口边框
+    // painter.setPen(QPen(QColor(80, 120, 200, 200), 3));
+    // painter.setBrush(Qt::NoBrush);
+    // painter.drawRect(rect().adjusted(1, 1, -2, -2));
 
     // 操作提示
     painter.setPen(QColor(180, 190, 220, 180));

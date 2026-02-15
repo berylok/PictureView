@@ -128,11 +128,11 @@ void ImageWidget::enableCanvasMode()
     canvasOverlay->setDisplayState(displayState);
 
 
-    // 新增：根据主窗口当前透明度调整覆盖层透明度
-    double currentMainOpacity = windowOpacity();  // 获取主窗口当前透明度
-    double targetOpacity = (currentMainOpacity > 0.7) ? 0.7 : currentMainOpacity;
-    canvasOverlay->setWindowOpacity(targetOpacity);
-    qDebug() << "设置覆盖层透明度为:" << targetOpacity;
+    // // 新增：根据主窗口当前透明度调整覆盖层透明度
+    // double currentMainOpacity = windowOpacity();  // 获取主窗口当前透明度
+    // double targetOpacity = (currentMainOpacity > 0.7) ? 0.7 : currentMainOpacity;
+    // canvasOverlay->setWindowOpacity(targetOpacity);
+    // qDebug() << "设置覆盖层透明度为:" << targetOpacity;
 
     // 3. 隐藏原窗口
     hide();
@@ -303,4 +303,34 @@ void ImageWidget::disableMousePassthrough()
 bool ImageWidget::isCanvasModeEnabled()
 {
     return canvasMode;
+}
+
+void ImageWidget::forceX11ShapeRefresh()
+{
+#ifdef Q_OS_LINUX
+    if (!QGuiApplication::platformName().contains("xcb")) return;
+    Display *display = XOpenDisplay(nullptr);
+    if (!display) return;
+    Window windowId = (Window)winId();
+    if (!windowId) {
+        XCloseDisplay(display);
+        return;
+    }
+
+    // 发送一个 ConfigureNotify 事件，模拟窗口配置变化（但大小不变）
+    XEvent event;
+    memset(&event, 0, sizeof(event));
+    event.type = ConfigureNotify;
+    event.xconfigure.window = windowId;
+    event.xconfigure.width = width();
+    event.xconfigure.height = height();
+    event.xconfigure.border_width = 0;
+    event.xconfigure.above = None;
+    event.xconfigure.override_redirect = False;
+    XSendEvent(display, windowId, False, StructureNotifyMask, &event);
+    XFlush(display);
+    XCloseDisplay(display);
+
+    qDebug() << "X11 刷新事件已发送";
+#endif
 }

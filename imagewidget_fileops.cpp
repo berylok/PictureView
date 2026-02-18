@@ -429,6 +429,8 @@ void ImageWidget::deleteCurrentImage()
                 if (currentViewMode == SingleView) {
                     // 单张视图模式下加载新图片
                     loadImageByIndex(newIndex);
+                    // 强制刷新掩码和 X11 形状
+                    updateMask();
                 } else {
                     // 缩略图模式下更新选中项
                     currentImageIndex = newIndex;

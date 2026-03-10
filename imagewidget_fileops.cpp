@@ -17,6 +17,7 @@
 #include <QProcess>
 #include <QDir>
 #include <QFileInfo>
+#include <QCheckBox>
 #endif
 
 
@@ -380,39 +381,46 @@ void ImageWidget::deleteCurrentImage()
         return;
     }
 
-    // 确认对话框
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, tr("确认删除"),
-                                  tr("确定要将图片 '") +
-                                      QFileInfo(currentImagePath).fileName() +
-                                      tr("' 移动到回收站吗？"),
-                                  QMessageBox::Yes | QMessageBox::No);
-
-    if (reply != QMessageBox::Yes) {
+    // 如果配置了跳过确认，直接执行删除
+    if (currentConfig.skipMoveToTrashConfirmation) {
+        performDeleteCurrentImage(); // 将实际删除操作提取为独立函数
         return;
     }
 
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("确认删除"));
+    msgBox.setText(tr("确定要将图片 '%1' 移动到回收站吗？")
+                       .arg(QFileInfo(currentImagePath).fileName()));
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::Yes);
+
+    QCheckBox *cb = new QCheckBox(tr("不再询问"));
+    msgBox.setCheckBox(cb);
+
+    if (msgBox.exec() == QMessageBox::Yes) {
+        performDeleteCurrentImage(); // 执行删除
+        if (cb->isChecked()) {
+            currentConfig.skipMoveToTrashConfirmation = true;
+            saveConfiguration();
+        }
+    }
+}
+
+void ImageWidget::performDeleteCurrentImage()
+{
     QString imageToDelete = currentImagePath;
     int indexToDelete = currentImageIndex;
 
-    // 移动到回收站而不是直接删除
     if (moveFileToRecycleBin(imageToDelete)) {
-        // 从缓存中移除
         imageCache.remove(imageToDelete);
-
-        // 从缩略图缓存中移除
         ThumbnailWidget::clearThumbnailCacheForImage(imageToDelete);
 
-        // 从图片列表中移除
         if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
             imageList.removeAt(indexToDelete);
-
-            // 更新缩略图
             thumbnailWidget->setImageList(imageList, currentDir);
 
-            // 确定下一张要显示的图片
             if (imageList.isEmpty()) {
-                // 如果没有图片了
                 pixmap = QPixmap();
                 currentImagePath.clear();
                 currentImageIndex = -1;
@@ -420,19 +428,14 @@ void ImageWidget::deleteCurrentImage()
                     switchToThumbnailView();
                 }
             } else {
-                // 计算新的索引
                 int newIndex = indexToDelete;
                 if (newIndex >= imageList.size()) {
                     newIndex = imageList.size() - 1;
                 }
 
                 if (currentViewMode == SingleView) {
-                    // 单张视图模式下加载新图片
                     loadImageByIndex(newIndex);
-                    // 强制刷新掩码和 X11 形状
-                    updateMask();
                 } else {
-                    // 缩略图模式下更新选中项
                     currentImageIndex = newIndex;
                     thumbnailWidget->setSelectedIndex(newIndex);
                 }

@@ -25,6 +25,8 @@ public:
         QString lastImagePath;   // 最后查看的图片路径（备用）
 
 
+        bool skipMoveToTrashConfirmation = false;   // 是否跳过回收站删除确认
+        bool skipPermanentDeleteConfirmation = false; // 是否跳过永久删除确认
         //Config();       // 默认构造函数
 
         Config() :

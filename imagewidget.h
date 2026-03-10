@@ -345,6 +345,10 @@ private:
     void setX11ShapeRect(const QRect &rect); // 设置单一矩形形状
     void setX11Shape(const QRegion &region); // 设置复杂形状（多个矩形）
 
+private:
+    void forceX11ShapeRefresh();  // 强制 X11 刷新窗口形状
+
+    void performDeleteCurrentImage();
 };
 
 #endif // IMAGEWIDGET_H

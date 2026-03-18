@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.5.0 LANGUAGES CXX)
+project(PictureView VERSION 1.5.1 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -24,43 +24,44 @@ pkg_check_modules(LIBARCHIVE REQUIRED libarchive)
 
 # 设置源文件
 set(SOURCES
-    main.cpp
-    archivehandler.cpp
-    canvascontrolpanel.cpp
-    configmanager.cpp
-    imagewidget_archive.cpp
-    imagewidget_canvas.cpp
-    imagewidget_config.cpp
-    imagewidget_core.cpp
-    imagewidget_file.cpp
-    imagewidget_fileops.cpp
-    imagewidget_help.cpp
-    imagewidget_keyboard.cpp
-    imagewidget_menu.cpp
-    imagewidget_mouse.cpp
-    imagewidget_shortcuts.cpp
-    imagewidget_slideshow.cpp
-    imagewidget_transform.cpp
-    imagewidget_view.cpp
-    imagewidget_viewmode.cpp
-    thumbnailwidget.cpp
+    src/main.cpp
+    src/archivehandler.cpp
+    src/canvascontrolpanel.cpp
+    src/configmanager.cpp
+    src/imagewidget_archive.cpp
+    src/imagewidget_canvas.cpp
+    src/imagewidget_config.cpp
+    src/imagewidget_core.cpp
+    src/imagewidget_file.cpp
+    src/imagewidget_fileops.cpp
+    src/imagewidget_help.cpp
+    src/imagewidget_keyboard.cpp
+    src/imagewidget_menu.cpp
+    src/imagewidget_mouse.cpp
+    src/imagewidget_shortcuts.cpp
+    src/imagewidget_slideshow.cpp
+    src/imagewidget_transform.cpp
+    src/imagewidget_view.cpp
+    src/imagewidget_viewmode.cpp
+    src/thumbnailwidget.cpp
 )
 
 # 设置头文件
 set(HEADERS
-    archivehandler.h
-    canvascontrolpanel.h
-    configmanager.h
-    imagewidget.h
-    thumbnailwidget.h
+    src/archivehandler.h
+    src/canvascontrolpanel.h
+    src/configmanager.h
+    src/imagewidget.h
+    src/thumbnailwidget.h
 )
 
 # 创建可执行文件
 qt_add_executable(PictureView
     ${SOURCES}
     ${HEADERS}
-    platform_compat.h
-    canvasoverlay.h canvasoverlay.cpp
+    src/platform_compat.h
+    src/canvasoverlay.h
+    src/canvasoverlay.cpp
 
 
 )

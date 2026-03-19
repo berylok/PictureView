@@ -8,6 +8,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include "platform_compat.h"
+#include <QCheckBox>
 
 #ifdef _WIN32
 #include <shellapi.h>
@@ -17,7 +18,6 @@
 #include <QProcess>
 #include <QDir>
 #include <QFileInfo>
-#include <QCheckBox>
 #endif
 
 

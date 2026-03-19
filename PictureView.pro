@@ -14,33 +14,37 @@ win32 {
     LIBS += -L"c:\vcpkg\installed\x64-windows\lib"
 }
 
-SOURCES += main.cpp \
-    archivehandler.cpp \
-    canvascontrolpanel.cpp \
-    configmanager.cpp \
-    imagewidget_archive.cpp \
-    imagewidget_canvas.cpp \
-    imagewidget_config.cpp \
-    imagewidget_core.cpp \
-    imagewidget_file.cpp \
-    imagewidget_fileops.cpp \
-    imagewidget_help.cpp \
-    imagewidget_keyboard.cpp \
-    imagewidget_menu.cpp \
-    imagewidget_mouse.cpp \
-    imagewidget_shortcuts.cpp \
-    imagewidget_slideshow.cpp \
-    imagewidget_transform.cpp \
-    imagewidget_view.cpp \
-    imagewidget_viewmode.cpp \
-    thumbnailwidget.cpp
+SOURCES += src/main.cpp \
+    src/archivehandler.cpp \
+    src/canvascontrolpanel.cpp \
+    src/canvasoverlay.cpp \
+    src/configmanager.cpp \
+    src/imagewidget_archive.cpp \
+    src/imagewidget_canvas.cpp \
+    src/imagewidget_config.cpp \
+    src/imagewidget_core.cpp \
+    src/imagewidget_file.cpp \
+    src/imagewidget_fileops.cpp \
+    src/imagewidget_help.cpp \
+    src/imagewidget_keyboard.cpp \
+    src/imagewidget_menu.cpp \
+    src/imagewidget_mouse.cpp \
+    src/imagewidget_shortcuts.cpp \
+    src/imagewidget_slideshow.cpp \
+    src/imagewidget_transform.cpp \
+    src/imagewidget_view.cpp \
+    src/imagewidget_viewmode.cpp \
+    src/thumbnailwidget.cpp
 
 HEADERS += \
-    archivehandler.h \
-    canvascontrolpanel.h \
-    configmanager.h \
-    imagewidget.h \
-    thumbnailwidget.h
+    src/archivehandler.h \
+    src/canvasoverlay.h \
+    src/canvascontrolpanel.h \
+    src/configmanager.h \
+    src/imagewidget.h \
+    src/platform_compat.h \
+    src/thumbnailwidget.h
+
 
 # 资源文件
 RESOURCES += \

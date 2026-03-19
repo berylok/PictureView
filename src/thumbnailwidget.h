@@ -115,8 +115,8 @@ private:
     // 性能配置
     struct PerformanceConfig {
         int maxCacheSize = 200 * 1024 * 1024; // 200MB
-        int batchLoadSize = 10;  // 每次批量加载10个
-        int batchLoadDelay = 50; // 批次间延迟50ms
+        int batchLoadSize = 1;  // 每次批量加载1个
+        int batchLoadDelay = 150; // 批次间延迟150ms
         bool enableMemoryOptimization = true;
     };
     PerformanceConfig perfConfig;

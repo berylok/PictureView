@@ -20,6 +20,9 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 
 
 
+[PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)
+[PictureView1.51_forwindows_2026_3_19.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51_forwindows_2026_3_19.zip)
+
 
 更新版本号1.5.1 ,调整文件结构，修改内存限制128至512。增加在新窗口打开图片，和打开图片文件夹菜单。修改了透明背景模式的提示。2026-03-18
 

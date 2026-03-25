@@ -1,10 +1,7 @@
-PictureView 是由C++代码的QT6开发框架运行于windows平台。
-1.4增加基础的压缩包读取（依赖libarchive第三方库）
-沉浸大图模式，简单编辑（镜像旋转），幻灯浏览；空背景桌面摆放；缩略图浏览；还可以粘贴图片，以及投影式画布模式。
+# PictureView
 
-技术顾问：deepseek AI 
-图标创意：豆包AI。
-开发：berylok
+**PictureView** 是一款基于 Qt6 开源框架开发的高性能图片查看器，支持常见图片格式、压缩包内预览、全屏浏览、幻灯片放映、图像变换等丰富功能。它专为 Linux 平台设计，同时保留了跨平台潜力。
+它同时包含投影模式以帮助画师摆放图像样张临摹。
 
 缩略图模式文件夹与ZIP压缩包：
 <img width="802" height="632" alt="批注 2025-11-24 133341" src="https://github.com/user-attachments/assets/b12a74d4-57fb-417d-9e9e-703146af5d06" />
@@ -21,6 +18,8 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 
 
 [PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)
+
+
 [PictureView1.51_forwindows_2026_3_19.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51_forwindows_2026_3_19.zip)
 
 
@@ -38,26 +37,34 @@ PictureView 是由C++代码的QT6开发框架运行于windows平台。
 
 [PictureView1.421_2025_12_4_win_release.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.421_2025_12_4_win_release.zip)
 
-编译环境配置：
-1，windows平台：使用PictureView.pro在QT环境加载项目。
 
-2：Cmake  for ubuntu(linux) 
+## 功能特性
 
+- 📸 **支持多种图片格式**：通过 Qt 图像插件支持 JPEG、PNG、GIF、BMP、TIFF 等。
+- 📦 **压缩包预览**：集成 libarchive，可直接查看 ZIP、RAR、TAR 等压缩包内的图片。
+- 🎨 **图像变换**：旋转、翻转、缩放、自适应窗口/原始尺寸。
+- ⌨️ **键盘/鼠标快捷键**：支持自定义快捷键，操作便捷。
+- 🖼️ **缩略图模式**：快速浏览目录下所有图片。
+- ⏯️ **幻灯片放映**：自动播放，可设置间隔时间。
+- 🖱️ **画布控制面板**：显示缩放比例、位置、操作提示。
+- 🌙 **支持深色主题**（若系统主题支持）。
+- 🌍 **国际化准备**：支持多语言（翻译文件待完善）。
 
-2025年12月6日 更新仅针对Linux系统； x11桌面投影画布 以正确工作；调整透明度为快捷键pageup、pagedown；旋转为ctrl+；镜像为shift+；v1.430
+## 系统要求
 
-2025年12月4日 添加缺失的许可证信息。修补带标题窗口的错误。v1.421
+- **操作系统**：Linux（主要开发环境），理论上也支持 Windows 和 macOS（需适当调整依赖）。
+- **编译环境**：CMake 3.16+，支持 C++17 的编译器（GCC 8+ 或 Clang 8+）。
+- **Qt 版本**：Qt 6.0 或更高版本。
+- **libarchive**：用于压缩包支持。
+- **X11**：仅 Linux 下需要，提供窗口系统集成。
 
-2025年11月30日 归档整理。已知linix系统透明穿透及画布问题。目前有些许瑕疵，待完善。
+## 依赖项
 
-v1.4.0.0支持ZIP压缩包(+libarchive)
+### Ubuntu / Debian
+```bash
+sudo apt update
+sudo apt install cmake build-essential qt6-base-dev qt6-tools-dev \
+    libarchive-dev libx11-dev libxext-dev
+# 可选：Qt 图像格式插件（如需支持更多图片格式）
+sudo apt install qt6-image-formats-plugins
 
-v1.3.8.1补齐一些功能及修复
-
-v1.3投影画布支持
-
-v1.2缩略图支持
-
-v1.1幻灯支持
-
-v1.0基础图片显示(Qt6+opencv)

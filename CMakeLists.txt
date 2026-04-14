@@ -12,7 +12,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent)
 if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # 可选但推荐：也查找 Xext 扩展库，某些X11功能需要它
-    # find_package(X11 COMPONENTS Xext)
+    find_package(X11 COMPONENTS Xext)
 endif()
 
 # 启用 Qt 的自动处理
@@ -133,7 +133,7 @@ set_target_properties(PictureView PROPERTIES
 # Linux 特定设置
 if(UNIX AND NOT APPLE)
     # 设置图标
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.ico")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.png")
         set_target_properties(PictureView PROPERTIES
             MACOSX_BUNDLE_ICON_FILE PictureView.png
         )

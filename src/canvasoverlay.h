@@ -6,7 +6,7 @@
 #include <QPixmap>
 #include <QImage>
 #include <QPointF>
-
+#include <QPointer>
 // 前向声明
 class ImageWidget;
 
@@ -41,7 +41,7 @@ private:
 
     // 成员变量
     QPixmap m_displayPixmap;
-    ImageWidget* m_parentWidget;
+    QPointer<ImageWidget> m_parentWidget;  // 改为 QPointer
     DisplayState m_displayState;  // 使用自己的 DisplayState
 
     // 拖动相关

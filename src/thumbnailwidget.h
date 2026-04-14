@@ -113,11 +113,15 @@ private:
     int currentBatchIndex;
 
     // 性能配置
+    // thumbnailwidget.h
+
     struct PerformanceConfig {
-        int maxCacheSize = 200 * 1024 * 1024; // 200MB
-        int batchLoadSize = 1;  // 每次批量加载1个
-        int batchLoadDelay = 150; // 批次间延迟150ms
-        bool enableMemoryOptimization = true;
+        int maxCacheMemoryMB = 100;           // 最大缓存内存 100MB (改为MB单位)
+        int batchLoadSize = 1;                // 每次批量加载1个
+        int batchLoadDelay = 150;              // 批次间延迟150ms
+        int preloadRange = 1;                 // 预加载前后1个
+        bool enableLazyLoading = true;        // 启用懒加载
+        bool enablePriorityLoading = true;    // 启用优先级加载
     };
     PerformanceConfig perfConfig;
 
@@ -125,6 +129,9 @@ private:
     QSet<QString> failedThumbnails;
     QMap<QString, QString> loadingErrors;
     QTimer *diagnosticTimer;
+    int calculateCostForPixmap(const QPixmap &pixmap) const;
+    void logCacheStats();
+    void finishLoading();
 };
 
 #endif // THUMBNAILWIDGET_H

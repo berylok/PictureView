@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // === 在设置应用程序信息后检测Qt平台 ===
     // 设置应用程序信息
     app.setApplicationName("PictureView");
-    app.setApplicationVersion("1.5.1");
+    app.setApplicationVersion("1.5.2");
     app.setOrganizationName("berylok");
 
     // 打印环境信息

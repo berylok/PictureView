@@ -10,10 +10,10 @@
 #ifdef Q_OS_LINUX
 #include <X11/Xlib.h>
 #include <X11/extensions/shape.h>
-#include <execinfo.h>
-#include <cxxabi.h>
 #endif
 
+#include <execinfo.h>
+#include <cxxabi.h>
 
 void ImageWidget::paintEvent(QPaintEvent *event)
 {
@@ -331,10 +331,9 @@ void ImageWidget::updateMask()
 }
 
 
+
 void ImageWidget::setMask(const QRegion &region)
 {
-
-#ifdef Q_OS_LINUX
     // 🚨 缩略图模式下禁止任何 setMask 调用！
     if (currentViewMode != SingleView) {
         qDebug() << "\n🔥 非法 setMask 调用！当前模式:"
@@ -350,9 +349,7 @@ void ImageWidget::setMask(const QRegion &region)
         return;  // ⚡ 不调用 QWidget::setMask，直接返回！
     }
 
-
     QWidget::setMask(region);
-#endif
 }
 
 void ImageWidget::clearMask()

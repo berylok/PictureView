@@ -28,7 +28,8 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     totalCount(0),
     futureWatcher(nullptr),
     isLoading(false),
-    smartThumbnailCache(perfConfig.maxCacheSize),
+    // ✅ 使用 maxCacheMemoryMB 并转换为字节
+    smartThumbnailCache(perfConfig.maxCacheMemoryMB * 1024 * 1024),
     currentBatchIndex(0),
     batchLoadTimer(this),
     diagnosticTimer(nullptr)
@@ -36,15 +37,18 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
 
+    // 可选：设置缓存清理策略
+    smartThumbnailCache.setMaxCost(perfConfig.maxCacheMemoryMB * 1024 * 1024);
+
     // 设置批量加载定时器
     batchLoadTimer.setSingleShot(true);
     batchLoadTimer.setInterval(perfConfig.batchLoadDelay);
     connect(&batchLoadTimer, &QTimer::timeout, this, &ThumbnailWidget::processBatchLoad);
 
-    // 诊断定时器 - 每10秒检查一次加载状态
+    // 诊断定时器 - 每5秒检查一次加载状态
     diagnosticTimer = new QTimer(this);
     connect(diagnosticTimer, &QTimer::timeout, this, &ThumbnailWidget::logThumbnailStatus);
-    diagnosticTimer->start(10000);
+    diagnosticTimer->start(1000);
 }
 
 ThumbnailWidget::~ThumbnailWidget()
@@ -77,6 +81,8 @@ void ThumbnailWidget::setImageList(const QStringList &list, const QDir &dir)
 
     // 开始加载所有缩略图
     startLoadingAllThumbnails();
+
+    logCacheStats();  // 查看加载后的缓存状态
 }
 
 // 开始加载所有缩略图
@@ -98,74 +104,95 @@ void ThumbnailWidget::startLoadingAllThumbnails()
 void ThumbnailWidget::processBatchLoad()
 {
     if (currentBatchIndex >= allFilesToLoad.size()) {
-        // 所有批次都已加载完成
-        qDebug() << "所有缩略图加载完成";
-        isLoading = false;
+        finishLoading();  // 所有批次完成，重置状态
         return;
     }
 
-    isLoading = true;
+    isLoading = true;  // 仅在真正开始加载时设置
 
-    // 计算当前批次的范围
     int startIndex = currentBatchIndex;
     int endIndex = qMin(currentBatchIndex + perfConfig.batchLoadSize, allFilesToLoad.size());
 
     QStringList batchFiles;
-    for (int i = startIndex; i < endIndex; i++) {
+    for (int i = startIndex; i < endIndex; ++i) {
         batchFiles.append(allFilesToLoad[i]);
     }
 
-    qDebug() << "加载批次:" << startIndex << "-" << (endIndex-1) << "共" << batchFiles.size() << "个文件";
-
-    // 加载当前批次
     loadThumbnailsBatch(batchFiles);
-
-    // 更新索引
     currentBatchIndex = endIndex;
 
-    // 如果不是最后一批，安排下一批加载
+    // 安排下一批次（如果未完成）
     if (currentBatchIndex < allFilesToLoad.size()) {
         batchLoadTimer.start();
     } else {
-        isLoading = false;
-        qDebug() << "所有缩略图加载完成，总计:" << allFilesToLoad.size();
+        // 注意：这里不能直接设 isLoading = false，因为批次是异步的
+        // 需要在所有异步加载完成的回调中处理
     }
 }
-
 // 批量加载缩略图
 void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
 {
+    if (fileNames.isEmpty()) return;
+
+    // 在工作线程中只做文件 I/O 和解码
     QtConcurrent::run([this, fileNames]() {
-        QList<QPair<QString, QPixmap>> results;
+        QList<QPair<QString, QPixmap>> loadedResults;
 
         for (const QString &fileName : fileNames) {
-            QPixmap thumbnail = loadSingleThumbnail(fileName);
-            if (!thumbnail.isNull()) {
-                QString cacheKey = getCacheKey(fileName);
-                results.append(qMakePair(cacheKey, thumbnail));
+            QString cacheKey = getCacheKey(fileName);
+
+            // 线程安全：只检查只读的静态缓存？不行，静态缓存也可能被主线程修改
+            // 因此工作线程完全不触碰任何缓存，只负责加载原始图片
+            QPixmap pixmap = loadSingleThumbnail(fileName);
+            if (!pixmap.isNull()) {
+                loadedResults.append(qMakePair(fileName, pixmap));
             }
         }
 
-        // 在主线程更新
-        QMetaObject::invokeMethod(this, [this, results]() {
-            for (const auto &result : results) {
-                // 更新智能缓存
-                smartThumbnailCache.insert(result.first, new QPixmap(result.second));
+        // 将结果传回主线程
+        if (!loadedResults.isEmpty()) {
+            QMetaObject::invokeMethod(this, [this, loadedResults]() {
+                // 主线程安全地更新缓存
+                for (const auto &pair : loadedResults) {
+                    QString cacheKey = getCacheKey(pair.first);
+                    QPixmap thumbnail = pair.second;
 
-                // 同时更新静态缓存以保持兼容性
-                QMutexLocker locker(&cacheMutex);
-                thumbnailCache.insert(result.first, result.second);
-            }
+                    int cost = calculateCostForPixmap(thumbnail);
+                    smartThumbnailCache.insert(cacheKey, new QPixmap(thumbnail), cost);
+                    {
+                        QMutexLocker locker(&cacheMutex);
+                        thumbnailCache.insert(cacheKey, thumbnail);
+                    }
+                    loadedCount++;
+                }
 
-            // 更新加载计数
-            loadedCount += results.size();
-            emit loadingProgress(loadedCount, totalCount);
+                emit loadingProgress(loadedCount, totalCount);
+                update(visibleRegion().boundingRect());
 
-            // 更新UI
-            update();
-
-        }, Qt::QueuedConnection);
+                // 检查是否所有批次都已完成
+                if (currentBatchIndex >= allFilesToLoad.size() && loadedCount >= totalCount) {
+                    finishLoading();
+                }
+            }, Qt::QueuedConnection);
+        } else {
+            // 即使没有加载成功，也要更新计数并检查完成状态
+            QMetaObject::invokeMethod(this, [this]() {
+                // 这里实际上 loadedCount 没变，但我们可以通过批次索引判断
+                if (currentBatchIndex >= allFilesToLoad.size() && loadedCount >= totalCount) {
+                    finishLoading();
+                }
+            }, Qt::QueuedConnection);
+        }
     });
+}
+
+// 新增完成处理函数
+void ThumbnailWidget::finishLoading()
+{
+    isLoading = false;
+    qDebug() << "所有缩略图批次加载完成";
+    emit loadingProgress(loadedCount, totalCount);
+    update();
 }
 
 // 加载单个缩略图
@@ -428,21 +455,7 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
     updateMinimumHeight();
 }
 
-QPixmap ThumbnailWidget::getCachedThumbnail(const QString &cacheKey)
-{
-    // 优先使用智能缓存
-    if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
-        return *cached;
-    }
 
-    // 回退到静态缓存
-    QMutexLocker locker(&cacheMutex);
-    if (thumbnailCache.contains(cacheKey)) {
-        return thumbnailCache.value(cacheKey);
-    }
-
-    return QPixmap();
-}
 
 void ThumbnailWidget::drawThumbnailItem(QPainter &painter, int index,
                                         int x, int y, const QString &fileName,
@@ -747,30 +760,7 @@ void ThumbnailWidget::setThumbnailSize(const QSize &size)
     }
 }
 
-void ThumbnailWidget::setCacheSize(int maxSizeMB)
-{
-    perfConfig.maxCacheSize = maxSizeMB * 1024 * 1024;
-    smartThumbnailCache.setMaxCost(perfConfig.maxCacheSize);
-}
 
-// 鼠标和键盘事件处理保持不变...
-void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
-{
-    qDebug() << "ThumbnailWidget 鼠标按下，位置:" << event->pos();
-
-    if (event->button() == Qt::LeftButton) {
-        selectThumbnailAtPosition(event->pos());
-        setFocus();
-    } else if (event->button() == Qt::RightButton) {
-        QMouseEvent newEvent(event->type(),
-                             mapToParent(event->pos()),
-                             event->globalPos(),
-                             event->button(),
-                             event->buttons(),
-                             event->modifiers());
-        QApplication::sendEvent(parentWidget(), &newEvent);
-    }
-}
 
 void ThumbnailWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
@@ -865,3 +855,128 @@ void ThumbnailWidget::updateThumbnails()
 {
     // 这个方法现在不需要了，因为我们使用批量加载
 }
+
+
+// 计算 pixmap 的实际内存占用（字节）
+int ThumbnailWidget::calculateCostForPixmap(const QPixmap &pixmap) const
+{
+    if (pixmap.isNull()) return 0;
+
+    // 方法1：使用 QImage 的 byteCount（更准确）
+    QImage image = pixmap.toImage();
+    if (!image.isNull()) {
+        return image.sizeInBytes();
+    }
+
+    // 方法2：估算（宽*高*4字节RGBA）
+    return pixmap.width() * pixmap.height() * 4;
+}
+
+// 添加缓存统计方法
+// thumbnailwidget.cpp
+
+void ThumbnailWidget::logCacheStats()
+{
+    qDebug() << "========================================";
+    qDebug() << "=== 缩略图缓存统计 ===";
+    qDebug() << "智能缓存条目数:" << smartThumbnailCache.size();
+    qDebug() << "智能缓存总成本:" << smartThumbnailCache.totalCost() / (1024.0 * 1024.0) << "MB";
+    qDebug() << "智能缓存最大容量:" << smartThumbnailCache.maxCost() / (1024.0 * 1024.0) << "MB";
+    qDebug() << "智能缓存使用率:" << QString::number(smartThumbnailCache.totalCost() * 100.0 /
+                                                         smartThumbnailCache.maxCost(), 'f', 1) << "%";
+
+    // 静态缓存统计
+    QMutexLocker locker(&cacheMutex);
+    qDebug() << "静态缓存条目数:" << thumbnailCache.size();
+
+    // 计算静态缓存估算内存（粗略）
+    int staticCacheMemory = 0;
+    for (auto it = thumbnailCache.begin(); it != thumbnailCache.end(); ++it) {
+        staticCacheMemory += it->width() * it->height() * 4;
+    }
+    qDebug() << "静态缓存估算内存:" << staticCacheMemory / (1024.0 * 1024.0) << "MB";
+
+    // 加载统计
+    qDebug() << "已加载数量:" << loadedCount << "/" << totalCount;
+    qDebug() << "加载进度:" << QString::number(loadedCount * 100.0 / totalCount, 'f', 1) << "%";
+
+    // 失败统计
+    qDebug() << "失败缩略图数量:" << failedThumbnails.size();
+    if (!failedThumbnails.isEmpty() && failedThumbnails.size() <= 10) {
+        qDebug() << "失败列表:";
+        for (const QString& key : failedThumbnails) {
+            qDebug() << "  -" << key;
+        }
+    }
+
+    // 性能配置
+    qDebug() << "=== 性能配置 ===";
+    qDebug() << "最大缓存内存:" << perfConfig.maxCacheMemoryMB << "MB";
+    qDebug() << "批量加载大小:" << perfConfig.batchLoadSize;
+    qDebug() << "批量加载延迟:" << perfConfig.batchLoadDelay << "ms";
+    //qDebug() << "预加载范围:" << preloadRange;
+    qDebug() << "懒加载模式:" << (perfConfig.enableLazyLoading ? "启用" : "禁用");
+    qDebug() << "加载状态:" << (isLoading ? "加载中" : "空闲");
+    qDebug() << "========================================";
+}
+
+// 设置缓存大小（MB）
+void ThumbnailWidget::setCacheSize(int maxSizeMB)
+{
+    perfConfig.maxCacheMemoryMB = maxSizeMB;
+    int maxCostBytes = maxSizeMB * 1024 * 1024;
+
+    // 更新 QCache 的最大容量
+    smartThumbnailCache.setMaxCost(maxCostBytes);
+
+    // 可选：清理超出部分
+    smartThumbnailCache.clear();
+
+    qDebug() << "缩略图缓存大小设置为:" << maxSizeMB << "MB";
+}
+
+// 优化获取缓存方法
+QPixmap ThumbnailWidget::getCachedThumbnail(const QString &cacheKey)
+{
+    // 优先使用智能缓存（自动管理内存）
+    if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
+        if (!cached->isNull()) {
+            return *cached;
+        }
+    }
+
+    // 回退到静态缓存
+    QMutexLocker locker(&cacheMutex);
+    if (thumbnailCache.contains(cacheKey)) {
+        QPixmap pixmap = thumbnailCache.value(cacheKey);
+        if (!pixmap.isNull()) {
+            // 提升到智能缓存，并正确计算成本
+            int cost = calculateCostForPixmap(pixmap);
+            smartThumbnailCache.insert(cacheKey, new QPixmap(pixmap), cost);
+        }
+        return pixmap;
+    }
+
+    return QPixmap();
+}
+
+// thumbnailwidget.cpp
+
+void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
+{
+    qDebug() << "ThumbnailWidget 鼠标按下，位置:" << event->pos();
+
+    if (event->button() == Qt::LeftButton) {
+        selectThumbnailAtPosition(event->pos());
+        setFocus();
+    } else if (event->button() == Qt::RightButton) {
+        QMouseEvent newEvent(event->type(),
+                             mapToParent(event->pos()),
+                             event->globalPos(),
+                             event->button(),
+                             event->buttons(),
+                             event->modifiers());
+        QApplication::sendEvent(parentWidget(), &newEvent);
+    }
+}
+

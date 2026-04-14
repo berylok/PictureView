@@ -201,7 +201,7 @@ void ImageWidget::showAboutDialog()
     titleLabel->setAlignment(Qt::AlignCenter);
 
     // 版本信息
-    QLabel *versionLabel = new QLabel(tr("版本 1.5.1"), aboutTab);
+    QLabel *versionLabel = new QLabel(tr("版本 1.5.2"), aboutTab);
     versionLabel->setStyleSheet("font-size: 14px; color: #666666; font-weight: bold;");
     versionLabel->setAlignment(Qt::AlignCenter);
 

@@ -48,6 +48,13 @@ void CanvasOverlay::setImage(const QPixmap& pixmap)
 // canvasoverlay.cpp - 修改paintEvent，复制主窗口的绘制逻辑
 void CanvasOverlay::paintEvent(QPaintEvent* event)
 {
+    // 检查父窗口是否仍然存活
+    if (m_parentWidget.isNull()) {
+        // 父窗口已销毁，关闭自身
+        close();
+        return;
+    }
+
     QPainter painter(this);
 
     qDebug() << "CanvasOverlay::paintEvent - 开始绘制";
@@ -295,6 +302,8 @@ void CanvasOverlay::applyX11MousePassthrough()
 
 void CanvasOverlay::forceStayOnTop()
 {
+    if (m_parentWidget.isNull()) return;
+
 #ifdef Q_OS_LINUX
     if (!QGuiApplication::platformName().contains("xcb"))
         return;

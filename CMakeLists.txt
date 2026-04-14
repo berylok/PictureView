@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.5.1 LANGUAGES CXX)
+project(PictureView_34 VERSION 1.5.1 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 查找 Qt6 包
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 
 # 查找 X11 库 (仅Linux/Unix系统需要，且非macOS)
 if(UNIX AND NOT APPLE)
@@ -56,7 +56,7 @@ set(HEADERS
 )
 
 # 创建可执行文件
-qt_add_executable(PictureView
+qt_add_executable(PictureView_34
     ${SOURCES}
     ${HEADERS}
     src/platform_compat.h
@@ -67,17 +67,17 @@ qt_add_executable(PictureView
 )
 
 # 设置资源前缀（必须在 qt_add_resources 之前）
-set_target_properties(PictureView PROPERTIES
+set_target_properties(PictureView_34 PROPERTIES
     QT_RESOURCE_PREFIX "/"
 )
 
 # 添加资源文件 - 指定 PREFIX
-qt_add_resources(PictureView "app_resources"
+qt_add_resources(PictureView_34 "app_resources"
     FILES "app.qrc"
 )
 
 # 链接库
-target_link_libraries(PictureView PRIVATE
+target_link_libraries(PictureView_34 PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -87,42 +87,44 @@ target_link_libraries(PictureView PRIVATE
 
 # # 在Linux平台单独链接X11库
 # if(UNIX AND NOT APPLE AND X11_FOUND)
-#     target_link_libraries(PictureView PRIVATE ${X11_LIBRARIES})
+#     target_link_libraries(PictureView_34 PRIVATE ${X11_LIBRARIES})
 #     if(X11_Xext_FOUND)
-#         target_link_libraries(PictureView PRIVATE ${X11_Xext_LIBRARY})
+#         target_link_libraries(PictureView_34 PRIVATE ${X11_Xext_LIBRARY})
 #     endif()
 # endif()
 if(UNIX AND NOT APPLE AND X11_FOUND)
     # 明确链接 X11 库，确保 X11 库在 Qt 库之后链接
-    target_link_libraries(PictureView PRIVATE
+    target_link_libraries(PictureView_34 PRIVATE
         ${X11_LIBRARIES}
     )
     # 如果找到 Xext，也需要链接
     if(X11_Xext_FOUND)
-        target_link_libraries(PictureView PRIVATE ${X11_Xext_LIBRARY})
+        target_link_libraries(PictureView_34 PRIVATE ${X11_Xext_LIBRARY})
     endif()
 endif()
 
 # 包含目录
-target_include_directories(PictureView PRIVATE
+target_include_directories(PictureView_34 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${LIBARCHIVE_INCLUDE_DIRS}
 )
 
 # 翻译文件设置（可选，可暂时注释）
-# set(TS_FILES
-#     # translations/PictureView_zh_CN.ts
-#     translations/PictureView_en_US.ts
-# )
-#
-# # 添加翻译目标
-# qt_add_translation(QM_FILES ${TS_FILES})
-# add_custom_target(translations ALL DEPENDS ${QM_FILES})
+set(TS_FILES
+    translations/PictureView_zh_CN.ts
+    translations/PictureView_en_US.ts
+)
+
+# 添加翻译目标
+qt6_add_translations(PictureView_34
+    TS_FILES ${TS_FILES}
+)
+add_custom_target(translations ALL DEPENDS ${QM_FILES})
 
 # 设置应用程序属性
-set_target_properties(PictureView PROPERTIES
-    OUTPUT_NAME "PictureView"
-    MACOSX_BUNDLE_BUNDLE_NAME "PictureView"
+set_target_properties(PictureView_34 PROPERTIES
+    OUTPUT_NAME "PictureView_34"
+    MACOSX_BUNDLE_BUNDLE_NAME "PictureView_34"
     MACOSX_BUNDLE_COPYRIGHT "Copyright @ 2025 berylok"
     MACOSX_BUNDLE_GUI_IDENTIFIER ""
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
@@ -134,13 +136,13 @@ set_target_properties(PictureView PROPERTIES
 if(UNIX AND NOT APPLE)
     # 设置图标
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.png")
-        set_target_properties(PictureView PROPERTIES
+        set_target_properties(PictureView_34 PROPERTIES
             MACOSX_BUNDLE_ICON_FILE PictureView.png
         )
     endif()
 
     # 安装配置
-    install(TARGETS PictureView
+    install(TARGETS PictureView_34
         RUNTIME DESTINATION bin
     )
 
@@ -164,19 +166,32 @@ endif()
 if(WIN32)
     # 设置图标
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.ico")
-        set_target_properties(PictureView PROPERTIES
+        set_target_properties(PictureView_34 PROPERTIES
             RC_ICONS "${CMAKE_CURRENT_SOURCE_DIR}/icons/PictureView.ico"
         )
     endif()
 endif()
 
 # 编译特性设置
-target_compile_definitions(PictureView PRIVATE
+target_compile_definitions(PictureView_34 PRIVATE
     $<$<CONFIG:Debug>:QT_QML_DEBUG>
 )
 
 # 设置版本信息
-set_target_properties(PictureView PROPERTIES
+set_target_properties(PictureView_34 PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
+
+# 自动复制翻译文件到构建目录
+add_custom_command(TARGET PictureView_34 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PictureView_34>/translations"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/translations/PictureView_en_US.qm"
+        "$<TARGET_FILE_DIR:PictureView_34>/translations/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/translations/PictureView_zh_CN.qm"
+        "$<TARGET_FILE_DIR:PictureView_34>/translations/"
+    COMMENT "Copying translation files to build directory"
+)
+

@@ -36,48 +36,48 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
     // 如果在压缩包模式下，添加返回上级目录的选项
     if (isArchiveMode) {
-        contextMenu.addAction(tr("返回上级目录 (ESC)"), this,
-                              &ImageWidget::exitArchiveMode);
+        contextMenu.addAction(tr("返回上级目录 (ESC)"), this,&ImageWidget::exitArchiveMode);
         contextMenu.addSeparator();
     }
 
     if (currentViewMode == SingleView) {
-        contextMenu.addAction(tr("返回缩略图(Enter)"), this,
-                              &ImageWidget::switchToThumbnailView);
+        contextMenu.addAction(tr("窗口最小化"), this,&ImageWidget::showMinimized);
+        contextMenu.addSeparator();
+        contextMenu.addAction(tr("返回缩略图(Enter)"), this,&ImageWidget::switchToThumbnailView);
         contextMenu.addSeparator();
 
         // 添加切换提示
-        contextMenu.addAction(tr("上一张 (←)"), this,
-                              &ImageWidget::loadPreviousImage);
-        contextMenu.addAction(tr("下一张 (→)"), this,
-                              &ImageWidget::loadNextImage);
+        contextMenu.addAction(tr("上一张 (←)"), this,&ImageWidget::loadPreviousImage);
+        contextMenu.addAction(tr("下一张 (→)"), this,&ImageWidget::loadNextImage);
 
         // 添加合适大小和实际大小的菜单项
-        contextMenu.addAction(tr("合适大小 (↑)"), this,
-                              &ImageWidget::fitToWindow);
+        contextMenu.addAction(tr("合适大小 (↑)"), this,&ImageWidget::fitToWindow);
         contextMenu.addAction(tr("实际大小 (↓)"), this, &ImageWidget::actualSize);
         contextMenu.addSeparator();
 
         // 编辑菜单
         QMenu *editMenu = contextMenu.addMenu(tr("编辑"));
         QMenu *rotateSubMenu = editMenu->addMenu(tr("旋转"));
-        rotateSubMenu->addAction(tr("逆时针90° (PageUp)"), this,
-                                 &ImageWidget::rotate90CCW);
-        rotateSubMenu->addAction(tr("顺时针90° (PageDown)"), this,
-                                 &ImageWidget::rotate90CW);
+        rotateSubMenu->addAction(tr("逆时针90° (PageUp)"), this,&ImageWidget::rotate90CCW);
+        rotateSubMenu->addAction(tr("顺时针90° (PageDown)"), this,&ImageWidget::rotate90CW);
         rotateSubMenu->addAction(tr("180°"), this, &ImageWidget::rotate180);
 
         QMenu *mirrorSubMenu = editMenu->addMenu(tr("镜像"));
-        mirrorSubMenu->addAction(tr("垂直镜像 (Ctrl+PageUp)"), this,
-                                 &ImageWidget::mirrorVertical);
-        mirrorSubMenu->addAction(tr("水平镜像 (Ctrl+PageDown)"), this,
-                                 &ImageWidget::mirrorHorizontal);
+        mirrorSubMenu->addAction(tr("垂直镜像 (Ctrl+PageUp)"), this,&ImageWidget::mirrorVertical);
+        mirrorSubMenu->addAction(tr("水平镜像 (Ctrl+PageDown)"), this,&ImageWidget::mirrorHorizontal);
 
         if (isTransformed()) {
             editMenu->addSeparator();
-            editMenu->addAction(tr("重置变换 (Ctrl+0)"), this,
-                                &ImageWidget::resetTransform);
+            editMenu->addAction(tr("重置变换 (Ctrl+0)"), this,&ImageWidget::resetTransform);
         }
+        // 在编辑菜单中，旋转和镜像选项之后添加
+        editMenu->addSeparator();
+
+        QAction *lockTransformAction = editMenu->addAction(
+            transformLocked ? tr("解锁变换") : tr("锁定变换"));
+        lockTransformAction->setCheckable(true);
+        lockTransformAction->setChecked(transformLocked);
+        connect(lockTransformAction, &QAction::triggered, this, &ImageWidget::toggleTransformLock);
 
         contextMenu.addSeparator();
 
@@ -91,10 +91,12 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         int selectedIndex = thumbnailWidget->getSelectedIndex();
         if(selectedIndex>=0 && selectedIndex < imageList.size()){
 
-            contextMenu.addAction(tr("打开图片(Enter)"), this, &ImageWidget::openSelectedImage);
+            // 最小化
+            contextMenu.addAction(tr("窗口最小化"), this,&ImageWidget::showMinimized);
             contextMenu.addSeparator();
 
 
+            contextMenu.addAction(tr("打开图片(Enter)"), this, &ImageWidget::openSelectedImage);
             contextMenu.addAction(tr("删除选中图片 (Del)"), this, &ImageWidget::deleteSelectedThumbnail);
             contextMenu.addSeparator();
         }

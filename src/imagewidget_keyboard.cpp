@@ -53,6 +53,9 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
             event->accept();
             return;
             break;
+        case Qt::Key_M:
+                this->showMinimized();
+            break;
         }
     }
 
@@ -64,6 +67,11 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
         break;
+    case Qt::Key_F2:
+        // 最小化
+        showMinimized();
+        event->accept();
+        return;
     }
 
     // 在画布模式下，只响应特定的退出键
@@ -162,6 +170,7 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
                 event->accept();
             }
             break;
+
         case Qt::Key_Escape:
             close();     //esc直接退出程序
             break;

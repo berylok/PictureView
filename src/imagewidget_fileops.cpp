@@ -8,7 +8,6 @@
 #include <QMimeData>
 #include <QUrl>
 #include "platform_compat.h"
-#include <QCheckBox>
 
 #ifdef _WIN32
 #include <shellapi.h>
@@ -18,6 +17,7 @@
 #include <QProcess>
 #include <QDir>
 #include <QFileInfo>
+#include <QCheckBox>
 #endif
 
 
@@ -90,14 +90,25 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
     }
 
     // 继续原有逻辑...
+    // 修改这部分 - 只有未锁定时才重置变换
+    if (!transformLocked) {
+        rotationAngle = 0;
+        isHorizontallyFlipped = false;
+        isVerticallyFlipped = false;
+    }
+
+    // 保存原始图片
     originalPixmap = loadedPixmap;
-    pixmap = loadedPixmap;
+
+    // 如果锁定状态，需要重新应用变换
+    if (transformLocked) {
+        applyTransformations();
+    } else {
+        pixmap = loadedPixmap;
+    }
     qDebug() << "图片设置完成";
 
-    // 重置变换状态
-    rotationAngle = 0;
-    isHorizontallyFlipped = false;
-    isVerticallyFlipped = false;
+
 
     // 设置视图状态
     switch (currentViewStateType) {
@@ -465,81 +476,3 @@ void ImageWidget::deleteSelectedThumbnail()
 }
 
 
-
-void ImageWidget::permanentlyDeleteCurrentImage()
-{
-    if (currentImagePath.isEmpty() || !QFile::exists(currentImagePath)) {
-        QMessageBox::warning(this, tr("警告"), tr("没有可删除的图片"));
-        return;
-    }
-
-    // 警告对话框
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::warning(
-        this, tr("永久删除警告"),
-        tr("确定要永久删除图片 '") + QFileInfo(currentImagePath).fileName() +
-            "' 吗？\n"
-            "此操作无法撤销，文件将无法恢复！",
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-
-    if (reply != QMessageBox::Yes) {
-        return;
-    }
-
-    QString imageToDelete = currentImagePath;
-    int indexToDelete = currentImageIndex;
-
-    // 直接删除文件
-    if (QFile::remove(imageToDelete)) {
-        // 其余代码与 deleteCurrentImage 相同
-        imageCache.remove(imageToDelete);
-        ThumbnailWidget::clearThumbnailCacheForImage(imageToDelete);
-
-        if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
-            imageList.removeAt(indexToDelete);
-            thumbnailWidget->setImageList(imageList, currentDir);
-
-            if (imageList.isEmpty()) {
-                pixmap = QPixmap();
-                currentImagePath.clear();
-                currentImageIndex = -1;
-                if (currentViewMode == SingleView) {
-                    switchToThumbnailView();
-                }
-            } else {
-                int newIndex = indexToDelete;
-                if (newIndex >= imageList.size()) {
-                    newIndex = imageList.size() - 1;
-                }
-
-                if (currentViewMode == SingleView) {
-                    loadImageByIndex(newIndex);
-                } else {
-                    currentImageIndex = newIndex;
-                    thumbnailWidget->setSelectedIndex(newIndex);
-                }
-            }
-
-            update();
-            updateWindowTitle();
-        }
-    } else {
-        QMessageBox::critical(this, tr("错误"), tr("删除图片失败，可能没有权限或文件被占用"));
-    }
-}
-
-void ImageWidget::permanentlyDeleteSelectedThumbnail()
-{
-    if (currentViewMode == ThumbnailView) {
-        int selectedIndex = thumbnailWidget->getSelectedIndex();
-        if (selectedIndex >= 0 && selectedIndex < imageList.size()) {
-            QString imagePath =
-                currentDir.absoluteFilePath(imageList.at(selectedIndex));
-            loadImage(imagePath);
-            currentImageIndex = selectedIndex;
-            permanentlyDeleteCurrentImage();
-        } else {
-            QMessageBox::warning(this, tr("警告"), tr("请先选择要删除的图片"));
-        }
-    }
-}

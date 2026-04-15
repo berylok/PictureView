@@ -80,22 +80,57 @@ int main(int argc, char *argv[])
 
 
     // 设置默认语言
-    // QString locale = "zh_CN";  // 已为中文
+    // QString locale = "en_US";  // 已为中文
 
 
 
     // 设置默认语言：优先使用系统语言，若系统语言不支持则回退到中文
-    QString locale = QLocale::system().name();  // 例如 "zh_CN", "en_US"
+    // QString locale = QLocale::system().name();  // 例如 "zh_CN", "en_US"
 
     // 检查系统语言是否在我们支持的列表中
-    QStringList supportedLocales = {"zh_CN", "en_US"};
-    if (!supportedLocales.contains(locale)) {
-        // 如果系统语言不是 zh_CN 或 en_US，则进一步判断语种
-        QString lang = QLocale::system().languageToString(QLocale::system().language());
-        if (lang == "Chinese") {
-            locale = "zh_CN";
-        } else {
-            locale = "en_US";  // 其他所有语言默认显示英文
+    QStringList supportedLocales = {
+        "zh_CN",   // 中文（简体）        Chinese(China)
+        "en_US",   // 英文（美国）        English(United States)
+        "ja_JP",   // 日文                Japanese(Japan)
+        "ko_KR",   // 韩文                Korean(South Korea)
+        "fr_FR",   // 法文                French(France)
+        "de_AT",   // 德文（奥地利）       German(Germany)
+        "es_AR"    // 西班牙文（阿根廷） Spanish(Argentina)
+        "ru_RU"     //俄罗斯           Russian(Russia)
+        "pt_BR"     //巴西葡语          Portuguese(Brazil)
+        "pt_PT"     //欧洲葡语          Portuguese(Portugal)
+        "zh_TW"     //中国台湾（繁体）      Chinese(Taiwan)
+        "fr_CA"     //加拿大法语         French(Canada)
+        "it_IT"     //意大利           Italian(Italy)
+        "en_CA"     //加拿大英语         English(canada)
+
+        "ar_SA"     //阿拉伯语          Arabic(Saudi Arabia)
+        "hi_IN"     //印地语           Hindi(India)
+        "id_ID"     //印尼语           Indonesian(Indonesia)
+        "nl_NL"     //荷兰语           Dutch(Netherlands)
+        "pl_PL"     //波兰语           Polish(Poland)
+        "tr_TR"     //土耳其语          Turkish (Turkey)
+        "th_TH"     //泰语（泰国）        Thai (Thailand)
+        "vi_VN"     //越南语（越南）       Vietnamese (Vietnam)
+
+
+    };
+
+    // 获取系统 locale
+    QString sysLocale = QLocale::system().name();  // 如 "zh_CN", "en_US"
+    QString locale = "zh_CN";  // 默认
+
+    // 先检查是否精确匹配支持列表
+    if (supportedLocales.contains(sysLocale)) {
+        locale = sysLocale;
+    } else {
+        // 否则尝试匹配语言代码（前两位）
+        QString sysLang = sysLocale.left(2);  // 如 "zh", "de"
+        for (const QString &sup : supportedLocales) {
+            if (sup.left(2) == sysLang) {
+                locale = sup;
+                break;
+            }
         }
     }
 
@@ -128,7 +163,7 @@ int main(int argc, char *argv[])
     // 注册文件关联选项
     QCommandLineOption registerOption(
         "register",
-        QCoreApplication::translate("main", "Register file associations"));
+        ("main", "Register file associations"));
     parser.addOption(registerOption);
 
     parser.process(app);
@@ -147,7 +182,7 @@ int main(int argc, char *argv[])
         ImageWidget().registerFileAssociation("tiff", "tifffile", openCommand);
         ImageWidget().registerFileAssociation("tif", "tiffile", openCommand);
 
-        qDebug() << QCoreApplication::translate("main", "File associations registered");
+        qDebug() << ("main", "File associations registered");
         return 0;
     }
 
@@ -158,7 +193,7 @@ int main(int argc, char *argv[])
 
     if (argc > 1) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        qDebug() << QCoreApplication::translate("main", "Opening file:") << filePath;
+        qDebug() << ("main", "Opening file:") << filePath;
 
         if (QFile::exists(filePath)) {
             QFileInfo fileInfo(filePath);

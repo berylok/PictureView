@@ -92,7 +92,7 @@ void ImageWidget::updateWindowTitle()
     } else if (!pixmap.isNull()) {
         title = tr("剪贴板图片");
     } else {
-        title = tr("图片查看器 - 缩略图模式");
+        title = "PictureView - "+tr("缩略图模式");
     }
 
     if (isSlideshowActive) {
@@ -112,7 +112,7 @@ void ImageWidget::showAboutDialog()
 
     // 创建自定义对话框
     QDialog helpDialog(this);
-    helpDialog.setWindowTitle(tr("图片查看器 - 帮助"));
+    helpDialog.setWindowTitle("PictureView - "+tr("帮助"));
     helpDialog.setMinimumSize(600, 800);  // 稍微增加尺寸以适应更多内容
     helpDialog.setMaximumSize(1100, 1100);
 
@@ -184,7 +184,7 @@ void ImageWidget::showAboutDialog()
     QVBoxLayout *aboutLayout = new QVBoxLayout(aboutTab);
 
     // 标题区域
-    QLabel *titleLabel = new QLabel(tr("图片查看器"), aboutTab);
+    QLabel *titleLabel = new QLabel("PictureView", aboutTab);
     titleLabel->setStyleSheet(
         "QLabel { "
         "   font-size: 28px; "
@@ -201,11 +201,11 @@ void ImageWidget::showAboutDialog()
     titleLabel->setAlignment(Qt::AlignCenter);
 
     // 版本信息
-    QLabel *versionLabel = new QLabel(tr("版本 1.5.2"), aboutTab);
+    QLabel *versionLabel = new QLabel(("V 1.5.2"), aboutTab);
     versionLabel->setStyleSheet("font-size: 14px; color: #666666; font-weight: bold;");
     versionLabel->setAlignment(Qt::AlignCenter);
 
-    QLabel *developerLabel = new QLabel(tr("技术顾问：DeepSeek 图标创意：DouBao 开发者: berylok(幸运人的珠宝) "), aboutTab);
+    QLabel *developerLabel = new QLabel(tr("技术顾问：DeepSeek 图标创意：豆包 开发者: berylok(幸运人的珠宝) "), aboutTab);
     developerLabel->setStyleSheet("font-size: 12px; color: #888888;");
     developerLabel->setAlignment(Qt::AlignCenter);
 
@@ -241,7 +241,7 @@ void ImageWidget::showAboutDialog()
         "<p>• <b>zlib</b> - " + tr("数据压缩库") + "</p>"
         "<p>• <b>libpng</b> - " + tr("PNG图像处理库") + "</p>"
         "<p>• <b>libjpeg-turbo</b> - " + tr("JPEG图像处理库") + "</p>"
-        "<p>• <b>libarchive</b> - " + tr("读取压缩格式") + "</p>"
+        "<p>• <b>libarchive</b> - " + tr("读写压缩格式") + "</p>"
         );
 
     aboutLayout->addWidget(titleLabel);
@@ -255,6 +255,7 @@ void ImageWidget::showAboutDialog()
 
     QTextEdit *shortcutsText = new QTextEdit(shortcutsTab);
     shortcutsText->setReadOnly(true);
+    // 构建 HTML 模板（使用原始字符串，内部用 %1, %2... 占位）
     shortcutsText->setHtml(
         "<h2 style='color: #0078d4;'>" + tr("快捷键参考") + "</h2>"
 
@@ -386,8 +387,8 @@ void ImageWidget::showAboutDialog()
         "<h2 style='color: #0078d4;'>" + tr("软件许可证") + "</h2>"
 
         "<div style='background-color: #e8f4f8; border: 1px solid #b8d8e8; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
-        "<h3 style='margin-top: 0; color: #0078d4;'>" + tr("图片查看器许可证") + "</h3>"
-        "<p><strong>" + tr("图片查看器") + "</strong> " + tr("基于 GNU 通用公共许可证第三版 (GPL v3) 发布。") + "</p>"
+        "<h3 style='margin-top: 0; color: #0078d4;'>" +"PictureView"+ tr("许可证") + "</h3>"
+        "<p><strong>" + "PictureView" + "</strong> " + tr("基于 GNU 通用公共许可证第三版 (GPL v3) 发布。") + "</p>"
         "<p>" + tr("这是一个自由软件，您可以：") + "</p>"
         "<ul>"
         "<li>" + tr("自由地运行此程序，无论出于何种目的") + "</li>"

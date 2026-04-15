@@ -399,13 +399,12 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
     if (imageList.isEmpty()) {
         painter.setPen(Qt::white);
         painter.drawText(rect(), Qt::AlignCenter,
-                         tr("欢迎使用图片查看器！\n\n"
+                         tr("欢迎使用""PictureView""！\n\n"
                             "使用方法：\n"
                             "• 按 Ctrl+O 打开文件夹浏览图片\n"
                             "• 按 Ctrl+Shift+O 打开单张图片\n"
                             "• 按 F1 查看详细使用说明\n\n"
-                            "祝您使用愉快！"
-                            "\n\n"
+                            "祝您使用愉快！""\n\n"
                             "没有图片文件\n拖拽图片文件夹到此窗口或右键选择打开文件夹"
                             "\n\n"
                             "F1 查看帮助 或右键弹出菜单使用"));

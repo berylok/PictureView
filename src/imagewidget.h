@@ -169,8 +169,7 @@ public slots:
     //图片删除相关
     void deleteCurrentImage();
     void deleteSelectedThumbnail();
-    void permanentlyDeleteCurrentImage();
-    void permanentlyDeleteSelectedThumbnail(); // 需要实现这个方法的缩略图版本
+    void performDeleteCurrentImage();// 将实际删除操作提取为独立函数
 private:
     bool moveFileToRecycleBin(const QString &filePath);
 
@@ -323,10 +322,7 @@ private:
 
 private:
     // 画布模式相关
-
     // 新增：覆盖层窗口
-
-
     //class CanvasOverlay;
     CanvasOverlay* canvasOverlay = nullptr;
 
@@ -348,7 +344,26 @@ private:
 private:
     void forceX11ShapeRefresh();  // 强制 X11 刷新窗口形状
 
-    void performDeleteCurrentImage();
+
+
+public:
+    void setHorizontalFlip(bool enable);
+    void setVerticalFlip(bool enable);
+    void applyTransform();   // 根据旋转、镜像等重新生成显示的 pixmap
+
+private:
+    QPixmap transformedPixmap; // 变换后用于绘制的图片
+
+    // 在 private 区域添加
+private:
+    bool transformLocked;  // 变换锁定状态
+
+public slots:
+    void toggleTransformLock();  // 切换锁定状态
+
+    // 在现有 public/private 区域合适位置添加
+public:
+    bool isTransformLocked() const { return transformLocked; }
 };
 
 #endif // IMAGEWIDGET_H

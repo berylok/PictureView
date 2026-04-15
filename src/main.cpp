@@ -21,43 +21,6 @@ int main(int argc, char *argv[])
     // 创建QApplication
     QApplication app(argc, argv);
 
-    // // 加载英文翻译文件
-    // QTranslator appTranslator;
-    // QString appTranslationsPath = QApplication::applicationDirPath() + "/translations";
-
-    // // 尝试加载几种可能的文件名
-    // bool loaded = false;
-    // QStringList tryNames = {
-    //     "PictureView_en_US",
-
-    // };
-
-    // for (const QString &name : tryNames) {
-    //     if (appTranslator.load(name, appTranslationsPath)) {
-    //         qDebug() << "✅ Loaded translation:" << name << "from" << appTranslationsPath;
-    //         loaded = true;
-    //         break;
-    //     }
-    // }
-
-    // if (!loaded) {
-    //     // 尝试从资源文件加载
-    //     for (const QString &name : tryNames) {
-    //         if (appTranslator.load(":/translations/" + name)) {
-    //             qDebug() << "✅ Loaded translation from resources:" << name;
-    //             loaded = true;
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // if (loaded) {
-    //     app.installTranslator(&appTranslator);
-    // } else {
-    //     qDebug() << "❌ Failed to load any English translation file!";
-    //     qDebug() << "   Checked paths:" << appTranslationsPath << "and :/translations/";
-    // }
-
     // 设置更高的内存分配限制（512MB）
     QImageReader::setAllocationLimit(512);
     qDebug() << "设置内存分配限制为 512MB";
@@ -114,7 +77,7 @@ int main(int argc, char *argv[])
 
     // 获取系统 locale
     QString sysLocale = QLocale::system().name();  // 如 "zh_CN", "en_US"
-    QString locale = "zh_CN";  // 默认
+    QString locale = "en_US";  // 默认
 
     // 先检查是否精确匹配支持列表
     if (supportedLocales.contains(sysLocale)) {
@@ -131,29 +94,28 @@ int main(int argc, char *argv[])
     }
 
 
-    // 检查命令行参数（支持 --lang zh_CN 或 --lang en_US）
+    // 命令行参数覆盖
     QCommandLineParser parser;
-    QCommandLineOption langOption("lang", "Set language (zh_CN, en_US)", "language");
+    QCommandLineOption langOption("lang", "Override system language (e.g., zh_CN, ru_RU)", "language");
     parser.addOption(langOption);
     parser.process(app);
-
     if (parser.isSet(langOption)) {
         locale = parser.value(langOption);
     }
 
-    // 加载对应的翻译文件
+    qDebug() << "Selected locale:" << locale;
+
+    // 加载翻译（保持原有代码）
     QTranslator appTranslator;
-    QTranslator qtTranslator;
-
-    QString qtTranslationsPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
-    qtTranslator.load("qt_" + locale, qtTranslationsPath);
-    app.installTranslator(&qtTranslator);
-
-    QString appTranslationsPath = QApplication::applicationDirPath() ;
-    if (appTranslator.load("PictureView_" + locale, appTranslationsPath)) {
+    QString appTranslationsPath = QApplication::applicationDirPath() + "/translations";
+    QString translationFile = "PictureView_" + locale;
+    qDebug() << "Loading" << translationFile << "from" << appTranslationsPath;
+    if (appTranslator.load(translationFile, appTranslationsPath)) {
         app.installTranslator(&appTranslator);
+        qDebug() << "✅ Successfully loaded" << translationFile;
+    } else {
+        qDebug() << "❌ Failed to load" << translationFile;
     }
-
 
 
     // 注册文件关联选项

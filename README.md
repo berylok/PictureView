@@ -15,6 +15,29 @@
 <img width="802" height="632" alt="批注 2025-11-24 133530" src="https://github.com/user-attachments/assets/09e6a20b-a088-401a-9f77-2da4fc3636f5" />
 
 
+更新本地化支持：
+        "zh_CN",   // 中文（简体）        Chinese(China)
+        "en_US",   // 英文（美国）        English(United States)
+        "ja_JP",   // 日文                Japanese(Japan)
+        "ko_KR",   // 韩文                Korean(South Korea)
+        "fr_FR",   // 法文                French(France)
+        "de_AT",   // 德文（奥地利）       German(Germany)
+        "es_AR"    // 西班牙文（阿根廷） Spanish(Argentina)
+        "ru_RU"     //俄罗斯           Russian(Russia)
+        "pt_BR"     //巴西葡语          Portuguese(Brazil)
+        "pt_PT"     //欧洲葡语          Portuguese(Portugal)
+        "zh_TW"     //中国台湾（繁体）      Chinese(Taiwan)
+        "fr_CA"     //加拿大法语         French(Canada)
+        "it_IT"     //意大利           Italian(Italy)
+        "en_CA"     //加拿大英语         English(canada)
+        "ar_SA"     //阿拉伯语          Arabic(Saudi Arabia)
+        "hi_IN"     //印地语           Hindi(India)
+        "id_ID"     //印尼语           Indonesian(Indonesia)
+        "nl_NL"     //荷兰语           Dutch(Netherlands)
+        "pl_PL"     //波兰语           Polish(Poland)
+        "tr_TR"     //土耳其语          Turkish (Turkey)
+        "th_TH"     //泰语（泰国）        Thai (Thailand)
+        "vi_VN"     //越南语（越南）       Vietnamese (Vietnam)
 
 
 [PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)

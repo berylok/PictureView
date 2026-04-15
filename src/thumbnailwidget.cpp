@@ -448,7 +448,7 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
     // 显示加载状态
     if (isLoading) {
         painter.setPen(QColor(200, 200, 200));
-        painter.drawText(10, 20, QString("加载中: %1/%2").arg(loadedCount).arg(totalCount));
+        painter.drawText(10, 20, QString("Loading: %1/%2").arg(loadedCount).arg(totalCount));
     }
 
     updateMinimumHeight();

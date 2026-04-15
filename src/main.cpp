@@ -80,12 +80,8 @@ int main(int argc, char *argv[])
 
 
     // 设置默认语言
-    // QString locale = "en_US";  // 已为中文
+    // QString locale = "en_US";  //硬性加载英文
 
-
-
-    // 设置默认语言：优先使用系统语言，若系统语言不支持则回退到中文
-    // QString locale = QLocale::system().name();  // 例如 "zh_CN", "en_US"
 
     // 检查系统语言是否在我们支持的列表中
     QStringList supportedLocales = {
@@ -153,7 +149,7 @@ int main(int argc, char *argv[])
     qtTranslator.load("qt_" + locale, qtTranslationsPath);
     app.installTranslator(&qtTranslator);
 
-    QString appTranslationsPath = QApplication::applicationDirPath() + "/translations";
+    QString appTranslationsPath = QApplication::applicationDirPath() ;
     if (appTranslator.load("PictureView_" + locale, appTranslationsPath)) {
         app.installTranslator(&appTranslator);
     }

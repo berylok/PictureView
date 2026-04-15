@@ -237,7 +237,7 @@ void ImageWidget::showAboutDialog()
         "<p>• " + tr("磁盘空间: 至少 50MB 可用空间") + "</p>"
 
         "<h3>" + tr("开源组件") + "</h3>"
-        "<p>• <b>Qt 框架</b> - " + tr("跨平台应用程序开发框架") + "</p>"
+        "<p>• <b>Qt Framework</b> - " + tr("跨平台应用程序开发框架") + "</p>"
         "<p>• <b>zlib</b> - " + tr("数据压缩库") + "</p>"
         "<p>• <b>libpng</b> - " + tr("PNG图像处理库") + "</p>"
         "<p>• <b>libjpeg-turbo</b> - " + tr("JPEG图像处理库") + "</p>"
@@ -276,7 +276,7 @@ void ImageWidget::showAboutDialog()
         "<tr><td><b>Home / End</b></td><td>" + tr("第一张/最后一张图片") + "</td></tr>"
         "<tr><td><b>ESC</b></td><td>" + tr("返回缩略图模式") + "</td></tr>"
         "<tr><td><b>Enter / Return</b></td><td>" + tr("进入单张视图") + "</td></tr>"
-        "<tr><td><b>鼠标双击</b></td><td>" + tr("切换视图模式") + "</td></tr>"
+        "<tr><td><b>Double-click</b></td><td>" + tr("切换视图模式") + "</td></tr>"
         "</table>"
 
         "<h3>🎨 " + tr("图片编辑") + "</h3>"
@@ -298,19 +298,19 @@ void ImageWidget::showAboutDialog()
         "<tr><td><b>ESC</b></td><td>" + tr("退出画布模式") + "</td></tr>"
         "<tr><td><b>PageUp</b></td><td>" + tr("增加透明度") + "</td></tr>"
         "<tr><td><b>PageDown</b></td><td>" + tr("减少透明度") + "</td></tr>"
-        "<tr><td><b>菜单键</b></td><td>" + tr("显示上下文菜单") + "</td></tr>"
+        "<tr><td><b>Menu key</b></td><td>" + tr("显示上下文菜单") + "</td></tr>"
         "</table>"
 
         "<h3>🎬 " + tr("幻灯片") + "</h3>"
         "<table border='0' cellspacing='5' cellpadding='5' width='100%'>"
-        "<tr><td width='40%'><b>空格键</b></td><td width='60%'>" + tr("开始/停止幻灯片") + "</td></tr>"
-        "<tr><td><b>S 键</b></td><td>" + tr("停止幻灯片") + "</td></tr>"
+        "<tr><td width='40%'><b>Space bar</b></td><td width='60%'>" + tr("开始/停止幻灯片") + "</td></tr>"
+        "<tr><td><b>S key</b></td><td>" + tr("停止幻灯片") + "</td></tr>"
         "</table>"
 
         "<h3>❓ " + tr("帮助") + "</h3>"
         "<table border='0' cellspacing='5' cellpadding='5' width='100%'>"
         "<tr><td width='40%'><b>F1</b></td><td width='60%'>" + tr("显示此帮助窗口") + "</td></tr>"
-        "<tr><td><b>右键菜单</b></td><td>" + tr("快速访问常用功能") + "</td></tr>"
+        "<tr><td><b>Context menu</b></td><td>" + tr("快速访问常用功能") + "</td></tr>"
         "</table>"
 
         "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 15px;'>"

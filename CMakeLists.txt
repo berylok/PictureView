@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.5.1 LANGUAGES CXX)
+project(PictureView VERSION 1.5.2 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -135,11 +135,18 @@ set(TS_FILES
     translations/PictureView_vi_VN.ts
 )
 
-# 添加翻译目标
+# 添加翻译目标，指定 .qm 文件输出到 translations 子目录
 qt6_add_translations(PictureView
     TS_FILES ${TS_FILES}
 )
-add_custom_target(translations ALL DEPENDS ${QM_FILES})
+# 强制将所有生成的 .qm 文件复制到可执行文件同级的 translations/ 目录
+add_custom_command(TARGET PictureView POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PictureView>/translations"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_BINARY_DIR}/*.qm"
+        "$<TARGET_FILE_DIR:PictureView>/translations/"
+    COMMENT "Copying all .qm files to translations/ folder"
+)
 
 # 设置应用程序属性
 set_target_properties(PictureView PROPERTIES

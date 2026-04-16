@@ -54,23 +54,23 @@ int main(int argc, char *argv[])
         "ko_KR",   // 韩文                Korean(South Korea)
         "fr_FR",   // 法文                French(France)
         "de_AT",   // 德文（奥地利）       German(Germany)
-        "es_AR"    // 西班牙文（阿根廷） Spanish(Argentina)
-        "ru_RU"     //俄罗斯           Russian(Russia)
-        "pt_BR"     //巴西葡语          Portuguese(Brazil)
-        "pt_PT"     //欧洲葡语          Portuguese(Portugal)
-        "zh_TW"     //中国台湾（繁体）      Chinese(Taiwan)
-        "fr_CA"     //加拿大法语         French(Canada)
-        "it_IT"     //意大利           Italian(Italy)
-        "en_CA"     //加拿大英语         English(canada)
+        "es_AR",    // 西班牙文（阿根廷） Spanish(Argentina)
+        "ru_RU",     //俄罗斯           Russian(Russia)
+        "pt_BR",     //巴西葡语          Portuguese(Brazil)
+        "pt_PT",     //欧洲葡语          Portuguese(Portugal)
+        "zh_TW",     //中国台湾（繁体）      Chinese(Taiwan)
+        "fr_CA",     //加拿大法语         French(Canada)
+        "it_IT",     //意大利           Italian(Italy)
+        "en_CA",     //加拿大英语         English(canada)
 
-        "ar_SA"     //阿拉伯语          Arabic(Saudi Arabia)
-        "hi_IN"     //印地语           Hindi(India)
-        "id_ID"     //印尼语           Indonesian(Indonesia)
-        "nl_NL"     //荷兰语           Dutch(Netherlands)
-        "pl_PL"     //波兰语           Polish(Poland)
-        "tr_TR"     //土耳其语          Turkish (Turkey)
-        "th_TH"     //泰语（泰国）        Thai (Thailand)
-        "vi_VN"     //越南语（越南）       Vietnamese (Vietnam)
+        "ar_SA",     //阿拉伯语          Arabic(Saudi Arabia)
+        "hi_IN",     //印地语           Hindi(India)
+        "id_ID",     //印尼语           Indonesian(Indonesia)
+        "nl_NL",     //荷兰语           Dutch(Netherlands)
+        "pl_PL",     //波兰语           Polish(Poland)
+        "tr_TR",     //土耳其语          Turkish (Turkey)
+        "th_TH",     //泰语（泰国）        Thai (Thailand)
+        "vi_VN",     //越南语（越南）       Vietnamese (Vietnam)
 
 
     };
@@ -105,16 +105,40 @@ int main(int argc, char *argv[])
 
     qDebug() << "Selected locale:" << locale;
 
-    // 加载翻译（保持原有代码）
+    // ========== 加载翻译文件 ==========
     QTranslator appTranslator;
-    QString appTranslationsPath = QApplication::applicationDirPath() + "/translations";
-    QString translationFile = "PictureView_" + locale;
-    qDebug() << "Loading" << translationFile << "from" << appTranslationsPath;
-    if (appTranslator.load(translationFile, appTranslationsPath)) {
-        app.installTranslator(&appTranslator);
-        qDebug() << "✅ Successfully loaded" << translationFile;
+    QTranslator qtTranslator;
+
+    // 1. 加载 Qt 自带翻译（如文件对话框的按钮）
+    QString qtTranslationsPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+    if (qtTranslator.load("qt_" + locale, qtTranslationsPath)) {
+        app.installTranslator(&qtTranslator);
+        qDebug() << "✅ Loaded Qt translation for" << locale;
     } else {
-        qDebug() << "❌ Failed to load" << translationFile;
+        qDebug() << "⚠️ Failed to load Qt translation for" << locale;
+    }
+
+    // 2. 加载应用程序翻译（支持多路径搜索）
+    QStringList searchPaths;
+    searchPaths << QApplication::applicationDirPath() + "/translations"                 // 开发环境
+                << QApplication::applicationDirPath() + "/../share/PictureView/translations" // AppImage 内部
+                << ":/translations";                                                     // 资源文件
+
+    QString appTranslationsPath;
+    for (const QString &path : searchPaths) {
+        if (QDir(path).exists()) {
+            appTranslationsPath = path;
+            break;
+        }
+    }
+    qDebug() << "Using translation path:" << appTranslationsPath;
+
+    if (appTranslator.load("PictureView_" + locale, appTranslationsPath)) {
+        app.installTranslator(&appTranslator);
+        qDebug() << "✅ Loaded application translation for" << locale;
+    } else {
+        qDebug() << "❌ Failed to load application translation for" << locale
+                 << "from" << appTranslationsPath;
     }
 
 

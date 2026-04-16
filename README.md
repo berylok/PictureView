@@ -1,3 +1,60 @@
+## Supported Languages
+
+| 语言代码 | 中文名称 | 英文标准名称 |
+| --- | --- | --- |
+| zh_CN | 中文（简体） | Chinese (China) |
+| en_US | 英文（美国） | English (United States) |
+| ja_JP | 日文 | Japanese (Japan) |
+| ko_KR | 韩文 | Korean (South Korea) |
+| fr_FR | 法文 | French (France) |
+| de_DE | 德文 | German (Germany) |
+| es_ES | 西班牙文 | Spanish (Spain) |
+| ru_RU | 俄语 | Russian (Russia) |
+| pt_BR | 葡萄牙语（巴西） | Portuguese (Brazil) |
+| pt_PT | 葡萄牙语（葡萄牙） | Portuguese (Portugal) |
+| zh_TW | 中文（繁体，台湾） | Chinese (Taiwan, China) |
+| fr_CA | 法语（加拿大） | French (Canada) |
+| it_IT | 意大利语 | Italian (Italy) |
+| en_CA | 英语（加拿大） | English (Canada) |
+| ar_SA | 阿拉伯语 | Arabic (Saudi Arabia) |
+| hi_IN | 印地语 | Hindi (India) |
+| id_ID | 印尼语 | Indonesian (Indonesia) |
+| nl_NL | 荷兰语 | Dutch (Netherlands) |
+| pl_PL | 波兰语 | Polish (Poland) |
+| tr_TR | 土耳其语 | Turkish (Turkey) |
+| th_TH | 泰语 | Thai (Thailand) |
+| vi_VN | 越南语 | Vietnamese (Vietnam) |
+
+
+## Download
+
+[PictureView1.52-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.52-x86_64_ubuntu_x11.AppImage)
+
+
+
+[PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)
+
+
+[PictureView1.51_forwindows_2026_3_19.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51_forwindows_2026_3_19.zip)
+
+
+更新版本号1.5.1 ,调整文件结构，修改内存限制128至512。增加在新窗口打开图片，和打开图片文件夹菜单。修改了透明背景模式的提示。2026-03-18
+
+
+2026年2月15日 在x11上的无边框图片模式，因窗口管理器不支持形状置顶，导致置顶无法穿透望悉知。如果一定要使用置顶建议使用投影画布。
+提示：下载的AppImage需要先右键属性打开执行能力才能运行。
+
+[PictureView1.5x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.5-x86_64_ubuntu_x11.AppImage)
+
+2026年1月13日 现在ubuntu或者debian可以下载打包的AppImage执行文件。
+
+[PictureView1.421_2025_12_4_win_release.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.421_2025_12_4_win_release.zip)
+
+
+
+
+
+
 # PictureView
 
 **PictureView** 是一款基于 Qt6 开源框架开发的高性能图片查看器，支持常见图片格式、压缩包内预览、全屏浏览、幻灯片放映、图像变换等丰富功能。它专为 Linux 平台设计，同时保留了跨平台潜力。
@@ -15,50 +72,6 @@
 <img width="802" height="632" alt="批注 2025-11-24 133530" src="https://github.com/user-attachments/assets/09e6a20b-a088-401a-9f77-2da4fc3636f5" />
 
 
-更新本地化支持：
-        "zh_CN",   // 中文（简体）        Chinese(China)
-        "en_US",   // 英文（美国）        English(United States)
-        "ja_JP",   // 日文                Japanese(Japan)
-        "ko_KR",   // 韩文                Korean(South Korea)
-        "fr_FR",   // 法文                French(France)
-        "de_AT",   // 德文（奥地利）       German(Germany)
-        "es_AR"    // 西班牙文（阿根廷） Spanish(Argentina)
-        "ru_RU"     //俄罗斯           Russian(Russia)
-        "pt_BR"     //巴西葡语          Portuguese(Brazil)
-        "pt_PT"     //欧洲葡语          Portuguese(Portugal)
-        "zh_TW"     //中国台湾（繁体）      Chinese(Taiwan)
-        "fr_CA"     //加拿大法语         French(Canada)
-        "it_IT"     //意大利           Italian(Italy)
-        "en_CA"     //加拿大英语         English(canada)
-        "ar_SA"     //阿拉伯语          Arabic(Saudi Arabia)
-        "hi_IN"     //印地语           Hindi(India)
-        "id_ID"     //印尼语           Indonesian(Indonesia)
-        "nl_NL"     //荷兰语           Dutch(Netherlands)
-        "pl_PL"     //波兰语           Polish(Poland)
-        "tr_TR"     //土耳其语          Turkish (Turkey)
-        "th_TH"     //泰语（泰国）        Thai (Thailand)
-        "vi_VN"     //越南语（越南）       Vietnamese (Vietnam)
-
-
-[PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)
-
-
-[PictureView1.51_forwindows_2026_3_19.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51_forwindows_2026_3_19.zip)
-
-
-更新版本号1.5.1 ,调整文件结构，修改内存限制128至512。增加在新窗口打开图片，和打开图片文件夹菜单。修改了透明背景模式的提示。2026-03-18
-
-
-
-
-2026年2月15日 在x11上的无边框图片模式，因窗口管理器不支持形状置顶，导致置顶无法穿透望悉知。如果一定要使用置顶建议使用投影画布。
-提示：下载的AppImage需要先右键属性打开执行能力才能运行。
-
-[PictureView1.5x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.5-x86_64_ubuntu_x11.AppImage)
-
-2026年1月13日 现在ubuntu或者debian可以下载打包的AppImage执行文件。
-
-[PictureView1.421_2025_12_4_win_release.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.421_2025_12_4_win_release.zip)
 
 
 ## 功能特性

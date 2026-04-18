@@ -163,23 +163,23 @@ QPixmap ImageWidget::getArchiveThumbnail(const QString &archivePath)
     qDebug() << "=== getArchiveThumbnail 详细调试 ===";
     qDebug() << "输入路径:" << archivePath;
 
-    // 使用完整路径作为缓存键
-    if (archiveImageCache.contains(archivePath)) {
-        qDebug() << "从缓存获取缩略图:" << archivePath;
-        QPixmap cached = archiveImageCache.value(archivePath);
-        qDebug() << "缓存图片是否为空:" << cached.isNull() << "尺寸:" << cached.size();
-        return cached;
+    // 顶层压缩包文件（不包含 '|'） → 直接返回默认图标，绝不读取压缩包内容
+    if (!archivePath.contains('|')) {
+        static QPixmap defaultArchiveIcon;
+        if (defaultArchiveIcon.isNull()) {
+            defaultArchiveIcon = createDefaultArchiveThumbnail();
+        }
+        return defaultArchiveIcon;
     }
 
-    // 解析路径格式：压缩包路径|内部文件路径
-    if (!archivePath.contains("|")) {
-        qDebug() << "路径格式错误，不包含 | 分隔符";
-        return createDefaultArchiveThumbnail();
+    // 以下是压缩包内部图片的提取逻辑（保持不变）
+    // 使用完整路径作为缓存键
+    if (archiveImageCache.contains(archivePath)) {
+        return archiveImageCache.value(archivePath);
     }
 
     QStringList parts = archivePath.split("|");
     if (parts.size() != 2) {
-        qDebug() << "路径格式错误，分割后不是2部分";
         return createDefaultArchiveThumbnail();
     }
 

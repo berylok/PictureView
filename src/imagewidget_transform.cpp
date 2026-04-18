@@ -103,3 +103,11 @@ bool ImageWidget::isTransformed() const
 {
     return rotationAngle != 0 || isHorizontallyFlipped || isVerticallyFlipped;
 }
+
+// imagewidget_transform.cpp 末尾添加
+
+void ImageWidget::toggleTransformLock()
+{
+    transformLocked = !transformLocked;
+    qDebug() << "变换锁定状态:" << (transformLocked ? "已锁定" : "已解锁");
+}

@@ -254,20 +254,26 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
             QString fullPath = currentDir.absoluteFilePath(fileName);
             //qDebug() << "加载普通文件:" << fullPath;
 
-            if (QFile::exists(fullPath)) {
-                result = loadImageFileFast(fullPath);
-
-                if (result.isNull()) {
-                    qDebug() << "普通文件加载失败:" << fileName;
-                    result = createArchiveIcon(); // 使用压缩包图标作为通用错误图标
-                    failedThumbnails.insert(cacheKey);
-                    loadingErrors.insert(cacheKey, "图片文件加载失败");
-                }
-            } else {
-                qDebug() << "文件不存在:" << fullPath;
+            // 普通文件 - 先检查是否是压缩包，若是则直接返回默认图标
+            if (isArchiveFile(fileName)) {
+                qDebug() << "检测到压缩包文件，使用默认图标:" << fileName;
                 result = createArchiveIcon();
-                failedThumbnails.insert(cacheKey);
-                loadingErrors.insert(cacheKey, "文件不存在");
+            } else {
+                QString fullPath = currentDir.absoluteFilePath(fileName);
+                if (QFile::exists(fullPath)) {
+                    result = loadImageFileFast(fullPath);
+                    if (result.isNull()) {
+                        qDebug() << "普通文件加载失败:" << fileName;
+                        result = createArchiveIcon(); // 使用压缩包图标作为通用错误图标
+                        failedThumbnails.insert(cacheKey);
+                        loadingErrors.insert(cacheKey, "图片文件加载失败");
+                    }
+                } else {
+                    qDebug() << "文件不存在:" << fullPath;
+                    result = createArchiveIcon();
+                    failedThumbnails.insert(cacheKey);
+                    loadingErrors.insert(cacheKey, "文件不存在");
+                }
             }
         }
     } catch (const std::exception& e) {

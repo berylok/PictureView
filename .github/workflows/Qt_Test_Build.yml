@@ -27,7 +27,16 @@ jobs:
             libglu1-mesa-dev \
             libpulse-dev \
             libasound2-dev
-
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libarchive-dev \
+            libx11-dev \
+            libxext-dev \
+            libxrandr-dev \
+            libxi-dev
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 

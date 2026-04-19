@@ -35,7 +35,8 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     rotationAngle(0),
     isHorizontallyFlipped(false),
     isVerticallyFlipped(false),
-    isArchiveMode(false)
+    isArchiveMode(false),
+    m_transparentBackgroundReady(false)
 
 {
 

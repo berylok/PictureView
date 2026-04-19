@@ -7,6 +7,10 @@
 #include <X11/extensions/shape.h>
 #endif
 
+#include <QProcess>
+#include <QCoreApplication>
+#include <QMessageBox>
+
 void ImageWidget::closeEvent(QCloseEvent *event)
 {
     // 销毁控制面板
@@ -116,6 +120,17 @@ void ImageWidget::applyConfiguration(const ConfigManager::Config &config)
         flags &= ~Qt::WindowStaysOnTopHint;
     }
 
+    // 设置透明背景属性
+    if (config.transparentBackground) {
+        setAttribute(Qt::WA_TranslucentBackground, true);
+        setAutoFillBackground(false);
+        // 标记透明背景机制已就绪（因为窗口已经以此属性创建/显示过）
+        m_transparentBackgroundReady = true;
+    } else {
+        setAttribute(Qt::WA_TranslucentBackground, false);
+        setAutoFillBackground(true);
+    }
+
     // 只有在标志确实改变时才设置
     if (flags != windowFlags()) {
         setWindowFlags(flags);
@@ -137,6 +152,15 @@ void ImageWidget::applyConfiguration(const ConfigManager::Config &config)
         resize(savedGeometry.size());
         showMaximized();
         qDebug() << "应用配置：窗口最大化";
+    }
+
+    // 恢复上次打开的图片路径（但不自动加载，避免覆盖当前状态）
+    if (!config.lastImagePath.isEmpty() && QFile::exists(config.lastImagePath)) {
+        currentImagePath = config.lastImagePath;
+        // 可选：如果当前没有图片，则加载它
+        if (pixmap.isNull() && currentViewMode == SingleView) {
+            loadImage(currentImagePath);
+        }
     }
 
     update();
@@ -219,31 +243,6 @@ void ImageWidget::toggleAlwaysOnTop()
     saveConfiguration();
 }
 
-void ImageWidget::toggleTransparentBackground()
-{
-    bool currentState = testAttribute(Qt::WA_TranslucentBackground);
-
-    if (currentState) {
-        // 关闭
-        setAttribute(Qt::WA_TranslucentBackground, false);
-        setAutoFillBackground(true);
-        clearMask();
-        currentConfig.transparentBackground = false;
-        qDebug("透明背景 关闭");
-    } else {
-        // 开启
-        setAttribute(Qt::WA_TranslucentBackground, true);
-        setAutoFillBackground(false);
-        if (currentViewMode == SingleView && !pixmap.isNull()) {
-            updateMask();
-        }
-        currentConfig.transparentBackground = true;
-        qDebug("透明背景 开启");
-    }
-    saveConfiguration(); // 立即保存
-    update();
-}
-
 void ImageWidget::setWindowOpacityValue(double opacity)
 {
     opacity = qBound(0.1, opacity, 1.0);
@@ -264,4 +263,70 @@ bool ImageWidget::hasTitleBar() const
 bool ImageWidget::hasTransparentBackground() const
 {
     return this->testAttribute(Qt::WA_TranslucentBackground);
+}
+
+
+void ImageWidget::restartApplication()
+{
+    saveConfiguration();  // 确保最新设置已保存
+
+    QString appPath = QCoreApplication::applicationFilePath();
+    QStringList args;
+
+    // 如果当前有打开的图片，将图片路径作为参数传递给新实例
+    if (!currentImagePath.isEmpty() && QFile::exists(currentImagePath)) {
+        args << currentImagePath;
+    }
+
+    // 也可以保留原始的命令行参数（如 --lang 等），但注意避免重复传递图片路径
+    // 简单起见，只传递当前图片路径即可满足“在新窗口打开”的需求
+
+    if (QProcess::startDetached(appPath, args)) {
+        QCoreApplication::quit();
+    } else {
+        QMessageBox::warning(this, tr("重启失败"),
+                             tr("无法启动新实例，请手动重启程序。"));
+    }
+}
+
+void ImageWidget::toggleTransparentBackground()
+{
+    bool currentState = testAttribute(Qt::WA_TranslucentBackground);
+
+    if (!currentState) {
+        // 尝试开启透明背景
+        if (m_transparentBackgroundReady) {
+            // 窗口已支持透明背景，直接动态切换
+            setAttribute(Qt::WA_TranslucentBackground, true);
+            setAutoFillBackground(false);
+            if (currentViewMode == SingleView && !pixmap.isNull()) {
+                updateMask();
+            }
+            currentConfig.transparentBackground = true;
+            saveConfiguration();
+            update();
+            qDebug() << "透明背景已动态开启";
+        } else {
+            // 首次开启，需要重启才能完全生效
+            QMessageBox::StandardButton reply = QMessageBox::question(this,
+                                                                      tr("需要重启"),
+                                                                      tr("开启透明背景需要重启程序才能完全生效。是否立即重启？"),
+                                                                      QMessageBox::Yes | QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+                currentConfig.transparentBackground = true;
+                saveConfiguration();
+                restartApplication();  // 需要事先实现该函数
+            }
+            // 如果用户选择 No，则什么都不做（保持关闭状态）
+        }
+    } else {
+        // 关闭透明背景：总是可以直接动态关闭
+        setAttribute(Qt::WA_TranslucentBackground, false);
+        setAutoFillBackground(true);
+        clearMask();
+        currentConfig.transparentBackground = false;
+        saveConfiguration();
+        update();
+        qDebug() << "透明背景已关闭";
+    }
 }

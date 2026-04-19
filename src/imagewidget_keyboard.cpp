@@ -56,6 +56,9 @@ void ImageWidget::keyPressEvent(QKeyEvent *event)
         case Qt::Key_M:
                 this->showMinimized();
             break;
+        case Qt::Key_N:
+            //this->open
+            break;
         }
     }
 

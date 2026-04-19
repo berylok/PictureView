@@ -130,3 +130,47 @@ void ImageWidget::pasteImageFromClipboard()
         }
     }
 }
+
+void ImageWidget::openImageInNewWindow()
+{
+    // 获取当前有效的图片路径（复用菜单中的逻辑）
+    auto getCurrentImagePath = [this]() -> QString {
+        if (!currentImagePath.isEmpty() && QFile::exists(currentImagePath) && !isArchiveMode) {
+            return currentImagePath;
+        }
+        if (currentViewMode == ThumbnailView) {
+            int selected = thumbnailWidget->getSelectedIndex();
+            if (selected >= 0 && selected < imageList.size() && !isArchiveMode) {
+                return currentDir.absoluteFilePath(imageList.at(selected));
+            }
+        }
+        return QString();
+    };
+
+    QString path = getCurrentImagePath();
+    if (path.isEmpty() || !QFile::exists(path)) {
+        QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
+        return;
+    }
+
+    QString program = QCoreApplication::applicationFilePath();
+    QStringList arguments;
+    arguments << path;
+    QString workingDir = QCoreApplication::applicationDirPath();
+
+    qint64 pid = 0;
+    bool success = QProcess::startDetached(program, arguments, workingDir, &pid);
+    if (!success) {
+#ifdef Q_OS_LINUX
+        QString command = QString("\"%1\" \"%2\"").arg(program, path);
+        success = QProcess::startDetached("/bin/sh", QStringList() << "-c" << command, workingDir, &pid);
+#endif
+    }
+
+    if (!success) {
+        QMessageBox::critical(this, tr("启动失败"),
+                              tr("无法启动新窗口。\n请检查程序路径：\n%1").arg(program));
+    } else {
+        qDebug() << "新窗口已启动，PID:" << pid;
+    }
+}

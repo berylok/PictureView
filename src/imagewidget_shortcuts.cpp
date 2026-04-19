@@ -104,4 +104,19 @@ void ImageWidget::createShortcutActions()
              << "Ctrl+H (水平镜像), "
              << "Ctrl+Shift+V (垂直镜像), "
              << "Ctrl+0 (重置变换)";
+
+    // 沉浸模式 Ctrl+F
+    QAction *immersiveAction = new QAction(tr("沉浸模式"), this);
+    immersiveAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
+    immersiveAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(immersiveAction, &QAction::triggered, this, &ImageWidget::toggleImmersiveMode);
+    this->addAction(immersiveAction);
+
+    // 在新窗口打开图片：Ctrl+N
+    openInNewWindowAction = new QAction(tr("在新窗口打开图片"), this);
+    openInNewWindowAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_N));
+    openInNewWindowAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(openInNewWindowAction, &QAction::triggered, this, &ImageWidget::openImageInNewWindow);
+    this->addAction(openInNewWindowAction);
+
 }

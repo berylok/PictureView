@@ -357,13 +357,23 @@ private:
     // 在 private 区域添加
 private:
     bool transformLocked;  // 变换锁定状态
+    bool m_transparentBackgroundReady;  // 标记透明背景机制是否已就绪（可动态切换）
+    bool m_immersiveUseTransparent;  // 沉浸模式下是否使用透明背景（true=透明，false=黑色）
 
 public slots:
     void toggleTransformLock();  // 切换锁定状态
 
-    // 在现有 public/private 区域合适位置添加
 public:
     bool isTransformLocked() const { return transformLocked; }
+
+    void toggleImmersiveMode(); //一键沉浸模式
+private slots:
+    void restartApplication();  //重启函数
+
+private:
+    QAction *openInNewWindowAction;   // 新窗口打开图片
+private slots:
+    void openImageInNewWindow();
 };
 
 #endif // IMAGEWIDGET_H

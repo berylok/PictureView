@@ -41,7 +41,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     }
 
     if (currentViewMode == SingleView) {
-        contextMenu.addAction(tr("窗口最小化"), this,&ImageWidget::showMinimized);
+        contextMenu.addAction(tr("窗口最小化 (Ctrl+M)"), this,&ImageWidget::showMinimized);
         contextMenu.addSeparator();
         contextMenu.addAction(tr("返回缩略图(Enter)"), this,&ImageWidget::switchToThumbnailView);
         contextMenu.addSeparator();
@@ -92,7 +92,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         if(selectedIndex>=0 && selectedIndex < imageList.size()){
 
             // 最小化
-            contextMenu.addAction(tr("窗口最小化"), this,&ImageWidget::showMinimized);
+            contextMenu.addAction(tr("窗口最小化(Ctrl+M)"), this,&ImageWidget::showMinimized);
             contextMenu.addSeparator();
 
 
@@ -122,7 +122,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     };
 
     // 1. 在新窗口打开图片
-    QAction *openInNewWindowAction = new QAction(tr("在新窗口打开图片"), this);
+    QAction *openInNewWindowAction = new QAction(tr("在新窗口打开图片(Ctrl+N)"), this);
     QString imgPath = getCurrentImagePath();  // 用于初始启用状态
     bool hasValidImage = !imgPath.isEmpty() && QFile::exists(imgPath) && !isArchiveMode;
     openInNewWindowAction->setVisible(hasValidImage);
@@ -191,6 +191,15 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
     // 窗口控制菜单
     QMenu *windowshowMenu = contextMenu.addMenu(tr("窗口"));
+
+    // 沉浸模式选项（放在最前面，突出显示）
+    bool isImmersive = isMaximized() && !hasTitleBar() && hasTransparentBackground();
+    QAction *immersiveAction = windowshowMenu->addAction(
+        isImmersive ? tr("退出沉浸模式 (Ctrl+F)") : tr("沉浸模式 (Ctrl+F)")
+        );
+    connect(immersiveAction, &QAction::triggered, this, &ImageWidget::toggleImmersiveMode);
+    windowshowMenu->addSeparator();  // 与其他选项分隔
+
     QAction *windowshowAction1 = windowshowMenu->addAction(
         hasTitleBar() ? tr("隐藏标题栏") : tr("显示标题栏"));
     connect(windowshowAction1, &QAction::triggered, this,
@@ -257,6 +266,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     connect(opacity10, &QAction::triggered, [this]() { setWindowOpacityValue(0.1); });
 
     if (currentViewMode == SingleView) {
+        windowshowMenu->addSeparator();  // 与其他选项分隔
         // 在画布模式下显示不同的菜单项
         if (canvasMode) {
             QAction *exitCanvasAction =

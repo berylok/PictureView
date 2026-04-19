@@ -136,3 +136,92 @@ void ImageWidget::onEnsureRectVisible(const QRect &rect)
     // 使用 ensureVisible 确保矩形区域可见
     scrollArea->ensureVisible(rect.x(), rect.y(), rect.width(), rect.height());
 }
+
+void ImageWidget::toggleImmersiveMode()
+{
+    bool currentlyImmersive = isMaximized() && !hasTitleBar();
+
+    // ---------- 退出沉浸模式 ----------
+    if (currentlyImmersive) {
+        bool wasVisible = isVisible();
+        QRect normalGeometry = geometry();
+        if (wasVisible) hide();
+        setUpdatesEnabled(false);
+
+        Qt::WindowFlags flags = windowFlags();
+        flags &= ~Qt::FramelessWindowHint;
+        setWindowFlags(flags);
+
+        setAttribute(Qt::WA_TranslucentBackground, false);
+        setAutoFillBackground(true);
+        clearMask();
+
+        currentConfig.titleBarVisible = true;
+        currentConfig.transparentBackground = false;
+        currentConfig.windowMaximized = false;
+
+        if (wasVisible) {
+            setGeometry(normalGeometry);
+            showNormal();
+        }
+
+        setUpdatesEnabled(true);
+        update();
+        saveConfiguration();
+        return;
+    }
+
+    // ---------- 进入沉浸模式 ----------
+    // 弹出二选一对话框
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("选择沉浸背景"));
+    msgBox.setText(tr("请选择沉浸模式的背景类型："));
+    QPushButton *transparentBtn = msgBox.addButton(tr("透明背景"), QMessageBox::AcceptRole);
+    QPushButton *blackBtn = msgBox.addButton(tr("黑色背景"), QMessageBox::RejectRole);
+    msgBox.setDefaultButton(blackBtn);
+
+    msgBox.exec();
+    bool useTransparent = (msgBox.buttonRole(msgBox.clickedButton()) == QMessageBox::AcceptRole);
+
+    // 应用沉浸模式（无闪烁）
+    bool wasVisible = isVisible();
+    QRect normalGeometry = geometry();
+    if (wasVisible) hide();
+    setUpdatesEnabled(false);
+
+    Qt::WindowFlags flags = windowFlags();
+    flags |= Qt::FramelessWindowHint;
+    setWindowFlags(flags);
+
+    setAttribute(Qt::WA_TranslucentBackground, useTransparent);
+    setAutoFillBackground(!useTransparent);
+
+    currentConfig.titleBarVisible = false;
+    currentConfig.transparentBackground = useTransparent;
+    currentConfig.windowMaximized = true;
+
+    if (wasVisible) {
+        showMaximized();
+    }
+
+    if (useTransparent && currentViewMode == SingleView && !pixmap.isNull()) {
+        updateMask();
+    } else {
+        clearMask();
+    }
+
+    setUpdatesEnabled(true);
+    update();
+    saveConfiguration();
+
+    // 如果选择透明背景且需要重启，询问是否重启
+    if (useTransparent && !m_transparentBackgroundReady) {
+        QMessageBox::StandardButton reply = QMessageBox::question(this,
+                                                                  tr("需要重启"),
+                                                                  tr("透明背景需要重启程序才能完全生效。是否立即重启？"),
+                                                                  QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            restartApplication();
+        }
+    }
+}

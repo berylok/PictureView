@@ -37,20 +37,30 @@ jobs:
             libxext-dev \
             libxrandr-dev \
             libxi-dev
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-dev libx11-dev libxext-dev
+
+          - name: List build directory contents
+          run: ls -la build/
+          
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Project
         run: cmake --build build --parallel
-
+        
       - name: Package
         run: |
-          mkdir -p release/DownloadManager
-          cp build/DownloadManager release/DownloadManager/
-          tar -czvf DownloadManager-Linux.tar.gz -C release DownloadManager
-
+          mkdir -p release/PictureView        # 1. 目录名（通常与可执行文件同名）
+          cp build/PictureView release/PictureView/   # 2. 源文件路径和目标
+          tar -czvf PictureView-Linux.tar.gz -C release PictureView   # 3. 压缩包名
+      
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DownloadManager-Linux
-          path: DownloadManager-Linux.tar.gz
+          name: PictureView-Linux        # 4. Artifact 名称
+          path: PictureView-Linux.tar.gz # 5. 压缩包路径
+

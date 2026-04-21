@@ -21,25 +21,12 @@ jobs:
       - name: Install Qt and system dependencies via apt
         run: |
           sudo apt update
-          sudo apt install -y --no-install-recommends \
-            build-essential \
-            cmake \
-            qt6-base-dev \
-            qt6-tools-dev \
-            libgl1-mesa-dev \
-            libglu1-mesa-dev \
-            libpulse-dev \
-            libasound2-dev
+          sudo apt install -y --no-install-recommends build-essential cmake qt6-base-dev qt6-tools-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libasound2-dev
       
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libarchive-dev \
-            libx11-dev \
-            libxext-dev \
-            libxrandr-dev \
-            libxi-dev
+          sudo apt-get install -y libarchive-dev libx11-dev libxext-dev libxrandr-dev libxi-dev
 
       - name: Install dependencies
         run: |

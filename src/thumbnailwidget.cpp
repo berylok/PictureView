@@ -14,9 +14,9 @@
 #include <QTimer>
 #include <QFont>
 
-// // 初始化静态成员变量
-// QMap<QString, QPixmap> ThumbnailWidget::thumbnailCache;
-// QMutex ThumbnailWidget::cacheMutex;
+// 初始化静态成员变量
+QMap<QString, QPixmap> ThumbnailWidget::thumbnailCache;
+QMutex ThumbnailWidget::cacheMutex;
 
 ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     : QWidget(parent),
@@ -160,6 +160,8 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
                     int cost = calculateCostForPixmap(thumbnail);
                     smartThumbnailCache.insert(cacheKey, new QPixmap(thumbnail), cost);
                     {
+                        QMutexLocker locker(&cacheMutex);
+                        thumbnailCache.insert(cacheKey, thumbnail);
                     }
                     loadedCount++;
                 }
@@ -198,6 +200,8 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
 {
     QString cacheKey = getCacheKey(fileName);
 
+    //qDebug() << "加载缩略图:" << fileName << "缓存键:" << cacheKey;
+
     // 快速缓存检查
     if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
         if (!cached->isNull()) {
@@ -209,6 +213,20 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
         }
     }
 
+    // 回退到静态缓存检查
+    {
+        QMutexLocker locker(&cacheMutex);
+        if (thumbnailCache.contains(cacheKey)) {
+            QPixmap cached = thumbnailCache.value(cacheKey);
+            if (!cached.isNull()) {
+                qDebug() << "从静态缓存获取:" << fileName;
+                return cached;
+            } else {
+                qDebug() << "静态缓存中的缩略图为空，移除:" << fileName;
+                thumbnailCache.remove(cacheKey);
+            }
+        }
+    }
 
     QPixmap result;
 
@@ -236,26 +254,20 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
             QString fullPath = currentDir.absoluteFilePath(fileName);
             //qDebug() << "加载普通文件:" << fullPath;
 
-            // 普通文件 - 先检查是否是压缩包，若是则直接返回默认图标
-            if (isArchiveFile(fileName)) {
-                qDebug() << "检测到压缩包文件，使用默认图标:" << fileName;
-                result = createArchiveIcon();
-            } else {
-                QString fullPath = currentDir.absoluteFilePath(fileName);
-                if (QFile::exists(fullPath)) {
-                    result = loadImageFileFast(fullPath);
-                    if (result.isNull()) {
-                        qDebug() << "普通文件加载失败:" << fileName;
-                        result = createArchiveIcon(); // 使用压缩包图标作为通用错误图标
-                        failedThumbnails.insert(cacheKey);
-                        loadingErrors.insert(cacheKey, "图片文件加载失败");
-                    }
-                } else {
-                    qDebug() << "文件不存在:" << fullPath;
-                    result = createArchiveIcon();
+            if (QFile::exists(fullPath)) {
+                result = loadImageFileFast(fullPath);
+
+                if (result.isNull()) {
+                    qDebug() << "普通文件加载失败:" << fileName;
+                    result = createArchiveIcon(); // 使用压缩包图标作为通用错误图标
                     failedThumbnails.insert(cacheKey);
-                    loadingErrors.insert(cacheKey, "文件不存在");
+                    loadingErrors.insert(cacheKey, "图片文件加载失败");
                 }
+            } else {
+                qDebug() << "文件不存在:" << fullPath;
+                result = createArchiveIcon();
+                failedThumbnails.insert(cacheKey);
+                loadingErrors.insert(cacheKey, "文件不存在");
             }
         }
     } catch (const std::exception& e) {
@@ -282,27 +294,83 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
 // 高效图片加载
 QPixmap ThumbnailWidget::loadImageFileFast(const QString &filePath)
 {
-    QImageReader reader(filePath);
-    if (!reader.canRead()) {
+    // 检查文件是否存在和可读
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists()) {
+        qDebug() << "文件不存在:" << filePath;
         return QPixmap();
     }
 
-    // ✅ 关键优化：设置 QImageReader 的目标尺寸
-    QSize originalSize = reader.size();
-    if (originalSize.isValid()) {
-        // 计算缩放比例，确保解码时直接缩放到接近缩略图大小
-        QSize scaledSize = originalSize.scaled(thumbnailSize, Qt::KeepAspectRatio);
-        reader.setScaledSize(scaledSize);
+    if (!fileInfo.isReadable()) {
+        qDebug() << "文件不可读:" << filePath;
+        return QPixmap();
     }
 
-    reader.setAutoTransform(true);
-    reader.setQuality(50); // 降低质量以加快速度
+    if (fileInfo.size() == 0) {
+        qDebug() << "文件大小为0:" << filePath;
+        return QPixmap();
+    }
 
-    QImage image = reader.read();
-    if (image.isNull()) return QPixmap();
+    // 方法1: 使用 QImageReader（最可靠）
+    QImageReader reader(filePath);
 
-    // 此时得到的 image 已经是接近缩略图尺寸，直接转换即可
-    return QPixmap::fromImage(image);
+    // 检查格式支持
+    if (!reader.canRead()) {
+        qDebug() << "QImageReader 不支持此格式:" << filePath << "格式:" << reader.format();
+        // 继续尝试其他方法
+    } else {
+        // 设置优化参数
+        reader.setAutoTransform(true);
+        reader.setQuality(50);
+
+        QImage image;
+        if (reader.read(&image)) {
+            //qDebug() << "QImageReader 加载成功:" << filePath << "原始尺寸:" << image.size();
+
+            if (image.isNull()) {
+                qDebug() << "QImageReader 读取的图像为空:" << filePath;
+            } else {
+                // 保持宽高比进行缩放
+                QImage scaled = scaleImageWithAspectRatio(image);
+                return QPixmap::fromImage(scaled);
+            }
+        } else {
+            qDebug() << "QImageReader 加载失败:" << filePath << "错误:" << reader.errorString();
+        }
+    }
+
+    // 方法2: 直接使用 QImage（备用方法）
+    QImage image2;
+    if (image2.load(filePath)) {
+        qDebug() << "QImage 直接加载成功:" << filePath << "原始尺寸:" << image2.size();
+
+        if (image2.isNull()) {
+            qDebug() << "QImage 读取的图像为空:" << filePath;
+        } else {
+            // 保持宽高比进行缩放
+            QImage scaled = scaleImageWithAspectRatio(image2);
+            return QPixmap::fromImage(scaled);
+        }
+    } else {
+        qDebug() << "QImage 直接加载也失败:" << filePath;
+    }
+
+    // 方法3: 尝试使用 QPixmap（最后的手段）
+    QPixmap pixmap;
+    if (pixmap.load(filePath)) {
+        qDebug() << "QPixmap 加载成功:" << filePath << "原始尺寸:" << pixmap.size();
+
+        if (pixmap.isNull()) {
+            qDebug() << "QPixmap 读取的图像为空:" << filePath;
+        } else {
+            // 保持宽高比进行缩放
+            return scaleThumbnailWithAspectRatio(pixmap);
+        }
+    } else {
+        qDebug() << "所有加载方法都失败:" << filePath;
+    }
+
+    return QPixmap();
 }
 
 // 保持宽高比缩放
@@ -511,7 +579,7 @@ void ThumbnailWidget::diagnoseLoadingIssues()
     qDebug() << "=== 缩略图加载问题诊断 ===";
     qDebug() << "总图片数量:" << imageList.size();
     qDebug() << "智能缓存数量:" << smartThumbnailCache.size();
-
+    qDebug() << "静态缓存数量:" << thumbnailCache.size();
     qDebug() << "已加载数量:" << loadedCount;
     qDebug() << "失败缩略图:" << failedThumbnails.size();
 
@@ -521,10 +589,15 @@ void ThumbnailWidget::diagnoseLoadingIssues()
         QString cacheKey = getCacheKey(fileName);
 
         bool inSmartCache = smartThumbnailCache.contains(cacheKey);
-
+        bool inStaticCache = thumbnailCache.contains(cacheKey);
         bool isFailed = failedThumbnails.contains(cacheKey);
 
-
+        if (!inSmartCache && !inStaticCache && !isFailed) {
+            qDebug() << "未加载的文件:" << fileName;
+            qDebug() << "  - 索引:" << i;
+            qDebug() << "  - 缓存键:" << cacheKey;
+            qDebug() << "  - 是否压缩包:" << (fileName.contains("|") || isArchiveFile(fileName));
+        }
     }
 
     qDebug() << "=== 诊断结束 ===";
@@ -542,7 +615,7 @@ void ThumbnailWidget::logThumbnailStatus()
         QString fileName = imageList.at(i);
         QString cacheKey = getCacheKey(fileName);
 
-        if (smartThumbnailCache.contains(cacheKey) ) {
+        if (smartThumbnailCache.contains(cacheKey) || thumbnailCache.contains(cacheKey)) {
             loaded++;
         }
     }
@@ -567,6 +640,8 @@ void ThumbnailWidget::forceReloadAll()
     // 清空所有缓存和状态
     smartThumbnailCache.clear();
     {
+        QMutexLocker locker(&cacheMutex);
+        thumbnailCache.clear();
     }
 
     pendingLoadRequests.clear();
@@ -602,8 +677,8 @@ void ThumbnailWidget::retryFailedThumbnails()
                 QString cacheKey = getCacheKey(fileName);
                 if (!thumbnail.isNull()) {
                     smartThumbnailCache.insert(cacheKey, new QPixmap(thumbnail));
-                    // QMutexLocker locker(&cacheMutex);
-                    // thumbnailCache.insert(cacheKey, thumbnail);
+                    QMutexLocker locker(&cacheMutex);
+                    thumbnailCache.insert(cacheKey, thumbnail);
                     failedThumbnails.remove(cacheKey);
                     loadingErrors.remove(cacheKey);
                     loadedCount++;
@@ -661,12 +736,15 @@ void ThumbnailWidget::ensureVisible(int index)
 
 void ThumbnailWidget::clearThumbnailCache()
 {
+    QMutexLocker locker(&cacheMutex);
+    thumbnailCache.clear();
     smartThumbnailCache.clear();
 }
 
 void ThumbnailWidget::clearThumbnailCacheForImage(const QString &imagePath)
 {
-
+    QMutexLocker locker(&cacheMutex);
+    thumbnailCache.remove(imagePath);
 }
 
 void ThumbnailWidget::setThumbnailSize(const QSize &size)
@@ -675,6 +753,8 @@ void ThumbnailWidget::setThumbnailSize(const QSize &size)
         thumbnailSize = size;
         // 尺寸变化时清空缓存
         smartThumbnailCache.clear();
+        QMutexLocker locker(&cacheMutex);
+        thumbnailCache.clear();
         update();
     }
 }
@@ -804,6 +884,17 @@ void ThumbnailWidget::logCacheStats()
     qDebug() << "智能缓存使用率:" << QString::number(smartThumbnailCache.totalCost() * 100.0 /
                                                          smartThumbnailCache.maxCost(), 'f', 1) << "%";
 
+    // 静态缓存统计
+    QMutexLocker locker(&cacheMutex);
+    qDebug() << "静态缓存条目数:" << thumbnailCache.size();
+
+    // 计算静态缓存估算内存（粗略）
+    int staticCacheMemory = 0;
+    for (auto it = thumbnailCache.begin(); it != thumbnailCache.end(); ++it) {
+        staticCacheMemory += it->width() * it->height() * 4;
+    }
+    qDebug() << "静态缓存估算内存:" << staticCacheMemory / (1024.0 * 1024.0) << "MB";
+
     // 加载统计
     qDebug() << "已加载数量:" << loadedCount << "/" << totalCount;
     qDebug() << "加载进度:" << QString::number(loadedCount * 100.0 / totalCount, 'f', 1) << "%";
@@ -822,6 +913,7 @@ void ThumbnailWidget::logCacheStats()
     qDebug() << "最大缓存内存:" << perfConfig.maxCacheMemoryMB << "MB";
     qDebug() << "批量加载大小:" << perfConfig.batchLoadSize;
     qDebug() << "批量加载延迟:" << perfConfig.batchLoadDelay << "ms";
+    //qDebug() << "预加载范围:" << preloadRange;
     qDebug() << "懒加载模式:" << (perfConfig.enableLazyLoading ? "启用" : "禁用");
     qDebug() << "加载状态:" << (isLoading ? "加载中" : "空闲");
     qDebug() << "========================================";
@@ -851,6 +943,19 @@ QPixmap ThumbnailWidget::getCachedThumbnail(const QString &cacheKey)
             return *cached;
         }
     }
+
+    // 回退到静态缓存
+    QMutexLocker locker(&cacheMutex);
+    if (thumbnailCache.contains(cacheKey)) {
+        QPixmap pixmap = thumbnailCache.value(cacheKey);
+        if (!pixmap.isNull()) {
+            // 提升到智能缓存，并正确计算成本
+            int cost = calculateCostForPixmap(pixmap);
+            smartThumbnailCache.insert(cacheKey, new QPixmap(pixmap), cost);
+        }
+        return pixmap;
+    }
+
     return QPixmap();
 }
 

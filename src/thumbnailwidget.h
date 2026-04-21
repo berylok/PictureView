@@ -97,6 +97,9 @@ private:
     QFutureWatcher<QPixmap> *futureWatcher;
     bool isLoading;
 
+    // 静态缓存 - 保持向后兼容
+    static QMap<QString, QPixmap> thumbnailCache;
+    static QMutex cacheMutex;
 
     // === 性能优化成员 ===
 
@@ -110,8 +113,10 @@ private:
     int currentBatchIndex;
 
     // 性能配置
+    // thumbnailwidget.h
+
     struct PerformanceConfig {
-        int maxCacheMemoryMB = 50;           // 最大缓存内存 100MB (改为MB单位)
+        int maxCacheMemoryMB = 100;           // 最大缓存内存 100MB (改为MB单位)
         int batchLoadSize = 1;                // 每次批量加载1个
         int batchLoadDelay = 150;              // 批次间延迟150ms
         int preloadRange = 1;                 // 预加载前后1个

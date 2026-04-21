@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-dev libx11-dev libxext-dev
+          sudo apt-get install -y libarchive-dev
 
           - name: List build directory contents
           run: ls -la build/

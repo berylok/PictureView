@@ -5,7 +5,10 @@ on:
   push:
     branches:
       - main                  # 或者你的默认分支名
-
+permissions:
+  contents: read
+  pull-requests: write
+  
 jobs:
   # ==================== Ubuntu 构建 ====================
   build-ubuntu:

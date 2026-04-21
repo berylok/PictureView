@@ -30,8 +30,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libarchive-dev
+          sudo apt install libarchive-dev liblzma-dev libbz2-dev zlib1g-dev
 
           - name: List build directory contents
           run: ls -la build/

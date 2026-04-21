@@ -31,7 +31,6 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt install libarchive-dev liblzma-dev libbz2-dev zlib1g-dev
-
           - name: List build directory contents
           run: ls -la build/
           

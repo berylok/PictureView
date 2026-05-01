@@ -184,9 +184,6 @@ private:
     QAction *toggleTitleBarAction;
     QAction *toggleAlwaysOnTopAction;
     QAction *toggleTransparentBackgroundAction;
-
-    void drawNavigationArrows(QPainter &painter, const QPointF &offset,
-                              const QSize &scaledSize);
     bool shouldShowNavigationArrows(const QSize &scaledSize);
 
     // 窗口透明度控制
@@ -331,7 +328,7 @@ private:
 
 private:
     void updateMask();                       // 更新窗口掩码
-    bool m_maskDirty;                      // 标记是否需要更新掩码
+    bool m_maskDirty = false;                // 标记是否需要更新掩码
 
     void setMask(const QRegion &region) ;
     void clearMask() ;
@@ -374,6 +371,8 @@ private:
     QAction *openInNewWindowAction;   // 新窗口打开图片
 private slots:
     void openImageInNewWindow();
+
+
 };
 
 #endif // IMAGEWIDGET_H

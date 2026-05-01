@@ -121,6 +121,25 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         }
     };
 
+
+
+
+
+
+
+
+    QAction *openfileshowAction =
+        openfileshowMenu->addAction(tr("打开文件夹 (Ctrl+O)"));
+    connect(openfileshowAction, &QAction::triggered, this,
+            &ImageWidget::openFolder);
+
+    QAction *openpicshowAction =
+        openfileshowMenu->addAction(tr("打开图片 (Ctrl+Shift+O)"));
+    connect(openpicshowAction, &QAction::triggered, this,
+            &ImageWidget::openImage);
+
+      openfileshowMenu->addSeparator();
+
     // 1. 在新窗口打开图片
     QAction *openInNewWindowAction = new QAction(tr("在新窗口打开图片(Ctrl+N)"), this);
     QString imgPath = getCurrentImagePath();  // 用于初始启用状态
@@ -159,17 +178,6 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     openfileshowMenu->addSeparator();
 
 
-
-
-    QAction *openfileshowAction =
-        openfileshowMenu->addAction(tr("打开文件夹 (Ctrl+O)"));
-    connect(openfileshowAction, &QAction::triggered, this,
-            &ImageWidget::openFolder);
-
-    QAction *openpicshowAction =
-        openfileshowMenu->addAction(tr("打开图片 (Ctrl+Shift+O)"));
-    connect(openpicshowAction, &QAction::triggered, this,
-            &ImageWidget::openImage);
 
     if (currentViewMode == SingleView) {
         QAction *showAction1 =

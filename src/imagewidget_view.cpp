@@ -17,109 +17,71 @@
 
 void ImageWidget::paintEvent(QPaintEvent *event)
 {
-    if (currentViewMode == SingleView) {
-        Q_UNUSED(event);
-        QPainter painter(this);
+    Q_UNUSED(event);
+    QPainter painter(this);
 
-        // 如果启用了透明背景，使用透明颜色填充
-        if (testAttribute(Qt::WA_TranslucentBackground)) {
-            painter.fillRect(rect(), QColor(0, 0, 0, 0));
-        } else {
-            // 非透明背景时填充黑色
-            painter.fillRect(rect(), Qt::black);
-        }
+    // 1. 背景填充
+    if (testAttribute(Qt::WA_TranslucentBackground))
+        painter.fillRect(rect(), QColor(0, 0, 0, 0));
+    else
+        painter.fillRect(rect(), Qt::black);
 
-        // 安全检查：确保pixmap有效
-        if (pixmap.isNull()) {
-            painter.setPen(Qt::white);
-            painter.drawText(rect(), Qt::AlignCenter, tr("没有图片或图片加载失败"));
-            return;
-        }
+    // 2. 空图 / 无效缩放保护
+    if (pixmap.isNull()) {
+        painter.setPen(Qt::white);
+        painter.drawText(rect(), Qt::AlignCenter, tr("没有图片或图片加载失败"));
+        return;
+    }
+    if (scaleFactor <= 0) scaleFactor = 1.0;
 
-        // 安全检查：确保scaleFactor有效
-        if (scaleFactor <= 0) {
-            scaleFactor = 1.0;
-        }
+    // 3. 计算图像在窗口中的缩放后尺寸和偏移
+    QSizeF scaledSize = QSizeF(pixmap.size()) * scaleFactor;
+    QPointF offset((width()  - scaledSize.width())  / 2.0 + panOffset.x(),
+                   (height() - scaledSize.height()) / 2.0 + panOffset.y());
+    QRectF imageCanvasRect(offset, scaledSize);
 
-        QSize scaledSize = pixmap.size() * scaleFactor;
+    // 4. ★ 关键判断：缩放后图片是否大于窗口
+    bool largerThanWindow = (scaledSize.width()  > width() ||
+                             scaledSize.height() > height());
 
-        // 安全检查：确保缩放后的尺寸有效
-        if (scaledSize.width() <= 0 || scaledSize.height() <= 0) {
-            painter.setPen(Qt::white);
-            painter.drawText(rect(), Qt::AlignCenter, tr("图片尺寸无效"));
-            return;
-        }
+    if (largerThanWindow) {
+        // ---------- 按需渲染：只处理窗口内的可见部分 ----------
+        QRectF visibleRectF = imageCanvasRect.intersected(QRectF(rect()));
+        if (visibleRectF.isEmpty()) return;
 
-        //qDebug() << "绘制图片 - 原始尺寸:" << pixmap.size() << "缩放后:" << scaledSize;
+        // 映射回原图子矩形
+        QPointF srcTopLeft = (visibleRectF.topLeft() - offset) / scaleFactor;
+        QSizeF  srcSize    = visibleRectF.size() / scaleFactor;
+        QRect sourceRect(srcTopLeft.toPoint(), srcSize.toSize());
 
-        QPixmap scaledPixmap = pixmap.scaled(scaledSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        // 缩放可见块
+        QSize targetSize = visibleRectF.size().toSize();
+        QPixmap piece = pixmap.copy(sourceRect)
+                            .scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        painter.drawPixmap(visibleRectF.topLeft(), piece);
 
-        // 安全检查：确保缩放后的pixmap有效
-        if (scaledPixmap.isNull()) {
-            painter.setPen(Qt::white);
-            painter.drawText(rect(), Qt::AlignCenter, tr("图片缩放失败"));
-            return;
-        }
-
-        QPointF offset((width() - scaledPixmap.width()) / 2 + panOffset.x(),
-                       (height() - scaledPixmap.height()) / 2 + panOffset.y());
-
+    } else {
+        // ---------- 图片完全在窗口内：直接缩放全图 ----------
+        QPixmap scaledPixmap = pixmap.scaled(scaledSize.toSize(),
+                                             Qt::KeepAspectRatio,
+                                             Qt::SmoothTransformation);
         painter.drawPixmap(offset, scaledPixmap);
+    }
 
-        // 添加变换状态提示
-        if (isTransformed()) {
-            painter.setPen(Qt::yellow);
-            painter.setFont(QFont("Arial", 10));
-
-            QString transformInfo;
-            if (rotationAngle != 0) {
-                transformInfo += QString("旋转: %1° ").arg(rotationAngle);
-            }
-            if (isHorizontallyFlipped) {
-                transformInfo += "水平镜像 ";
-            }
-            if (isVerticallyFlipped) {
-                transformInfo += "垂直镜像 ";
-            }
-
-            if (!transformInfo.isEmpty()) {
-                painter.drawText(10, 30, transformInfo.trimmed());
-            }
-        }
-
-        // 添加左右箭头提示（半透明，只在图片较大时显示）
-        if (scaledSize.width() > 600 && scaledSize.height() > 600) {
-            drawNavigationArrows(painter, offset, scaledSize);
-        }
-
-        //qDebug() << "图片绘制完成";
+    // 5. 变换状态提示（保持不变）
+    if (isTransformed()) {
+        painter.setPen(Qt::yellow);
+        painter.setFont(QFont("Arial", 10));
+        QStringList info;
+        if (rotationAngle != 0)
+            info << QString("旋转: %1°").arg(rotationAngle);
+        if (isHorizontallyFlipped) info << "水平镜像";
+        if (isVerticallyFlipped)   info << "垂直镜像";
+        if (!info.isEmpty())
+            painter.drawText(10, 30, info.join(" "));
     }
 }
 
-void ImageWidget::drawNavigationArrows(QPainter &painter, const QPointF &offset,
-                                       const QSize &scaledSize)
-{
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setOpacity(0.5); // 半透明
-
-    // 左箭头
-    QPainterPath leftArrow;
-    leftArrow.moveTo(offset.x() + 20, offset.y() + scaledSize.height() / 2);
-    leftArrow.lineTo(offset.x() + 40, offset.y() + scaledSize.height() / 2 - 15);
-    leftArrow.lineTo(offset.x() + 40, offset.y() + scaledSize.height() / 2 + 15);
-    leftArrow.closeSubpath();
-    painter.fillPath(leftArrow, Qt::white);
-
-    // 右箭头
-    QPainterPath rightArrow;
-    rightArrow.moveTo(offset.x() + scaledSize.width() - 20, offset.y() + scaledSize.height() / 2);
-    rightArrow.lineTo(offset.x() + scaledSize.width() - 40, offset.y() + scaledSize.height() / 2 - 15);
-    rightArrow.lineTo(offset.x() + scaledSize.width() - 40, offset.y() + scaledSize.height() / 2 + 15);
-    rightArrow.closeSubpath();
-    painter.fillPath(rightArrow, Qt::white);
-
-    painter.setOpacity(1.0); // 恢复不透明
-}
 
 bool ImageWidget::shouldShowNavigationArrows(const QSize &scaledSize)
 {
@@ -188,34 +150,26 @@ void ImageWidget::actualSize()
 
 void ImageWidget::wheelEvent(QWheelEvent *event)
 {
-    if (currentViewMode == SingleView) {
-        // 标记为手动调整
-        currentViewStateType = ManualAdjustment;
+    if (currentViewMode != SingleView) return;
 
-        double zoomFactor = 1.15;
-        double oldScaleFactor = scaleFactor;
+    currentViewStateType = ManualAdjustment;
+    double zoomFactor = 1.15;
+    double oldScale = scaleFactor;
 
-        if (event->angleDelta().y() > 0) {
-            scaleFactor *= zoomFactor;
-        } else {
-            scaleFactor /= zoomFactor;
-        }
+    if (event->angleDelta().y() > 0)
+        scaleFactor *= zoomFactor;
+    else
+        scaleFactor /= zoomFactor;
+    scaleFactor = qBound(0.03, scaleFactor, 8.0);
 
-        scaleFactor = qBound(0.03, scaleFactor, 8.0);
+    QPointF mousePos = event->position();
+    QPointF viewCenter(width()/2.0, height()/2.0);
+    QPointF imagePos = (mousePos - viewCenter - panOffset) / oldScale;
+    panOffset = mousePos - viewCenter - imagePos * scaleFactor;
 
-        // 获取鼠标位置
-        QPointF mousePos = event->position();
-        QPointF viewCenter(width() / 2.0, height() / 2.0);
-
-        // 计算以鼠标为中心的缩放偏移
-        QPointF imagePos = (mousePos - viewCenter - panOffset) / oldScaleFactor;
-        panOffset = mousePos - viewCenter - imagePos * scaleFactor;
-
-        updateMask();
-        update();
-
-
-    }
+    // 只重绘，不立即更新掩码
+    m_maskDirty = true;   // 标记掩码需要更新
+    update();
 }
 
 void ImageWidget::resizeEvent(QResizeEvent *event)
@@ -245,88 +199,81 @@ void ImageWidget::updateMask()
 {
     m_maskDirty = false;
 
-    // 非单图模式或无图片时，清除所有形状（X11 + Qt）
-    if (currentViewMode != SingleView || pixmap.isNull()) {
+    // 非单图 / 无图 / 非透明背景 → 清除所有形状
+    if (currentViewMode != SingleView || pixmap.isNull() ||
+        !testAttribute(Qt::WA_TranslucentBackground)) {
         clearX11Shape();
         clearMask();
         return;
     }
 
-    // 只有透明模式时才需要掩码
-    if (!testAttribute(Qt::WA_TranslucentBackground)) {
+    // 1. 计算虚拟画布和偏移（与 paintEvent 完全相同）
+    QSizeF scaledSize = QSizeF(pixmap.size()) * scaleFactor;
+    QPointF offset((width()  - scaledSize.width())  / 2.0 + panOffset.x(),
+                   (height() - scaledSize.height()) / 2.0 + panOffset.y());
+    QRectF imageCanvasRect(offset, scaledSize);
+
+    // 2. 只取窗口内可见区域
+    QRectF visibleRectF = imageCanvasRect.intersected(QRectF(rect()));
+    if (visibleRectF.isEmpty()) {
         clearX11Shape();
         clearMask();
         return;
     }
+    QRect visibleRect = visibleRectF.toRect();
 
-    // 1. 获取当前完整缩放图片及其位置
-    QSize scaledSize = pixmap.size() * scaleFactor;
-    if (scaledSize.isEmpty()) {
-        clearX11Shape();
-        clearMask();
-        return;
-    }
+    // 3. 映射回原图区域（关键：只拷贝这一小块）
+    QPointF srcTopLeft = (visibleRectF.topLeft() - offset) / scaleFactor;
+    QSizeF  srcSize    = visibleRectF.size() / scaleFactor;
+    QRect sourceRect(srcTopLeft.toPoint(), srcSize.toSize());
 
-    QPixmap scaledPixmap = pixmap.scaled(scaledSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    QPointF offset((width() - scaledPixmap.width()) / 2.0 + panOffset.x(),
-                   (height() - scaledPixmap.height()) / 2.0 + panOffset.y());
+    QPixmap piece = pixmap.copy(sourceRect);
+    QPixmap scaledPiece = piece.scaled(visibleRect.size(),
+                                       Qt::KeepAspectRatio,
+                                       Qt::SmoothTransformation);
 
-    // 2. 裁剪出窗口中实际可见的图片区域
-    QRect imageRect = QRect(offset.toPoint(), scaledPixmap.size()).intersected(rect());
-    if (imageRect.isEmpty()) {
-        clearX11Shape();
-        clearMask();
-        return;
-    }
-
-    // 3. 快速路径：无透明通道 → 整个矩形可点击
+    // 4. 无透明通道 → 直接用矩形（极速）
     if (!pixmap.hasAlphaChannel()) {
-        setX11ShapeRect(imageRect);
+        setX11ShapeRect(visibleRect);
         return;
     }
 
-    // 4. 提取可见区域的图片（从缩放后的完整图片中截取）
-    QPixmap visiblePixmap = scaledPixmap.copy(imageRect.translated(-offset.toPoint()));
-
-    // 5. 性能优化：将可见区域缩小到不超过 300x300 进行逐像素检测
-    const int MAX_MASK_SIZE = 300;
-    QPixmap maskPixmap = visiblePixmap;
-    double scale = 1.0;
-    if (maskPixmap.width() > MAX_MASK_SIZE || maskPixmap.height() > MAX_MASK_SIZE) {
-        scale = qMin(MAX_MASK_SIZE / (double)maskPixmap.width(),
-                     MAX_MASK_SIZE / (double)maskPixmap.height());
-        maskPixmap = maskPixmap.scaled(maskPixmap.size() * scale, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    // 5. 有透明通道：缩小到 200x200 以内做逐像素检测（进一步减轻 CPU）
+    const int MAX_MASK_SIZE = 200;   // 减小尺寸，加快速度
+    QPixmap smallMask = scaledPiece;
+    double maskScale = 1.0;
+    if (smallMask.width() > MAX_MASK_SIZE || smallMask.height() > MAX_MASK_SIZE) {
+        maskScale = qMin(MAX_MASK_SIZE / (double)smallMask.width(),
+                         MAX_MASK_SIZE / (double)smallMask.height());
+        smallMask = smallMask.scaled(smallMask.size() * maskScale,
+                                     Qt::KeepAspectRatio,
+                                     Qt::FastTransformation);  // 快速缩放即可
     }
 
-    // 6. 生成 alpha 掩码位图
-    QImage alphaImage = maskPixmap.toImage().convertToFormat(QImage::Format_Alpha8);
-    QBitmap maskBitmap(alphaImage.size());
-    maskBitmap.fill(Qt::color0);  // 全不可点击
-
-    QPainter maskPainter(&maskBitmap);
-    maskPainter.setPen(Qt::color1);
-    maskPainter.setBrush(Qt::color1);
-
-    for (int y = 0; y < alphaImage.height(); ++y) {
-        for (int x = 0; x < alphaImage.width(); ++x) {
-            if (qAlpha(alphaImage.pixel(x, y)) > 30) {
-                maskPainter.drawPoint(x, y);
+    QImage alphaImg = smallMask.toImage().convertToFormat(QImage::Format_Alpha8);
+    QBitmap maskBitmap(alphaImg.size());
+    maskBitmap.fill(Qt::color0);
+    {
+        QPainter mp(&maskBitmap);
+        mp.setPen(Qt::color1);
+        mp.setBrush(Qt::color1);
+        for (int y = 0; y < alphaImg.height(); ++y) {
+            for (int x = 0; x < alphaImg.width(); ++x) {
+                if (qAlpha(alphaImg.pixel(x, y)) > 30) {
+                    mp.drawPoint(x, y);
+                }
             }
         }
     }
-    maskPainter.end();
 
-    // 7. 如果对掩码图片进行了缩小，需要放大回原始可见区域大小
-    if (scale < 1.0) {
-        maskBitmap = maskBitmap.scaled(visiblePixmap.size(), Qt::KeepAspectRatio, Qt::FastTransformation);
+    if (maskScale < 1.0) {
+        maskBitmap = maskBitmap.scaled(scaledPiece.size(),
+                                       Qt::KeepAspectRatio,
+                                       Qt::FastTransformation);
     }
 
-    // 8. 将掩码放置到窗口的正确位置（imageRect 左上角）
     QRegion finalMask;
-    QRegion imageRegion(maskBitmap);
-    finalMask += imageRegion.translated(imageRect.topLeft());
-
-    // 9. 通过 X11 设置形状
+    finalMask += QRegion(maskBitmap).translated(visibleRect.topLeft());
     setX11Shape(finalMask);
 }
 

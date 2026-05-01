@@ -201,13 +201,23 @@ void ImageWidget::toggleImmersiveMode()
     currentConfig.windowMaximized = true;
 
     if (wasVisible) {
-        showMaximized();
-    }
-
-    if (useTransparent && currentViewMode == SingleView && !pixmap.isNull()) {
-        updateMask();
+        // 不要 hide，而是直接显示并延迟最大化
+        show();   // 确保窗口可见（如果已隐藏则显示）
+        // 等待一帧，让窗口管理器处理标志变化
+        QTimer::singleShot(0, this, [this]() {
+            showMaximized();
+            // 如果还需要其他操作（如 updateMask）可以放在这里
+            if (currentConfig.transparentBackground && currentViewMode == SingleView && !pixmap.isNull()) {
+                updateMask();
+            } else {
+                clearMask();
+            }
+            setUpdatesEnabled(true);
+            update();
+        });
     } else {
-        clearMask();
+        // 窗口本来不可见？正常情况不会发生，但保留处理
+        showMaximized();
     }
 
     setUpdatesEnabled(true);

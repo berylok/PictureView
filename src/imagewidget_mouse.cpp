@@ -33,44 +33,52 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
         }
     } else {
         // 单张模式下的处理
-        if (event->button() == Qt::MiddleButton) {
-            isDraggingWindow = true;
-            dragStartPosition = event->globalPos() - frameGeometry().topLeft();
-        } else if (event->button() == Qt::RightButton) {
-            showContextMenu(event->globalPos());
-        } else if (event->button() == Qt::LeftButton) {
-            // 检查是否在图片区域内
-            if (!pixmap.isNull()) {
-                QSize scaledSize = pixmap.size() * scaleFactor;
-                QPointF offset((width() - scaledSize.width()) / 2 + panOffset.x(),
-                               (height() - scaledSize.height()) / 2 + panOffset.y());
-                QRectF imageRect(offset, scaledSize);
+        // 单张模式
+        if (currentViewMode == SingleView) {
+            if (event->button() == Qt::MiddleButton) {
+                isDraggingWindow = true;
+                dragStartPosition = event->globalPos() - frameGeometry().topLeft();
+                return;
+            }
+            if (event->button() == Qt::RightButton) {
+                showContextMenu(event->globalPos());
+                return;
+            }
+            if (event->button() == Qt::LeftButton) {
+                // ---- 原有的左键处理（可保留或精简） ----
+                if (!pixmap.isNull()) {
+                    QSizeF scaledSize = QSizeF(pixmap.size()) * scaleFactor;
+                    QPointF offset((width() - scaledSize.width()) / 2.0 + panOffset.x(),
+                                   (height() - scaledSize.height()) / 2.0 + panOffset.y());
+                    QRectF imageRect(offset, scaledSize);
 
-                if (imageRect.contains(event->pos())) {
-                    // 在图片区域内，检查是左四分之一还是右四分之一
-                    QPointF relativePos = event->pos() - offset;
+                    if (imageRect.contains(event->pos())) {
+                        // 如果仍想保留图片边缘的点击切换，可以保留下面的判断
+                        // 但在箭头优先的情况下，这里的左右 1/9 可能永远不会被触发
+                        // 建议移除或注释掉，避免混乱
+                        QPointF relativePos = event->pos() - offset;
+                        /*
                     if (relativePos.x() < scaledSize.width() / 9) {
-                        // 点击左四分之一，切换到上一张
                         loadPreviousImage();
-                        // 标记为键盘操作，不显示导航提示
                         showNavigationHints = false;
+                        return;
                     } else if (relativePos.x() > scaledSize.width() * 8 / 9) {
-                        // 点击右四分之一，切换到下一张
                         loadNextImage();
-                        // 标记为键盘操作，不显示导航提示
                         showNavigationHints = false;
-                    } else {
-                        // 点击中间一半区域，进行拖拽
+                        return;
+                    }
+                    */
+                        // 否则进入拖拽平移
                         isPanningImage = true;
                         panStartPosition = event->pos();
+                        return;
                     }
-                    return; // 处理完毕
                 }
-            }
 
-            // 不在图片区域内或图片为空，进行拖拽
-            isPanningImage = true;
-            panStartPosition = event->pos();
+                // 不在图片区域内 → 也允许拖拽平移（保留）
+                isPanningImage = true;
+                panStartPosition = event->pos();
+            }
         }
     }
 }
@@ -98,10 +106,15 @@ void ImageWidget::mouseReleaseEvent(QMouseEvent *event)
         isDraggingWindow = false;
     } else if (event->button() == Qt::LeftButton) {
         isPanningImage = false;
-        // 拖拽结束，立即更新掩码
+        // 拖拽结束，标记掩码需要更新（不再立即调用 updateMask）
         if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
-            updateMask();
+            m_maskDirty = true;
         }
+    }
+
+    // 任意鼠标释放后，统一执行一次掩码更新（包括滚轮停止后以及左键拖拽结束）
+    if (m_maskDirty) {
+        updateMask();
     }
 }
 
@@ -180,3 +193,4 @@ void ImageWidget::mouseDoubleClickEvent(QMouseEvent *event)
         }
     }
 }
+

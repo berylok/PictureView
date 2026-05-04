@@ -201,7 +201,7 @@ void ImageWidget::showAboutDialog()
     titleLabel->setAlignment(Qt::AlignCenter);
 
     // 版本信息
-    QLabel *versionLabel = new QLabel(("V 1.5.2"), aboutTab);
+    QLabel *versionLabel = new QLabel(("V 1.5.3"), aboutTab);
     versionLabel->setStyleSheet("font-size: 14px; color: #666666; font-weight: bold;");
     versionLabel->setAlignment(Qt::AlignCenter);
 
@@ -241,7 +241,7 @@ void ImageWidget::showAboutDialog()
         "<p>• <b>zlib</b> - " + tr("数据压缩库") + "</p>"
         "<p>• <b>libpng</b> - " + tr("PNG图像处理库") + "</p>"
         "<p>• <b>libjpeg-turbo</b> - " + tr("JPEG图像处理库") + "</p>"
-        "<p>• <b>libarchive</b> - " + tr("读写压缩格式") + "</p>"
+        "<p>• <b>libarchive</b> - " + tr("读取压缩格式") + "</p>"
         );
 
     aboutLayout->addWidget(titleLabel);

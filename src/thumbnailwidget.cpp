@@ -202,6 +202,19 @@ QPixmap ThumbnailWidget::loadSingleThumbnail(const QString &fileName)
 
     //qDebug() << "加载缩略图:" << fileName << "缓存键:" << cacheKey;
 
+    // ---------- 新增：顶层压缩包直接返回图标 ----------
+    if (isArchiveFile(fileName) && !fileName.contains("|")) {
+        QPixmap icon = createArchiveIcon();
+        // 存入缓存，避免后续重复生成
+        {
+            QMutexLocker locker(&cacheMutex);
+            thumbnailCache.insert(cacheKey, icon);
+        }
+        int cost = calculateCostForPixmap(icon);
+        smartThumbnailCache.insert(cacheKey, new QPixmap(icon), cost);
+        return icon;
+    }
+
     // 快速缓存检查
     if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
         if (!cached->isNull()) {

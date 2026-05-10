@@ -28,31 +28,9 @@
 
 ## Download
 
-[PictureView1.52-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.52-x86_64_ubuntu_x11.AppImage)
+[PictureView1.53-x86_64.AppImage](https://github.com/berylok/PictureView/releases/download/v1.53/PictureView1.5-x86_64.AppImage)
 
-
-
-[PictureView1.51-x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51-x86_64_ubuntu_x11.AppImage)
-
-
-[PictureView1.51_forwindows_2026_3_19.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.51_forwindows_2026_3_19.zip)
-
-
-更新版本号1.5.1 ,调整文件结构，修改内存限制128至512。增加在新窗口打开图片，和打开图片文件夹菜单。修改了透明背景模式的提示。2026-03-18
-
-
-2026年2月15日 在x11上的无边框图片模式，因窗口管理器不支持形状置顶，导致置顶无法穿透望悉知。如果一定要使用置顶建议使用投影画布。
-提示：下载的AppImage需要先右键属性打开执行能力才能运行。
-
-[PictureView1.5x86_64_ubuntu_x11.AppImage](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.5-x86_64_ubuntu_x11.AppImage)
-
-2026年1月13日 现在ubuntu或者debian可以下载打包的AppImage执行文件。
-
-[PictureView1.421_2025_12_4_win_release.zip](https://github.com/berylok/PictureView/releases/download/PictureView/PictureView1.421_2025_12_4_win_release.zip)
-
-
-
-
+[PictureView1.53_win.zip](https://github.com/berylok/PictureView/releases/download/v1.53/PictureView153_win.zip)
 
 
 # PictureView

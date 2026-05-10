@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PictureView VERSION 1.5.2 LANGUAGES CXX)
+project(PictureView VERSION 1.5.3 LANGUAGES CXX)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -19,8 +19,27 @@ endif()
 qt_standard_project_setup()
 
 # 查找 libarchive
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBARCHIVE REQUIRED libarchive)
+# 查找 libarchive
+if(UNIX AND NOT APPLE)
+    # Linux 下继续使用 pkg-config
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBARCHIVE REQUIRED libarchive)
+else()
+    # Windows (或 macOS) 使用手动查找
+    find_path(LIBARCHIVE_INCLUDE_DIRS
+        NAMES archive.h
+        PATHS "C:/vcpkg/installed/x64-windows/include"   # 你的实际 vcpkg 路径
+        DOC "libarchive include directory"
+    )
+    find_library(LIBARCHIVE_LIBRARIES
+        NAMES archive libarchive
+        PATHS "C:/vcpkg/installed/x64-windows/lib"
+        DOC "libarchive library"
+    )
+    if(NOT LIBARCHIVE_INCLUDE_DIRS OR NOT LIBARCHIVE_LIBRARIES)
+        message(FATAL_ERROR "libarchive not found on Windows. Please check path.")
+    endif()
+endif()
 
 # 设置源文件
 set(SOURCES
@@ -136,17 +155,17 @@ set(TS_FILES
 )
 
 # 添加翻译目标，指定 .qm 文件
+# 添加翻译目标，并保存生成的 .qm 文件列表
 qt6_add_translations(PictureView
     TS_FILES ${TS_FILES}
+    QM_FILES_OUTPUT_VARIABLE qm_files
 )
-# 构建后处理：将 .qm 文件移动到 translations 子目录，并清理根目录残留
+
+# 构建后处理：将生成的 .qm 文件复制到 translations 目录
 add_custom_command(TARGET PictureView POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PictureView>/translations"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_BINARY_DIR}/*.qm"
-        "$<TARGET_FILE_DIR:PictureView>/translations/"
-    COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_BINARY_DIR}/*.qm"
-    COMMENT "Moving .qm files to translations folder and cleaning build root"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${qm_files} "$<TARGET_FILE_DIR:PictureView>/translations/"
+    COMMENT "Copying .qm files to translations folder"
 )
 
 # 设置应用程序属性

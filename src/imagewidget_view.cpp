@@ -1,3 +1,4 @@
+
 #include "imagewidget.h"
 #include <QPainter>
 #include <QWheelEvent>
@@ -10,10 +11,12 @@
 #ifdef Q_OS_LINUX
 #include <X11/Xlib.h>
 #include <X11/extensions/shape.h>
-#endif
-
 #include <execinfo.h>
 #include <cxxabi.h>
+#endif
+
+
+
 
 void ImageWidget::paintEvent(QPaintEvent *event)
 {
@@ -286,6 +289,7 @@ void ImageWidget::setMask(const QRegion &region)
         qDebug() << "\n🔥 非法 setMask 调用！当前模式:"
                  << (currentViewMode == SingleView ? "SingleView" : "ThumbnailView")
                  << "，已拦截。堆栈如下：";
+#ifdef Q_OS_LINUX
         void* callstack[128];
         int frames = backtrace(callstack, 128);
         char** strs = backtrace_symbols(callstack, frames);
@@ -293,6 +297,7 @@ void ImageWidget::setMask(const QRegion &region)
             qDebug() << "  " << strs[i];
         }
         free(strs);
+#endif
         return;  // ⚡ 不调用 QWidget::setMask，直接返回！
     }
 

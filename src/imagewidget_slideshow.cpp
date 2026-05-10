@@ -1,3 +1,4 @@
+
 // imagewidget_slideshow.cpp
 #include "imagewidget.h"
 

@@ -1,3 +1,4 @@
+
 #include "configmanager.h"
 #include <QSettings>
 #include <QApplication>

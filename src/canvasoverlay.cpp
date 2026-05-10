@@ -1,3 +1,4 @@
+
 // canvasoverlay.cpp
 #include "canvasoverlay.h"
 #include "imagewidget.h"

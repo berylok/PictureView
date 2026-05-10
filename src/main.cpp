@@ -1,3 +1,4 @@
+
 #include "imagewidget.h"
 #include "qimagereader.h"
 #include <QApplication>
@@ -8,6 +9,9 @@
 #include <QDir>
 #include <QDebug>  // 添加QDebug头文件
 #include <QGuiApplication>  // 添加QGuiApplication头文件用于平台检测
+
+#include <QStyleFactory>
+#include <QPalette>
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +25,17 @@ int main(int argc, char *argv[])
     // 创建QApplication
     QApplication app(argc, argv);
 
+    // // 获取应用程序的调色板
+    // QPalette palette = app.palette();
+
+    // // 设置焦点高亮颜色为蓝色
+    // palette.setColor(QPalette::Active, QPalette::Highlight, QColor(0, 120, 215));     // 选中项背景色
+    // palette.setColor(QPalette::Active, QPalette::HighlightedText, Qt::white);         // 选中项文字色
+    // palette.setColor(QPalette::Inactive, QPalette::Highlight, QColor(0, 120, 215));
+    // palette.setColor(QPalette::Inactive, QPalette::HighlightedText, Qt::white);
+
+    // app.setPalette(palette);
+
     // 设置更高的内存分配限制（512MB）
     QImageReader::setAllocationLimit(512);
     qDebug() << "设置内存分配限制为 512MB";
@@ -28,7 +43,7 @@ int main(int argc, char *argv[])
     // === 在设置应用程序信息后检测Qt平台 ===
     // 设置应用程序信息
     app.setApplicationName("PictureView");
-    app.setApplicationVersion("1.5.2");
+    app.setApplicationVersion("1.5.3");
     app.setOrganizationName("berylok");
 
     // 打印环境信息

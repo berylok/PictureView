@@ -1,3 +1,4 @@
+
 // imagewidget_help.cpp
 #include "imagewidget.h"
 #include <QMessageBox>
@@ -233,6 +234,7 @@ void ImageWidget::showAboutDialog()
         "<h3>" + tr("系统要求") + "</h3>"
         "<p>• " + tr("操作系统: Windows 7 或更高版本 / Ubuntu 20.04 及衍生版（以及其他Linux发行版）") + "</p>"
         "<p>• " + tr("桌面环境: 支持X11的桌面环境（GNOME、KDE、XFCE等）") + "</p>"
+        "<p>• " + tr("Wayland桌面环境目前仅测试以Appimage形式打包可以正常运行") + "</p>"
         "<p>• " + tr("内存: 至少 512MB RAM") + "</p>"
         "<p>• " + tr("磁盘空间: 至少 50MB 可用空间") + "</p>"
 
@@ -384,10 +386,15 @@ void ImageWidget::showAboutDialog()
     QTextEdit *licenseText = new QTextEdit(licenseTab);
     licenseText->setReadOnly(true);
     licenseText->setHtml(
+
+        "<strong>" + tr("开源代码请访问： ") +
+        "<a href='https://github.com/berylok/PictureView'>https://github.com/berylok/PictureView</a></strong>"
+
         "<h2 style='color: #0078d4;'>" + tr("软件许可证") + "</h2>"
 
         "<div style='background-color: #e8f4f8; border: 1px solid #b8d8e8; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
         "<h3 style='margin-top: 0; color: #0078d4;'>" +"PictureView"+ tr("许可证") + "</h3>"
+
         "<p><strong>" + "PictureView" + "</strong> " + tr("基于 GNU 通用公共许可证第三版 (GPL v3) 发布。") + "</p>"
         "<p>" + tr("这是一个自由软件，您可以：") + "</p>"
         "<ul>"
@@ -428,57 +435,55 @@ void ImageWidget::showAboutDialog()
         "<td>" + tr("必须同样采用GPL v3许可证") + "</td>"
         "</tr>"
 
-        "</table>"
+    "</table>"
 
-        "<hr style='margin: 25px 0; border: 1px solid #cccccc;'>"
+    "<hr style='margin: 25px 0; border: 1px solid #cccccc;'>"
 
-        "<div style='background-color: #f0f8ff; border: 1px solid #a8d8ff; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
-        "<h3 style='margin-top: 0; color: #0078d4;'>" + tr("Qt 框架许可证") + "</h3>"
-        "<p><strong>" + tr("本软件使用 Qt 框架开发。") + "</strong></p>"
-        "<p>" + tr("Qt 在以下许可证下可用：") + "</p>"
-        "<ul>"
-        "<li><strong>" + tr("GNU LGPL v3:") + "</strong> " + tr("用于开源开发") + "</li>"
-        "<li><strong>" + tr("商业许可证:") + "</strong> " + tr("用于商业和专有开发") + "</li>"
-        "</ul>"
+    "<div style='background-color: #f0f8ff; border: 1px solid #a8d8ff; border-radius: 4px; padding: 15px; margin-bottom: 20px;'>"
+    "<h3 style='margin-top: 0; color: #0078d4;'>" + tr("Qt 框架许可证") + "</h3>"
+    "<p><strong>" + tr("本软件使用 Qt 框架开发。") + "</strong></p>"
+    "<p>" + tr("Qt 在以下许可证下可用：") + "</p>"
+    "<ul>"
+    "<li><strong>" + tr("GNU LGPL v3:") + "</strong> " + tr("用于开源开发") + "</li>"
+    "<li><strong>" + tr("商业许可证:") + "</strong> " + tr("用于商业和专有开发") + "</li>"
+    "</ul>"
 
-        "<p>" + tr("本软件基于 Qt 的开源版本构建，遵循 LGPL v3 许可证条款。") + "</p>"
-        "<p>" + tr("Qt 是 The Qt Company Ltd. 的注册商标。") + "</p>"
-        "</div>"
+    "<p>" + tr("本软件基于 Qt 的开源版本构建，遵循 LGPL v3 许可证条款。") + "</p>"
+    "<p>" + tr("Qt 是 The Qt Company Ltd. 的注册商标。") + "</p>"
+    "</div>"
 
-        "<h3>🔗 " + tr("许可证链接") + "</h3>"
-        "<ul>"
-        "<li>" + tr("GPL v3 完整文本: ") +
-        "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>https://www.gnu.org/licenses/gpl-3.0.html</a></li>"
-        "<li>" + tr("LGPL v3 完整文本: ") +
-        "<a href='https://www.gnu.org/licenses/lgpl-3.0.html'>https://www.gnu.org/licenses/lgpl-3.0.html</a></li>"
-        "<li>" + tr("Qt 许可证信息: ") +
-        "<a href='https://www.qt.io/licensing/'>https://www.qt.io/licensing/</a></li>"
-        "<li>" + tr("自由软件基金会: ") +
-        "<a href='https://www.fsf.org/'>https://www.fsf.org/</a></li>"
-        "</ul>"
+    "<h3>🔗 " + tr("许可证链接") + "</h3>"
+    "<ul>"
+    "<li>" + tr("LGPL v3 完整文本: ") +
+    "<a href='https://www.gnu.org/licenses/lgpl-3.0.html'>https://www.gnu.org/licenses/lgpl-3.0.html</a></li>"
+    "<li>" + tr("Qt 许可证信息: ") +
+    "<a href='https://www.qt.io/licensing/'>https://www.qt.io/licensing/</a></li>"
+    "<li>" + tr("自由软件基金会: ") +
+    "<a href='https://www.fsf.org/'>https://www.fsf.org/</a></li>"
+    "</ul>"
 
-        "<h3>⚖️ " + tr("重要声明") + "</h3>"
-        "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px;'>"
-        "<p><strong>" + tr("免责声明:") + "</strong> " +
-        tr("本软件按原样提供，不提供任何明示或暗示的担保，包括但不限于对适销性和特定用途适用性的暗示担保。") + "</p>"
-        "<p><strong>" + tr("版权声明:") + "</strong> " +
-        tr("版权所有 © 2024 berylok(幸运人的珠宝)。保留所有权利。") + "</p>"
-        "<p><strong>" + tr("Qt 声明:") + "</strong> " +
-        tr("Qt 是 The Qt Company Ltd. 及其子公司和关联公司的注册商标。") + "</p>"
-        "</div>"
+    "<h3>⚖️ " + tr("重要声明") + "</h3>"
+    "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px;'>"
+    "<p><strong>" + tr("免责声明:") + "</strong> " +
+    tr("本软件按原样提供，不提供任何明示或暗示的担保，包括但不限于对适销性和特定用途适用性的暗示担保。") + "</p>"
+    "<p><strong>" + tr("版权声明:") + "</strong> " +
+    tr("版权所有 © 2024 berylok(幸运人的珠宝)。保留所有权利。") + "</p>"
+    "<p><strong>" + tr("Qt 声明:") + "</strong> " +
+    tr("Qt 是 The Qt Company Ltd. 及其子公司和关联公司的注册商标。") + "</p>"
+    "</div>"
 
-        "<div style='background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; padding: 15px; margin-top: 20px;'>"
-        "<h4 style='margin-top: 0;'>" + tr("开源贡献") + "</h4>"
-        "<p>" + tr("此软件是开源社区的一部分。我们鼓励：") + "</p>"
-        "<ul>"
-        "<li>" + tr("报告错误和改进建议") + "</li>"
-        "<li>" + tr("贡献代码改进") + "</li>"
-        "<li>" + tr("翻译和本地化") + "</li>"
-        "<li>" + tr("分享使用体验") + "</li>"
-        "</ul>"
-        "<p>" + tr("感谢您支持开源软件！") + "</p>"
-        "</div>"
-        );
+    "<div style='background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; padding: 15px; margin-top: 20px;'>"
+    "<h4 style='margin-top: 0;'>" + tr("开源贡献") + "</h4>"
+    "<p>" + tr("此软件是开源社区的一部分。我们鼓励：") + "</p>"
+    "<ul>"
+    "<li>" + tr("报告错误和改进建议") + "</li>"
+    "<li>" + tr("贡献代码改进") + "</li>"
+    "<li>" + tr("翻译和本地化") + "</li>"
+    "<li>" + tr("分享使用体验") + "</li>"
+    "</ul>"
+    "<p>" + tr("感谢您支持开源软件！") + "</p>"
+    "</div>"
+    );
 
     licenseLayout->addWidget(licenseText);
 

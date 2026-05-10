@@ -1,3 +1,4 @@
+
 // imagewidget_mouse.cpp
 #include "imagewidget.h"
 #include <QMouseEvent>
@@ -89,14 +90,15 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *event)
         QPoint newPosition = event->globalPos() - dragStartPosition;
         move(newPosition);
     } else if (isPanningImage && (event->buttons() & Qt::LeftButton)) {
-        // 标记为手动调整
         currentViewStateType = ManualAdjustment;
 
         QPointF delta = event->pos() - panStartPosition;
         panOffset += delta;
         panStartPosition = event->pos();
         update();
-        updateMask();
+
+        // ✅ 只标记，不更新
+        m_maskDirty = true;
     }
 }
 

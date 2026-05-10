@@ -1,3 +1,4 @@
+
 // imagewidget_config.cpp
 #include "imagewidget.h"
 #include <QCloseEvent>

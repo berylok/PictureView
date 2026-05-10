@@ -1,3 +1,4 @@
+
 // imagewidget_menu.cpp
 #include "imagewidget.h"
 #include <QMenu>

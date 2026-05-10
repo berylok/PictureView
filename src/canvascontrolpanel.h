@@ -1,3 +1,5 @@
+
+
 // canvascontrolpanel.h
 #ifndef CANVASCONTROLPANEL_H
 #define CANVASCONTROLPANEL_H

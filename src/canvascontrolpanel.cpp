@@ -1,3 +1,4 @@
+
 // canvascontrolpanel.cpp
 #include "canvascontrolpanel.h"
 #include <QPainter>

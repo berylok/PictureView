@@ -1,7 +1,8 @@
+
 // imagewidget_viewmode.cpp
 #include "imagewidget.h"
 #include <QTimer>
-#include <QMessageBox>  // 添加这行
+#include <QMessageBox>
 
 void ImageWidget::switchToThumbnailView()
 {

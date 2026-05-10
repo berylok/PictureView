@@ -1,3 +1,4 @@
+
 #include "thumbnailwidget.h"
 #include <QPainter>
 #include <QMouseEvent>
@@ -461,7 +462,7 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
     // 显示加载状态
     if (isLoading) {
         painter.setPen(QColor(200, 200, 200));
-        painter.drawText(10, 20, QString("Loading: %1/%2").arg(loadedCount).arg(totalCount));
+        painter.drawText(10, 20, QString(tr("Loading: %1/%2")).arg(loadedCount).arg(totalCount));
     }
 
     updateMinimumHeight();
@@ -633,8 +634,8 @@ void ThumbnailWidget::logThumbnailStatus()
         }
     }
 
-    qDebug() << "缩略图状态 - 已加载:" << loaded << "/" << total
-             << "失败:" << failed;
+    // qDebug() << "缩略图状态 - 已加载:" << loaded << "/" << total
+    //          << "失败:" << failed;
 
     // 如果有很多失败的，尝试重新加载
     if (failed > total * 0.3) { // 超过30%失败

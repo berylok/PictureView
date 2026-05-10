@@ -1,3 +1,4 @@
+
 // imagewidget_core.cpp
 #include "imagewidget.h"
 #include <QVBoxLayout>
@@ -93,6 +94,11 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     connect(slideshowTimer, &QTimer::timeout, this, &ImageWidget::slideshowNext);
 
     setMouseTracking(true);
+
+    connect(&m_wheelTimer, &QTimer::timeout, this, [this](){
+        if (m_maskDirty)
+            updateMask();
+    });
 
     // 初始重绘以确保无残影
     update();

@@ -1,63 +1,101 @@
-// imagewidget.h
+
+
 #ifndef IMAGEWIDGET_H
 #define IMAGEWIDGET_H
 
-#include "qscrollarea.h"
-#include "thumbnailwidget.h"
 #include <QWidget>
 #include <QPixmap>
 #include <QDir>
 #include <QTimer>
 #include <QMap>
+#include <QAction>
 #include <QtConcurrent>
 #include <QMutex>
+#include <QScrollArea>
+#include <QImage>
 
-#include "configmanager.h"  // 添加配置管理器头文件
-#include "canvascontrolpanel.h"  // 添加控制面板头文件
-
+#include "thumbnailwidget.h"
+#include "configmanager.h"
+#include "canvascontrolpanel.h"
 #include "archivehandler.h"
 #include "canvasoverlay.h"
-
 
 class ImageWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    enum ViewMode {
-        SingleView,
-        ThumbnailView
-    };
+    enum ViewMode { SingleView, ThumbnailView };
 
     ImageWidget(QWidget *parent = nullptr);
     ~ImageWidget();
 
+    // ==================== 图片加载 ====================
     bool loadImage(const QString &filePath, bool fromCache = false);
-    void loadImageList();
     bool loadImageByIndex(int index, bool fromCache = true);
+    void loadImageList();
     void loadNextImage();
     void loadPreviousImage();
     void preloadAllImages();
     void clearImageCache();
+
+    // ==================== 幻灯片 ====================
     void startSlideshow();
     void stopSlideshow();
     void toggleSlideshow();
-    void setSlideshowInterval(int interval); // 添加这行声明
+    void setSlideshowInterval(int interval);
     void slideshowNext();
+
+    // ==================== 视图切换 ====================
+    void switchToSingleView(int index = -1);
+    void switchToThumbnailView();
+    void setCurrentDir(const QDir &dir);
+    void clearThumbnailCache() { thumbnailWidget->clearThumbnailCache(); }
+
+    // ==================== 缩放 / 适配 ====================
+    void fitToWindow();
+    void actualSize();
+
+    // ==================== 配置管理 ====================
+    void loadConfiguration();
+    void saveConfiguration();
+    void applyConfiguration(const ConfigManager::Config &config);
+    int getLastViewMode() const { return currentConfig.lastViewMode; }
+    int getLastImageIndex() const { return currentConfig.lastImageIndex; }
+
+    // ==================== 变换操作 ====================
+    void setHorizontalFlip(bool enable);
+    void setVerticalFlip(bool enable);
+    void applyTransform();
+    bool isTransformLocked() const { return transformLocked; }
+
+    // ==================== 压缩包 ====================
+    QPixmap getArchiveThumbnail(const QString &archivePath);
+
+    // ==================== 工具方法 ====================
     void updateWindowTitle();
     QString getShortPathName(const QString &longPath);
     void logMessage(const QString &message);
     void registerFileAssociation(const QString &fileExtension,
                                  const QString &fileTypeName,
                                  const QString &openCommand);
-    void switchToSingleView(int index = -1);
-    void switchToThumbnailView();
     void openFolder();
 
-    // 清空缩略图缓存
-    void clearThumbnailCache() {
-        thumbnailWidget->clearThumbnailCache();
-    }
+    ConfigManager::Config currentConfig;
+    ConfigManager *configManager;
+
+public slots:
+    // ==================== 图片操作 ====================
+    void deleteCurrentImage();
+    void deleteSelectedThumbnail();
+    void performDeleteCurrentImage();
+
+    // ==================== 压缩包 ====================
+    void exitArchiveMode();
+
+    // ==================== 画布 / 变换 ====================
+    void toggleTransformLock();
+    void toggleImmersiveMode();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -70,14 +108,151 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-
-    void closeEvent(QCloseEvent *event) override;  // 添加关闭事件处理
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
+    // ==================== 缩略图 ====================
     void onThumbnailClicked(int index);
     void onEnsureRectVisible(const QRect &rect);
 
+    // ==================== 画布控制面板 ====================
+    void onExitCanvasMode();
+    void showShortcutHelp();
+
+    // ==================== 菜单操作 ====================
+    void openImageInNewWindow();
+    void restartApplication();
+
 private:
+    // ==================== 枚举 ====================
+    enum ViewStateType {
+        ManualAdjustment,
+        FitToWindow,
+        ActualSize
+    };
+
+    // ==================== 图片数据 ====================
+    QPixmap pixmap;
+    QPixmap originalPixmap;
+    QPixmap transformedPixmap;
+    QImage currentImage;
+    QString currentImagePath;
+    QStringList imageList;
+    int currentImageIndex;
+    double scaleFactor;
+    QPointF panOffset;
+
+    // ==================== 变换状态 ====================
+    int rotationAngle;
+    bool isHorizontallyFlipped;
+    bool isVerticallyFlipped;
+    bool transformLocked;
+    ViewStateType currentViewStateType;
+
+    // ==================== 缓存 ====================
+    QMap<QString, QPixmap> imageCache;
+    QMutex cacheMutex;
+
+    // ==================== 幻灯片 ====================
+    bool isSlideshowActive;
+    int slideshowInterval;
+    QTimer *slideshowTimer;
+
+    // ==================== 视图模式 ====================
+    ViewMode currentViewMode;
+    QSize thumbnailSize;
+    int thumbnailSpacing;
+    QScrollArea *scrollArea;
+    ThumbnailWidget *thumbnailWidget;
+    QDir currentDir;
+
+    // ==================== 拖拽 / 平移 ====================
+    bool isDraggingWindow;
+    QPoint dragStartPosition;
+    bool isPanningImage;
+    QPointF panStartPosition;
+
+    // ==================== 导航提示 ====================
+    bool mouseInLeftQuarter;
+    bool mouseInRightQuarter;
+    bool mouseInImage;
+    bool showNavigationHints;
+    QTimer *hideHintsTimer;
+    QPoint lastMousePos;
+    void updateNavigationHintsVisibility(const QPoint& mousePos);
+    bool isMouseInImageArea(const QPoint& mousePos) const;
+    void startHideHintsTimer();
+    void stopHideHintsTimer();
+
+    // ==================== 窗口状态 ====================
+    bool wasMaximizedBeforeCanvas;
+    QRect normalGeometryBeforeCanvas;
+    Qt::WindowFlags windowFlagsBeforeCanvas;
+    double m_windowOpacity;
+    bool m_transparentBackgroundReady;
+    bool m_immersiveUseTransparent;
+
+    bool isAlwaysOnTop() const;
+    bool hasTitleBar() const;
+    bool hasTransparentBackground() const;
+    void setWindowOpacityValue(double opacity);
+    void restoreNormalWindowState();
+
+    // ==================== 画布模式 ====================
+    bool canvasMode;
+    CanvasControlPanel *controlPanel;
+    CanvasOverlay* canvasOverlay = nullptr;
+
+    void toggleCanvasMode();
+    void enableCanvasMode();
+    void disableCanvasMode();
+    bool isCanvasModeEnabled();
+    void createControlPanel();
+    void destroyControlPanel();
+    void positionControlPanel();
+
+    // ==================== 鼠标穿透 ====================
+    bool mousePassthrough;
+    void enableMousePassthrough();
+    void disableMousePassthrough();
+    void ensureWindowVisible();
+    void ensureFocus();
+    void updateMousePassthroughRegion();
+    bool shouldPassthroughMouse(const QPoint& pos) const;
+    bool isInImageArea(const QPoint& pos) const;
+    void updateCanvasModePassthrough();
+    void clearAllPassthrough();
+
+    // ==================== 窗口形状 / 掩码 ====================
+    QRect getImageDisplayRect() const;
+    void cleanImageEdges();
+    void updateMask();
+    bool m_maskDirty = false;
+    void setMask(const QRegion &region);
+    void clearMask();
+    void clearX11Shape();
+    void setX11ShapeRect(const QRect &rect);
+    void setX11Shape(const QRegion &region);
+    void forceX11ShapeRefresh();
+
+    // ==================== 压缩包 ====================
+    ArchiveHandler archiveHandler;
+    bool isArchiveMode;
+    QString currentArchivePath;
+    QMap<QString, QPixmap> archiveImageCache;
+    QDir previousDir;
+    QStringList previousImageList;
+    int previousImageIndex;
+    ViewMode previousViewMode;
+
+    bool openArchive(const QString &filePath);
+    void closeArchive();
+    void loadArchiveImageList();
+    bool loadImageFromArchive(const QString &filePath);
+    bool isArchiveFile(const QString &fileName) const;
+    QPixmap createDefaultArchiveThumbnail();
+
+    // ==================== 菜单 / 操作 ====================
     void navigateThumbnails(int key);
     void toggleTitleBar();
     void toggleAlwaysOnTop();
@@ -85,294 +260,42 @@ private:
     void copyImageToClipboard();
     void pasteImageFromClipboard();
     void saveImage();
-    void showContextMenu(const QPoint &globalPos);
     void openImage();
-
-    QPixmap pixmap;
-    double scaleFactor;
-    QPointF panOffset;
-    bool isDraggingWindow;
-    QPoint dragStartPosition;
-    bool isPanningImage;
-    QPointF panStartPosition;
-    QString currentImagePath;
-
-    QStringList imageList;
-    int currentImageIndex;
-
-    bool isSlideshowActive;
-    int slideshowInterval;
-    QTimer *slideshowTimer;
-
-    QMap<QString, QPixmap> imageCache;
-
-    ViewMode currentViewMode;
-    QSize thumbnailSize;
-    int thumbnailSpacing;
-    QScrollArea *scrollArea;
-    ThumbnailWidget *thumbnailWidget;
-    QDir currentDir;
-public:
-    // ini配置管理相关
-    void loadConfiguration();  // 加载配置
-    void saveConfiguration();  // 保存配置
-    void applyConfiguration(const ConfigManager::Config &config);  // 应用配置
-    // 添加当前配置对象
-    ConfigManager::Config currentConfig;
-    // 配置管理器
-    ConfigManager *configManager;
-public:
-    int getLastViewMode() const { return currentConfig.lastViewMode; }
-    int getLastImageIndex() const { return currentConfig.lastImageIndex; }
-    //多线程互斥体
-private:
-    QMutex cacheMutex; // 用于保护 imageCache 的访问
-
-    //
-public:
-    void setCurrentDir(const QDir &dir);
-public:
-    void fitToWindow();
-    void actualSize();
-private:
-    enum ViewStateType {
-        ManualAdjustment,  // 手动调整
-        FitToWindow,       // 合适大小
-        ActualSize         // 实际大小
-    };
-
-    ViewStateType currentViewStateType;
-
-    // 箭头指示相关
-private:
-    bool mouseInLeftQuarter; // 跟踪鼠标是否在左四分之一区域
-    bool mouseInRightQuarter; // 跟踪鼠标是否在右四分之一区域
-
-    // 导航提示相关
-    bool mouseInImage;
-    bool showNavigationHints;
-    QTimer *hideHintsTimer;  // 隐藏提示的定时器
-
-    // 鼠标位置跟踪
-    QPoint lastMousePos;
-
-    // 新增方法
-    void updateNavigationHintsVisibility(const QPoint& mousePos);
-    bool isMouseInImageArea(const QPoint& mousePos) const;
-    void startHideHintsTimer();
-    void stopHideHintsTimer();
-
-    //键盘按下测试相关
+    void openSelectedImage();
+    void showContextMenu(const QPoint &globalPos);
+    void mirrorHorizontal();
+    void mirrorVertical();
+    void rotate90CW();
+    void rotate90CCW();
+    void rotate180();
+    void resetTransform();
+    void applyTransformations();
+    bool isTransformed() const;
+    bool moveFileToRecycleBin(const QString &filePath);
+    bool shouldShowNavigationArrows(const QSize &scaledSize);
+    void showAboutDialog();
     void testKeyboard();
 
-public slots:
-    //图片删除相关
-    void deleteCurrentImage();
-    void deleteSelectedThumbnail();
-    void performDeleteCurrentImage();// 将实际删除操作提取为独立函数
-private:
-    bool moveFileToRecycleBin(const QString &filePath);
-
-
-private:
-    //窗口状态相关
-    bool isAlwaysOnTop() const;
-    bool hasTitleBar() const;
-    bool hasTransparentBackground() const;
-
-    //弹出菜单相关
+    // ==================== 菜单动作 ====================
     QAction *toggleTitleBarAction;
     QAction *toggleAlwaysOnTopAction;
     QAction *toggleTransparentBackgroundAction;
-    bool shouldShowNavigationArrows(const QSize &scaledSize);
-
-    // 窗口透明度控制
-    double m_windowOpacity;
-    void setWindowOpacityValue(double opacity);
-
-    // 画布模式
-    bool canvasMode;
-
-    // 鼠标穿透相关
-    bool mousePassthrough;
-
-    // 画布模式控制方法
-    void toggleCanvasMode();
-    void enableCanvasMode();
-    void disableCanvasMode();
-    bool isCanvasModeEnabled();
-
-    // 鼠标穿透控制
-    void enableMousePassthrough();
-    void disableMousePassthrough();
-    void ensureWindowVisible();
-    void ensureFocus();
-
-
-    // 画布控制面板
-    CanvasControlPanel *controlPanel;
-
-    // 控制面板方法
-    void createControlPanel();
-    void destroyControlPanel();
-    void positionControlPanel();
-
-    QIcon createMultiResolutionIcon();
-    void createFallbackIcon();
-private slots:
-    // 控制面板信号槽
-    void onExitCanvasMode();
-    void showShortcutHelp();  // 新增：显示快捷键帮助
-
-
-private:
-    void createShortcutActions(); // 创建快捷键动作
-
-    // 快捷键动作
     QAction *openFolderAction;
     QAction *openImageAction;
-    QAction *saveImageAction;    // 新增：保存图片
-    QAction *copyImageAction;    // 新增：拷贝图片
-    QAction *pasteImageAction;   // 新增：粘贴图片
+    QAction *saveImageAction;
+    QAction *copyImageAction;
+    QAction *pasteImageAction;
+    QAction *aboutAction;
+    QAction *openInNewWindowAction;
 
-    // 关于窗口相关
-    void showAboutDialog();  // 新增：显示关于对话框
-    QAction *aboutAction;    // 新增：关于动作
+    void createShortcutActions();
 
-    // 镜像和旋转功能
-    void mirrorHorizontal();    // 水平镜像
-    void mirrorVertical();      // 垂直镜像
-    void rotate90CW();          // 顺时针旋转90度
-    void rotate90CCW();         // 逆时针旋转90度
-    void rotate180();           // 旋转180度
-    void resetTransform();      // 重置变换
+    // ==================== 图标 ====================
+    QIcon createMultiResolutionIcon();
+    void createFallbackIcon();
 
-    void applyTransformations();  // 应用所有变换的核心函数
-
-    // 变换状态
-    bool isTransformed() const; // 检查是否有变换
-
-private:
-    // 变换相关变量
-    int rotationAngle;           // 旋转角度 (0, 90, 180, 270)
-    bool isHorizontallyFlipped;  // 水平镜像
-    bool isVerticallyFlipped;    // 垂直镜像
-    QPixmap originalPixmap;      // 存储原始图片，用于重置变换
-
-    // 压缩包处理
-    // 压缩包处理
-    ArchiveHandler archiveHandler;
-    bool isArchiveMode;
-    QString currentArchivePath;
-    QMap<QString, QPixmap> archiveImageCache;  // 压缩包图片缓存
-
-    // 压缩包相关方法
-    bool openArchive(const QString &filePath);
-    void closeArchive();
-    void loadArchiveImageList();
-    bool loadImageFromArchive(const QString &filePath);
-
-public:
-    QPixmap getArchiveThumbnail(const QString &archivePath);
-
-public slots:
-    // 返回上级目录（退出压缩包模式）
-    void exitArchiveMode();
-
-private:
-    bool isArchiveFile(const QString &fileName) const;
-
-    // 状态保存变量（用于退出压缩包模式时恢复状态）
-    QDir previousDir;
-    QStringList previousImageList;
-    int previousImageIndex;
-    ViewMode previousViewMode;
-    void openSelectedImage();
-
-
-    QPixmap createDefaultArchiveThumbnail();
-
-private:
-    // 鼠标穿透控制
-    // void enableMousePassthrough();
-    // void disableMousePassthrough();
-    void updateMousePassthroughRegion();
-    bool shouldPassthroughMouse(const QPoint& pos) const; // 判断是否应该穿透
-
-    bool isInImageArea(const QPoint& pos) const;
-    void updateCanvasModePassthrough(); // 新增：专门处理画布模式的穿透
-
-    QRect getImageDisplayRect() const; // 获取图片实际显示区域
-    void cleanImageEdges(); // 清理图片边缘
-
-    void clearAllPassthrough();
-
-private:
-    // 保存窗口状态
-    bool wasMaximizedBeforeCanvas;
-    QRect normalGeometryBeforeCanvas;
-    Qt::WindowFlags windowFlagsBeforeCanvas;
-
-private:
-    void restoreNormalWindowState(); // 添加这行
-
-
-private:
-    // 画布模式相关
-    // 新增：覆盖层窗口
-    //class CanvasOverlay;
-    CanvasOverlay* canvasOverlay = nullptr;
-
-    // 图片数据
-    QImage currentImage;
-
-private:
-    void updateMask();                       // 更新窗口掩码
-    bool m_maskDirty = false;                // 标记是否需要更新掩码
-
-    void setMask(const QRegion &region) ;
-    void clearMask() ;
-
-private:
-    void clearX11Shape();            // 清除输入形状（全窗口可点）
-    void setX11ShapeRect(const QRect &rect); // 设置单一矩形形状
-    void setX11Shape(const QRegion &region); // 设置复杂形状（多个矩形）
-
-private:
-    void forceX11ShapeRefresh();  // 强制 X11 刷新窗口形状
-
-
-
-public:
-    void setHorizontalFlip(bool enable);
-    void setVerticalFlip(bool enable);
-    void applyTransform();   // 根据旋转、镜像等重新生成显示的 pixmap
-
-private:
-    QPixmap transformedPixmap; // 变换后用于绘制的图片
-
-    // 在 private 区域添加
-private:
-    bool transformLocked;  // 变换锁定状态
-    bool m_transparentBackgroundReady;  // 标记透明背景机制是否已就绪（可动态切换）
-    bool m_immersiveUseTransparent;  // 沉浸模式下是否使用透明背景（true=透明，false=黑色）
-
-public slots:
-    void toggleTransformLock();  // 切换锁定状态
-
-public:
-    bool isTransformLocked() const { return transformLocked; }
-
-    void toggleImmersiveMode(); //一键沉浸模式
-private slots:
-    void restartApplication();  //重启函数
-
-private:
-    QAction *openInNewWindowAction;   // 新窗口打开图片
-private slots:
-    void openImageInNewWindow();
-
-
+    // ==================== 定时器 ====================
+    QTimer m_wheelTimer;
 };
 
 #endif // IMAGEWIDGET_H

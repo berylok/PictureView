@@ -1,3 +1,4 @@
+
 // imagewidget_shortcuts.cpp
 #include "imagewidget.h"
 #include <QAction>

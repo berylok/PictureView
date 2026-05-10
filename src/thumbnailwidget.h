@@ -1,3 +1,5 @@
+
+
 // thumbnailwidget.h
 #ifndef THUMBNAILWIDGET_H
 #define THUMBNAILWIDGET_H
@@ -132,6 +134,7 @@ private:
     int calculateCostForPixmap(const QPixmap &pixmap) const;
     void logCacheStats();
     void finishLoading();
+
 };
 
 #endif // THUMBNAILWIDGET_H

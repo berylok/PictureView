@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 查找 Qt6 包
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 
+# 可选：尝试查找 OpenGLWidgets（Ubuntu 24.04 方式）
+find_package(Qt6 COMPONENTS OpenGLWidgets QUIET)
+
 # 查找 X11 库 (仅Linux/Unix系统需要，且非macOS)
 if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
@@ -81,6 +84,7 @@ qt_add_executable(PictureView
     src/platform_compat.h
     src/canvasoverlay.h
     src/canvasoverlay.cpp
+    src/imagewidget_opengl.cpp
 
 
 )
@@ -104,6 +108,13 @@ target_link_libraries(PictureView PRIVATE
     ${LIBARCHIVE_LIBRARIES}
 )
 
+# 如果找到了 OpenGLWidgets，添加它
+if(TARGET Qt6::OpenGLWidgets)
+    target_link_libraries(PictureView PRIVATE Qt6::OpenGLWidgets)
+    target_compile_definitions(PictureView PRIVATE HAS_QT6_OPENGL)
+    message(STATUS "OpenGLWidgets support enabled")
+endif()
+
 # # 在Linux平台单独链接X11库
 # if(UNIX AND NOT APPLE AND X11_FOUND)
 #     target_link_libraries(PictureView PRIVATE ${X11_LIBRARIES})
@@ -115,6 +126,8 @@ if(UNIX AND NOT APPLE AND X11_FOUND)
     # 明确链接 X11 库，确保 X11 库在 Qt 库之后链接
     target_link_libraries(PictureView PRIVATE
         ${X11_LIBRARIES}
+        Qt6::OpenGL        # OpenGL
+        Qt6::OpenGLWidgets # OpenGL
     )
     # 如果找到 Xext，也需要链接
     if(X11_Xext_FOUND)
@@ -222,6 +235,7 @@ endif()
 # 编译特性设置
 target_compile_definitions(PictureView PRIVATE
     $<$<CONFIG:Debug>:QT_QML_DEBUG>
+    HAS_QT6_OPENGL
 )
 
 # 设置版本信息

@@ -13,6 +13,12 @@
 #include <QStyleFactory>
 #include <QPalette>
 
+// 条件包含 OpenGL 头文件
+#ifdef HAS_QT6_OPENGL
+#include <QOpenGLWidget>
+#include <QSurfaceFormat>
+#endif
+
 int main(int argc, char *argv[])
 {
     // === 在创建QApplication之前先检测环境变量 ===
@@ -22,19 +28,34 @@ int main(int argc, char *argv[])
         qDebug() << "  argv[" << i << "]:" << argv[i];
     }
 
+    // 启用 OpenGL 硬件加速（放在 QApplication 创建之前）
+#ifdef HAS_QT6_OPENGL
+    QSurfaceFormat format;
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
+    format.setVersion(3, 3);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+    format.setSamples(4);  // 抗锯齿
+    QSurfaceFormat::setDefaultFormat(format);
+
+    qDebug() << "OpenGL acceleration enabled";
+#endif
+
+
     // 创建QApplication
     QApplication app(argc, argv);
 
-    // // 获取应用程序的调色板
-    // QPalette palette = app.palette();
+    // 获取应用程序的调色板
+    QPalette palette = app.palette();
 
-    // // 设置焦点高亮颜色为蓝色
-    // palette.setColor(QPalette::Active, QPalette::Highlight, QColor(0, 120, 215));     // 选中项背景色
-    // palette.setColor(QPalette::Active, QPalette::HighlightedText, Qt::white);         // 选中项文字色
-    // palette.setColor(QPalette::Inactive, QPalette::Highlight, QColor(0, 120, 215));
-    // palette.setColor(QPalette::Inactive, QPalette::HighlightedText, Qt::white);
+    // 设置焦点高亮颜色为蓝色
+    palette.setColor(QPalette::Active, QPalette::Highlight, QColor(0, 120, 215));     // 选中项背景色
+    palette.setColor(QPalette::Active, QPalette::HighlightedText, Qt::white);         // 选中项文字色
+    palette.setColor(QPalette::Inactive, QPalette::Highlight, QColor(0, 120, 215));
+    palette.setColor(QPalette::Inactive, QPalette::HighlightedText, Qt::white);
 
-    // app.setPalette(palette);
+    app.setPalette(palette);
 
     // 设置更高的内存分配限制（512MB）
     QImageReader::setAllocationLimit(512);

@@ -20,6 +20,11 @@
 #include "archivehandler.h"
 #include "canvasoverlay.h"
 
+#include <QOpenGLWidget>
+#include <QOpenGLTexture>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLBuffer>
+
 class ImageWidget : public QWidget
 {
     Q_OBJECT
@@ -296,6 +301,30 @@ private:
 
     // ==================== 定时器 ====================
     QTimer m_wheelTimer;
+
+    // OpenGL 加速相关
+    bool m_useOpenGL = false;
+    QOpenGLWidget* m_glWidget = nullptr;
+    QOpenGLTexture* m_glTexture = nullptr;
+    QOpenGLShaderProgram* m_shaderProgram = nullptr;
+    QOpenGLBuffer* m_vertexBuffer = nullptr;
+    QMatrix4x4 m_transformMatrix;
+
+    // OpenGL 初始化函数
+    void initOpenGL();
+    void updateGLTexture();
+    void updateTransformMatrix();
+    void renderWithOpenGL(QPainter* painter);
+
+public:
+    // 添加公共接口
+    void enableOpenGLAcceleration(bool enable = true);
+
+    // 在 imagewidget.h 的 private 部分添加
+private:
+    // ==================== 异步加载 ====================
+    void loadImageAsync(const QString &filePath, std::function<void(bool)> callback);
+    void preloadImagesAround(int centerIndex, int count = 2);
 };
 
 #endif // IMAGEWIDGET_H

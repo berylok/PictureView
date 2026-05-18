@@ -80,9 +80,9 @@ void ImageWidget::preloadAllImages()
     updateWindowTitle();
 }
 
-void ImageWidget::clearImageCache()
-{
-    int cacheSize = imageCache.size();
-    imageCache.clear();
-    updateWindowTitle();
-}
+// void ImageWidget::clearImageCache()
+// {
+//     int cacheSize = imageCache.size();
+//     imageCache.clear();
+//     updateWindowTitle();
+// }

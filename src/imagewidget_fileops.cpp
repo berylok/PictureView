@@ -10,6 +10,8 @@
 #include <QUrl>
 #include "platform_compat.h"
 #include <QCheckBox>
+#include <QDebug>
+#include <QtConcurrent>
 
 #ifdef _WIN32
 #include <shellapi.h>
@@ -21,18 +23,16 @@
 #include <QFileInfo>
 #endif
 
-
 bool ImageWidget::moveFileToRecycleBin(const QString &filePath)
 {
     return PlatformCompat::moveToRecycleBin(filePath);
 }
 
+// ==================== 优化的图片加载函数 ====================
 bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
 {
     qDebug() << "=== loadImage 开始 ===";
     qDebug() << "文件路径:" << filePath;
-
-
 
     // 检查文件是否存在
     QFileInfo fileInfo(filePath);
@@ -55,43 +55,83 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
         return loadImageFromArchive(filePath);
     }
 
-    //QFileInfo fileInfo(filePath);
-    qDebug() << "文件是否存在:" << fileInfo.exists();
-    qDebug() << "文件大小:" << fileInfo.size();
-    qDebug() << "文件权限:" << fileInfo.permissions();
+    // ========== 新增：使用 QImageReader 进行降采样优化 ==========
+    QImage loadedImage;
 
-    if (!fileInfo.exists()) {
-        qDebug() << "错误: 文件不存在";
-        return false;
+    // 获取目标显示尺寸（当前窗口大小）
+    QSize targetSize = size();
+    if (targetSize.isEmpty() || targetSize.width() <= 1) {
+        targetSize = QSize(1920, 1080); // 默认目标尺寸
     }
 
-    // 直接加载，绕过缓存进行测试
-    QPixmap loadedPixmap;
+    qDebug() << "目标显示尺寸:" << targetSize;
+
+    // 使用 QImageReader 进行智能加载
+    QImageReader reader(filePath);
+    reader.setAutoTransform(true);
+
+    // 获取原始图片尺寸（不加载数据）
+    QSize originalSize = reader.size();
+    if (originalSize.isValid()) {
+        qDebug() << "原始图片尺寸:" << originalSize;
+
+        // 计算降采样比例（对于 4K/8K 图片尤其重要）
+        int widthScale = originalSize.width() / targetSize.width();
+        int heightScale = originalSize.height() / targetSize.height();
+        int scale = qMax(1, qMin(widthScale, heightScale));
+
+        // 限制最大缩放倍数，避免过度降采样
+        if (scale > 8) scale = 8;
+
+        if (scale > 1) {
+            QSize scaledSize = originalSize / scale;
+            reader.setScaledSize(scaledSize);
+            qDebug() << "降采样比例:" << scale << "解码尺寸:" << scaledSize;
+        }
+
+        // 可选：限制内存使用（Qt 6.0+）
+        // reader.setAllocationLimit(200 * 1024 * 1024); // 200MB 上限
+    }
+
+    // 加载图片
     qDebug() << "开始加载图片...";
+    loadedImage = reader.read();
 
-    if (!loadedPixmap.load(filePath)) {
-        qDebug() << "错误: 直接加载失败";
+    if (loadedImage.isNull()) {
+        qDebug() << "QImageReader 加载失败，尝试 QImage 直接加载...";
 
-        // 尝试使用 QImage 加载
-        QImage image;
-        if (image.load(filePath)) {
-            qDebug() << "使用 QImage 加载成功";
-            loadedPixmap = QPixmap::fromImage(image);
-        } else {
-            qDebug() << "错误: QImage 加载也失败";
+        // 回退到传统加载方式
+        if (!loadedImage.load(filePath)) {
+            qDebug() << "错误: 所有加载方式都失败";
             return false;
         }
+        qDebug() << "QImage 直接加载成功，尺寸:" << loadedImage.size();
     } else {
-        qDebug() << "直接加载成功，图片尺寸:" << loadedPixmap.size();
+        qDebug() << "QImageReader 加载成功，尺寸:" << loadedImage.size();
     }
 
+    // 转换为 QPixmap 用于显示
+    QPixmap loadedPixmap = QPixmap::fromImage(loadedImage);
     if (loadedPixmap.isNull()) {
-        qDebug() << "错误: 加载后的 pixmap 为空";
+        qDebug() << "错误: 转换为 QPixmap 失败";
         return false;
     }
 
+    // ========== OpenGL 加速：更新纹理 ==========
+#ifdef HAS_QT6_OPENGL
+    if (m_useOpenGL && m_glWidget) {
+        // 保存为 QImage 用于 OpenGL 纹理
+        currentImage = loadedImage;
+        updateGLTexture();
+        qDebug() << "OpenGL 纹理已更新";
+    } else {
+        currentImage = loadedImage;
+    }
+#else
+    currentImage = loadedImage;
+#endif
+
     // 继续原有逻辑...
-    // 修改这部分 - 只有未锁定时才重置变换
     if (!transformLocked) {
         rotationAngle = 0;
         isHorizontallyFlipped = false;
@@ -108,8 +148,6 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
         pixmap = loadedPixmap;
     }
     qDebug() << "图片设置完成";
-
-
 
     // 设置视图状态
     switch (currentViewStateType) {
@@ -145,6 +183,119 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
     return true;
 }
 
+// ==================== 异步加载函数（避免 UI 卡顿） ====================
+void ImageWidget::loadImageAsync(const QString &filePath, std::function<void(bool)> callback)
+{
+    QtConcurrent::run([this, filePath, callback]() {
+        bool result = loadImage(filePath, false);
+        if (callback) {
+            // 使用 QMetaObject::invokeMethod 确保在主线程执行回调
+            QMetaObject::invokeMethod(this, [callback, result]() {
+                callback(result);
+            }, Qt::QueuedConnection);
+        }
+    });
+}
+
+// ==================== 批量预加载（优化幻灯片体验） ====================
+void ImageWidget::preloadImagesAround(int centerIndex, int count)
+{
+    if (imageList.isEmpty()) return;
+
+    int startIndex = qMax(0, centerIndex - count);
+    int endIndex = qMin(imageList.size() - 1, centerIndex + count);
+
+    for (int i = startIndex; i <= endIndex; ++i) {
+        if (i == centerIndex) continue; // 跳过当前图片
+
+        QString imagePath = currentDir.absoluteFilePath(imageList.at(i));
+
+        // 检查缓存
+        if (!imageCache.contains(imagePath)) {
+            QtConcurrent::run([this, imagePath]() {
+                // 使用 QImageReader 进行降采样预加载
+                QImageReader reader(imagePath);
+                reader.setAutoTransform(true);
+
+                QSize originalSize = reader.size();
+                if (originalSize.isValid()) {
+                    // 预加载时使用较小的尺寸
+                    QSize previewSize(800, 600);
+                    int widthScale = originalSize.width() / previewSize.width();
+                    int heightScale = originalSize.height() / previewSize.height();
+                    int scale = qMax(1, qMin(widthScale, heightScale));
+
+                    if (scale > 1) {
+                        reader.setScaledSize(originalSize / scale);
+                    }
+                }
+
+                QImage preview = reader.read();
+                if (!preview.isNull()) {
+                    QMutexLocker locker(&cacheMutex);
+                    imageCache.insert(imagePath, QPixmap::fromImage(preview));
+                    qDebug() << "预加载完成:" << imagePath;
+                }
+            });
+        }
+    }
+}
+
+// ==================== 优化的缩略图生成 ====================
+QPixmap ImageWidget::getArchiveThumbnail(const QString &archivePath)
+{
+    // 检查缓存
+    if (archiveImageCache.contains(archivePath)) {
+        return archiveImageCache[archivePath];
+    }
+
+    // 使用 QImageReader 生成缩略图
+    QImageReader reader(archivePath);
+    reader.setAutoTransform(true);
+
+    // 设置缩略图目标尺寸
+    QSize targetSize(256, 256);
+    QSize originalSize = reader.size();
+
+    if (originalSize.isValid()) {
+        int widthScale = originalSize.width() / targetSize.width();
+        int heightScale = originalSize.height() / targetSize.height();
+        int scale = qMax(1, qMin(widthScale, heightScale));
+
+        if (scale > 1) {
+            reader.setScaledSize(originalSize / scale);
+        }
+    }
+
+    QImage thumbnail = reader.read();
+    if (!thumbnail.isNull()) {
+        QPixmap pixmap = QPixmap::fromImage(thumbnail);
+        archiveImageCache.insert(archivePath, pixmap);
+        return pixmap;
+    }
+
+    return createDefaultArchiveThumbnail();
+}
+
+// ==================== 清晰图片缓存（可选） ====================
+void ImageWidget::clearImageCache()
+{
+    QMutexLocker locker(&cacheMutex);
+    imageCache.clear();
+
+#ifdef HAS_QT6_OPENGL
+    // 清理 OpenGL 纹理
+    if (m_glTexture) {
+        delete m_glTexture;
+        m_glTexture = nullptr;
+    }
+#endif
+
+    qDebug() << "图片缓存已清除";
+}
+
+// ==================== 其余现有函数保持不变 ====================
+
 void ImageWidget::loadImageList()
 {
     QStringList newImageList;
@@ -153,7 +304,7 @@ void ImageWidget::loadImageList()
     QStringList imageFilters = {"*.png",  "*.jpg", "*.bmp",  "*.jpeg",
                                 "*.webp", "*.gif", "*.tiff", "*.tif"};
     QStringList archiveFilters = {"*.zip", "*.rar", "*.7z", "*.tar",
-                                  "*.gz",  "*.bz2"}; // 添加压缩包过滤器
+                                  "*.gz",  "*.bz2"};
 
     foreach (const QFileInfo &fileInfo, fileList) {
         bool isImage = false;
@@ -165,7 +316,6 @@ void ImageWidget::loadImageList()
             }
         }
 
-        // 如果不是图片，检查是否是压缩包
         if (!isImage) {
             foreach (const QString &filter, archiveFilters) {
                 if (fileInfo.fileName().endsWith(filter.mid(1),
@@ -179,7 +329,6 @@ void ImageWidget::loadImageList()
 
     newImageList.sort();
 
-    // 只有当文件列表实际发生变化时才更新和输出日志
     if (newImageList != imageList) {
         imageList = newImageList;
         thumbnailWidget->setImageList(imageList, currentDir);
@@ -196,35 +345,29 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
     bool result = false;
 
     if (isArchiveMode) {
-        // 压缩包模式：使用内部文件名
         QString imagePath = imageList.at(index);
         result = loadImageFromArchive(imagePath);
-
-        // 更新当前图片路径为压缩包路径 + 内部文件路径
         if (result) {
             currentImagePath = currentArchivePath + "|" + imagePath;
         }
     } else {
-        // 普通文件模式：构建完整文件路径
         QString imagePath = currentDir.absoluteFilePath(imageList.at(index));
         result = loadImage(imagePath, fromCache);
     }
 
-    // 更新当前索引
     if (result) {
         currentImageIndex = index;
 
-        // 如果当前是缩略图模式，更新选中项
         if (currentViewMode == ThumbnailView) {
             thumbnailWidget->setSelectedIndex(currentImageIndex);
         }
 
-        // 预加载下一张图片（用于幻灯片）
+        // 预加载前后图片
+        preloadImagesAround(currentImageIndex, 2);
+
         if (isSlideshowActive) {
             int nextIndex = (currentImageIndex + 1) % imageList.size();
-
             if (isArchiveMode) {
-                // 压缩包模式预加载
                 QString nextPath = imageList.at(nextIndex);
                 if (!archiveImageCache.contains(nextPath)) {
                     QtConcurrent::run([this, nextIndex]() {
@@ -235,23 +378,31 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
                             if (tempPixmap.loadFromData(imageData)) {
                                 QMutexLocker locker(&cacheMutex);
                                 archiveImageCache.insert(nextPath, tempPixmap);
-                                qDebug() << "预加载压缩包图片:" << nextPath;
                             }
                         }
                     });
                 }
             } else {
-                // 普通文件模式预加载
-                QString nextPath =
-                    currentDir.absoluteFilePath(imageList.at(nextIndex));
+                QString nextPath = currentDir.absoluteFilePath(imageList.at(nextIndex));
                 if (!imageCache.contains(nextPath)) {
-                    QtConcurrent::run([this, nextIndex]() {
-                        QString nextPath =
-                            currentDir.absoluteFilePath(imageList.at(nextIndex));
-                        QPixmap tempPixmap;
-                        if (tempPixmap.load(nextPath)) {
+                    QtConcurrent::run([this, nextPath]() {
+                        // 使用降采样预加载
+                        QImageReader reader(nextPath);
+                        reader.setAutoTransform(true);
+                        QSize originalSize = reader.size();
+                        if (originalSize.isValid()) {
+                            QSize previewSize(800, 600);
+                            int widthScale = originalSize.width() / previewSize.width();
+                            int heightScale = originalSize.height() / previewSize.height();
+                            int scale = qMax(1, qMin(widthScale, heightScale));
+                            if (scale > 1) {
+                                reader.setScaledSize(originalSize / scale);
+                            }
+                        }
+                        QImage preview = reader.read();
+                        if (!preview.isNull()) {
                             QMutexLocker locker(&cacheMutex);
-                            imageCache.insert(nextPath, tempPixmap);
+                            imageCache.insert(nextPath, QPixmap::fromImage(preview));
                         }
                     });
                 }
@@ -261,6 +412,7 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
 
     return result;
 }
+
 
 void ImageWidget::loadNextImage()
 {
@@ -476,4 +628,14 @@ void ImageWidget::deleteSelectedThumbnail()
     }
 }
 
-
+void ImageWidget::updateGLTexture()
+{
+    if (!m_glTexture) {
+        m_glTexture = new QOpenGLTexture(currentImage.mirrored());
+        m_glTexture->setMinificationFilter(QOpenGLTexture::Linear);
+        m_glTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+        m_glTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
+    } else {
+        m_glTexture->setData(currentImage.mirrored());
+    }
+}

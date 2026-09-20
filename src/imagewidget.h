@@ -14,11 +14,13 @@
 #include <QScrollArea>
 #include <QImage>
 
+#include <atomic>
 #include "thumbnailwidget.h"
 #include "configmanager.h"
 #include "canvascontrolpanel.h"
 #include "archivehandler.h"
 #include "canvasoverlay.h"
+#include <QCache>
 
 class ImageWidget : public QWidget
 {
@@ -70,7 +72,7 @@ public:
     bool isTransformLocked() const { return transformLocked; }
 
     // ==================== 压缩包 ====================
-    QPixmap getArchiveThumbnail(const QString &archivePath);
+    QImage getArchiveThumbnailImage(const QString &archivePath);
 
     // ==================== 工具方法 ====================
     void updateWindowTitle();
@@ -95,7 +97,7 @@ public slots:
 
     // ==================== 画布 / 变换 ====================
     void toggleTransformLock();
-    void toggleImmersiveMode();
+    void toggleImmersiveMode(bool useTransparent);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -131,6 +133,11 @@ private:
         ActualSize
     };
 
+    enum SlideScaleMode {
+        SlideFitWindow,
+        SlideBoundingBox          //
+    };
+
     // ==================== 图片数据 ====================
     QPixmap pixmap;
     QPixmap originalPixmap;
@@ -150,7 +157,6 @@ private:
     ViewStateType currentViewStateType;
 
     // ==================== 缓存 ====================
-    QMap<QString, QPixmap> imageCache;
     QMutex cacheMutex;
 
     // ==================== 幻灯片 ====================
@@ -239,7 +245,7 @@ private:
     ArchiveHandler archiveHandler;
     bool isArchiveMode;
     QString currentArchivePath;
-    QMap<QString, QPixmap> archiveImageCache;
+    QMap<QString, QImage> archiveImageCache;    //
     QDir previousDir;
     QStringList previousImageList;
     int previousImageIndex;
@@ -250,7 +256,7 @@ private:
     void loadArchiveImageList();
     bool loadImageFromArchive(const QString &filePath);
     bool isArchiveFile(const QString &fileName) const;
-    QPixmap createDefaultArchiveThumbnail();
+    QImage createDefaultArchiveThumbnail();     //
 
     // ==================== 菜单 / 操作 ====================
     void navigateThumbnails(int key);
@@ -296,6 +302,20 @@ private:
 
     // ==================== 定时器 ====================
     QTimer m_wheelTimer;
+
+
+    SlideScaleMode slideScaleMode = SlideFitWindow;
+    // ==================== 包围盒缩放 ====================
+    double boxZoom = 1.0;                             // 相对包围盒的缩放倍数
+    double computeBoxBaseScale() const;               // 让图贴合包围盒的 scale
+
+    // ==================== 缓存 ====================
+    QMap<QString, QImage>  imageCache;        // 已有，工作线程写
+    QCache<QString, QPixmap> pixmapCache;
+    // 私有成员
+    std::atomic<int> m_cacheGeneration{0};
+
+
 };
 
 #endif // IMAGEWIDGET_H

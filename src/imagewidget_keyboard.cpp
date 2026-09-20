@@ -7,7 +7,7 @@
 
 void ImageWidget::keyPressEvent(QKeyEvent *event)
 {
-    qDebug() << "key:" << event->key();
+    //qDebug() << "key:" << event->key();
 
     // 在压缩包模式下，ESC 键退出压缩包
     if (isArchiveMode && event->key() == Qt::Key_Escape) {

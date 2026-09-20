@@ -22,6 +22,40 @@
 #endif
 
 
+#include <QPointer>       // 顶部加这个
+
+// =====================================================================
+// 统一的解码入口：按 maxDecode 限制最长边
+// maxDecode = 0 表示不限制
+// =====================================================================
+static QImage loadImageWithLimit(const QString &filePath, int maxDecode)
+{
+    QImage img;
+
+    if (maxDecode > 0) {
+        QImageReader reader(filePath);
+        reader.setAutoTransform(true);
+
+        QSize origSize = reader.size();
+        if (origSize.isValid() &&
+            (origSize.width() > maxDecode || origSize.height() > maxDecode)) {
+            QSize target = origSize.scaled(maxDecode, maxDecode, Qt::KeepAspectRatio);
+            reader.setScaledSize(target);
+            //qDebug() << "限制解码:" << origSize << "→" << target << filePath;
+        }
+
+        if (reader.read(&img)) return img;
+        //qDebug() << "QImageReader 失败:" << reader.errorString() << filePath;
+    }
+
+    // 未限制 / 读取失败 → 普通加载兜底
+    if (img.load(filePath)) return img;
+
+    return QImage();
+}
+
+
+
 bool ImageWidget::moveFileToRecycleBin(const QString &filePath)
 {
     return PlatformCompat::moveToRecycleBin(filePath);
@@ -29,64 +63,91 @@ bool ImageWidget::moveFileToRecycleBin(const QString &filePath)
 
 bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
 {
-    qDebug() << "=== loadImage 开始 ===";
-    qDebug() << "文件路径:" << filePath;
+    //qDebug() << "=== loadImage 开始 ===";
+    //qDebug() << "文件路径:" << filePath;
 
 
 
     // 检查文件是否存在
     QFileInfo fileInfo(filePath);
     if (!fileInfo.exists()) {
-        qDebug() << "错误: 文件不存在";
+        //qDebug() << "错误: 文件不存在";
         return false;
     }
 
-    qDebug() << "文件大小:" << fileInfo.size() << "字节";
+    //qDebug() << "文件大小:" << fileInfo.size() << "字节";
 
     // 检查是否是压缩包
     if (ArchiveHandler::isSupportedArchive(filePath)) {
-        qDebug() << "检测为压缩包文件";
+        //qDebug() << "检测为压缩包文件";
         return openArchive(filePath);
     }
 
     // 如果是压缩包模式，从压缩包加载
     if (isArchiveMode) {
-        qDebug() << "压缩包模式，从压缩包加载";
+        //qDebug() << "压缩包模式，从压缩包加载";
         return loadImageFromArchive(filePath);
     }
 
     //QFileInfo fileInfo(filePath);
-    qDebug() << "文件是否存在:" << fileInfo.exists();
-    qDebug() << "文件大小:" << fileInfo.size();
-    qDebug() << "文件权限:" << fileInfo.permissions();
+    //qDebug() << "文件是否存在:" << fileInfo.exists();
+    //qDebug() << "文件大小:" << fileInfo.size();
+    //qDebug() << "文件权限:" << fileInfo.permissions();
 
     if (!fileInfo.exists()) {
-        qDebug() << "错误: 文件不存在";
+        //qDebug() << "错误: 文件不存在";
         return false;
     }
 
+
     // 直接加载，绕过缓存进行测试
     QPixmap loadedPixmap;
-    qDebug() << "开始加载图片...";
 
-    if (!loadedPixmap.load(filePath)) {
-        qDebug() << "错误: 直接加载失败";
+    if (fromCache) {
+        // ★ 第 1 级：pixmapCache（QCache，瞬时）
+        if (QPixmap *cached = pixmapCache.object(filePath)) {
+            if (!cached->isNull()) {
+                loadedPixmap = *cached;
+                //qDebug() << "命中 pixmap 缓存:" << filePath;
+            }
+        }
 
-        // 尝试使用 QImage 加载
-        QImage image;
-        if (image.load(filePath)) {
-            qDebug() << "使用 QImage 加载成功";
-            loadedPixmap = QPixmap::fromImage(image);
-        } else {
-            qDebug() << "错误: QImage 加载也失败";
+        // ★ 第 2 级：imageCache（QImage，要转换）
+        if (loadedPixmap.isNull()) {
+            QImage cached;
+            {
+                QMutexLocker locker(&cacheMutex);
+                auto it = imageCache.constFind(filePath);
+                if (it != imageCache.constEnd()) cached = it.value();
+            }
+            if (!cached.isNull()) {
+                loadedPixmap = QPixmap::fromImage(cached);
+                pixmapCache.insert(filePath, new QPixmap(loadedPixmap));   // 提升到第 1 级
+                //qDebug() << "命中 QImage 缓存:" << filePath;
+            }
+        }
+    }
+
+    // 都没命中 → 从磁盘加载
+    if (loadedPixmap.isNull()) {
+        QImage img = loadImageWithLimit(filePath, currentConfig.maxDecodeSize);
+        if (img.isNull()) {
+            //qDebug() << "错误: 图片加载失败:" << filePath;
             return false;
         }
-    } else {
-        qDebug() << "直接加载成功，图片尺寸:" << loadedPixmap.size();
+        loadedPixmap = QPixmap::fromImage(img);
+
+        // 写两个缓存
+        // 从磁盘加载后：
+        {
+            QMutexLocker locker(&cacheMutex);
+            imageCache.insert(filePath, img);
+        }
+        pixmapCache.insert(filePath, new QPixmap(loadedPixmap));   // ★
     }
 
     if (loadedPixmap.isNull()) {
-        qDebug() << "错误: 加载后的 pixmap 为空";
+        //qDebug() << "错误: 加载后的 pixmap 为空";
         return false;
     }
 
@@ -107,7 +168,7 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
     } else {
         pixmap = loadedPixmap;
     }
-    qDebug() << "图片设置完成";
+    //qDebug() << "图片设置完成";
 
 
 
@@ -121,11 +182,13 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
         break;
     case ManualAdjustment:
         // 保持当前的缩放和偏移
+
+
         break;
     }
 
     currentImagePath = filePath;
-    qDebug() << "当前图片路径设置为:" << currentImagePath;
+    //qDebug() << "当前图片路径设置为:" << currentImagePath;
 
     // 检查目录是否改变
     bool dirChanged = (currentDir != fileInfo.absoluteDir());
@@ -136,11 +199,11 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
 
     // 确保当前图片索引正确设置
     currentImageIndex = imageList.indexOf(fileInfo.fileName());
-    qDebug() << "当前图片索引:" << currentImageIndex;
+    //qDebug() << "当前图片索引:" << currentImageIndex;
 
     update();
     updateWindowTitle();
-    qDebug() << "=== loadImage 完成 ===";
+    //qDebug() << "=== loadImage 完成 ===";
 
     return true;
 }
@@ -182,8 +245,8 @@ void ImageWidget::loadImageList()
     // 只有当文件列表实际发生变化时才更新和输出日志
     if (newImageList != imageList) {
         imageList = newImageList;
+        m_cacheGeneration.fetch_add(1);   // ★ 旧任务作废
         thumbnailWidget->setImageList(imageList, currentDir);
-        qDebug() << "找到文件:" << imageList.size() << "个（包含图片和压缩包）";
     }
 }
 
@@ -195,66 +258,88 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
 
     bool result = false;
 
+    // ==================== ① 加载当前图片 ====================
     if (isArchiveMode) {
-        // 压缩包模式：使用内部文件名
         QString imagePath = imageList.at(index);
         result = loadImageFromArchive(imagePath);
-
-        // 更新当前图片路径为压缩包路径 + 内部文件路径
         if (result) {
             currentImagePath = currentArchivePath + "|" + imagePath;
         }
     } else {
-        // 普通文件模式：构建完整文件路径
         QString imagePath = currentDir.absoluteFilePath(imageList.at(index));
         result = loadImage(imagePath, fromCache);
     }
 
-    // 更新当前索引
-    if (result) {
-        currentImageIndex = index;
+    // ==================== ③ 预加载前后 N 张 ====================
+    if (imageList.size() > 1 && currentConfig.preloadRange > 0) {
+        const int n = imageList.size();
+        const int range = qMin(currentConfig.preloadRange, (n - 1) / 2);   // 不超过一半
 
-        // 如果当前是缩略图模式，更新选中项
-        if (currentViewMode == ThumbnailView) {
-            thumbnailWidget->setSelectedIndex(currentImageIndex);
+        // 收集需要预加载的索引：近的先加载
+        QList<int> idxToLoad;
+        for (int d = 1; d <= range; ++d) {
+            int pIdx = (currentImageIndex - d + n) % n;
+            int nIdx = (currentImageIndex + d) % n;
+            if (pIdx != currentImageIndex && !idxToLoad.contains(pIdx))
+                idxToLoad.append(pIdx);
+            if (nIdx != currentImageIndex && !idxToLoad.contains(nIdx))
+                idxToLoad.append(nIdx);
         }
 
-        // 预加载下一张图片（用于幻灯片）
-        if (isSlideshowActive) {
-            int nextIndex = (currentImageIndex + 1) % imageList.size();
-
+        // 按顺序提交到线程池（最近的先跑）
+        for (int idx : std::as_const(idxToLoad)) {
             if (isArchiveMode) {
-                // 压缩包模式预加载
-                QString nextPath = imageList.at(nextIndex);
-                if (!archiveImageCache.contains(nextPath)) {
-                    QtConcurrent::run([this, nextIndex]() {
-                        QString nextPath = imageList.at(nextIndex);
-                        QByteArray imageData = archiveHandler.extractFile(nextPath);
-                        if (!imageData.isEmpty()) {
-                            QPixmap tempPixmap;
-                            if (tempPixmap.loadFromData(imageData)) {
-                                QMutexLocker locker(&cacheMutex);
-                                archiveImageCache.insert(nextPath, tempPixmap);
-                                qDebug() << "预加载压缩包图片:" << nextPath;
-                            }
-                        }
-                    });
+                QString itemPath = imageList.at(idx);
+                bool needLoad = false;
+                {
+                    QMutexLocker locker(&cacheMutex);
+                    needLoad = !archiveImageCache.contains(itemPath);
                 }
+                if (!needLoad) continue;
+
+                // 提交任务前记录当前代际
+                const int currentGen = m_cacheGeneration.load();
+                int maxDecode = currentConfig.maxDecodeSize;
+                QPointer<ImageWidget> guard(this);
+
+                QtConcurrent::run([guard, itemPath, maxDecode, currentGen]() {
+                    if (!guard) return;
+
+                    QImage img = loadImageWithLimit(itemPath, maxDecode);
+                    if (img.isNull()) return;
+                    if (!guard) return;
+
+                    // ★ 写缓存前检查代际
+                    if (guard->m_cacheGeneration.load() != currentGen) {
+                        qDebug() << "丢弃旧代际预加载:" << itemPath;
+                        return;
+                    }
+
+                    QMutexLocker locker(&guard->cacheMutex);
+                    guard->imageCache.insert(itemPath, img);
+                });
             } else {
-                // 普通文件模式预加载
-                QString nextPath =
-                    currentDir.absoluteFilePath(imageList.at(nextIndex));
-                if (!imageCache.contains(nextPath)) {
-                    QtConcurrent::run([this, nextIndex]() {
-                        QString nextPath =
-                            currentDir.absoluteFilePath(imageList.at(nextIndex));
-                        QPixmap tempPixmap;
-                        if (tempPixmap.load(nextPath)) {
-                            QMutexLocker locker(&cacheMutex);
-                            imageCache.insert(nextPath, tempPixmap);
-                        }
-                    });
+                QString itemPath = currentDir.absoluteFilePath(imageList.at(idx));
+                bool needLoad = false;
+                {
+                    QMutexLocker locker(&cacheMutex);
+                    needLoad = !imageCache.contains(itemPath);
                 }
+                if (!needLoad) continue;
+
+                int maxDecode = currentConfig.maxDecodeSize;
+                QPointer<ImageWidget> guard(this);
+
+                QtConcurrent::run([guard, itemPath, maxDecode]() {
+                    if (!guard) return;
+
+                    QImage img = loadImageWithLimit(itemPath, maxDecode);
+                    if (img.isNull()) return;
+                    if (!guard) return;
+
+                    QMutexLocker locker(&guard->cacheMutex);
+                    guard->imageCache.insert(itemPath, img);
+                });
             }
         }
     }
@@ -264,64 +349,64 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
 
 void ImageWidget::loadNextImage()
 {
-    qDebug() << "=== loadNextImage 开始 ===";
-    qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
-    qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
+    //qDebug() << "=== loadNextImage 开始 ===";
+    //qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
+    //qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
 
     if (imageList.isEmpty()) {
-        qDebug() << "图片列表为空，返回";
+        //qDebug() << "图片列表为空，返回";
         return;
     }
 
     int nextIndex = (currentImageIndex + 1) % imageList.size();
-    qDebug() << "计算出的下一个索引:" << nextIndex;
+    //qDebug() << "计算出的下一个索引:" << nextIndex;
 
     if (currentViewMode == SingleView) {
-        qDebug() << "单张模式，加载图片";
+        //qDebug() << "单张模式，加载图片";
         loadImageByIndex(nextIndex, true);
     } else {
         // 缩略图模式下，只更新索引和选中状态
-        qDebug() << "缩略图模式，更新选中状态";
+        //qDebug() << "缩略图模式，更新选中状态";
         currentImageIndex = nextIndex;
         thumbnailWidget->setSelectedIndex(currentImageIndex);
         thumbnailWidget->ensureVisible(currentImageIndex);
         updateWindowTitle();
 
-        qDebug() << "更新后的当前索引:" << currentImageIndex;
+        //qDebug() << "更新后的当前索引:" << currentImageIndex;
     }
 
-    qDebug() << "=== loadNextImage 结束 ===";
+    //qDebug() << "=== loadNextImage 结束 ===";
 }
 
 void ImageWidget::loadPreviousImage()
 {
-    qDebug() << "=== loadPreviousImage 开始 ===";
-    qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
-    qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
+    //qDebug() << "=== loadPreviousImage 开始 ===";
+    //qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
+    //qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
 
     if (imageList.isEmpty()) {
-        qDebug() << "图片列表为空，返回";
+        //qDebug() << "图片列表为空，返回";
         return;
     }
 
     int prevIndex = (currentImageIndex - 1 + imageList.size()) % imageList.size();
-    qDebug() << "计算出的上一个索引:" << prevIndex;
+    //qDebug() << "计算出的上一个索引:" << prevIndex;
 
     if (currentViewMode == SingleView) {
-        qDebug() << "单张模式，加载图片";
+        //qDebug() << "单张模式，加载图片";
         loadImageByIndex(prevIndex, true);
     } else {
         // 缩略图模式下，只更新索引和选中状态
-        qDebug() << "缩略图模式，更新选中状态";
+        //qDebug() << "缩略图模式，更新选中状态";
         currentImageIndex = prevIndex;
         thumbnailWidget->setSelectedIndex(currentImageIndex);
         thumbnailWidget->ensureVisible(currentImageIndex);
         updateWindowTitle();
 
-        qDebug() << "更新后的当前索引:" << currentImageIndex;
+        //qDebug() << "更新后的当前索引:" << currentImageIndex;
     }
 
-    qDebug() << "=== loadPreviousImage 结束 ===";
+    //qDebug() << "=== loadPreviousImage 结束 ===";
 }
 
 void ImageWidget::dragEnterEvent(QDragEnterEvent *event)
@@ -422,40 +507,51 @@ void ImageWidget::performDeleteCurrentImage()
     QString imageToDelete = currentImagePath;
     int indexToDelete = currentImageIndex;
 
-    if (moveFileToRecycleBin(imageToDelete)) {
+    if (!moveFileToRecycleBin(imageToDelete)) {
+        QMessageBox::critical(this, tr("错误"), tr("移动图片到回收站失败"));
+        return;
+    }
+
+    // ★ 锁只包住 map 的 remove，立刻释放
+    {
+        QMutexLocker locker(&cacheMutex);
         imageCache.remove(imageToDelete);
-        ThumbnailWidget::clearThumbnailCacheForImage(imageToDelete);
+        archiveImageCache.remove(imageToDelete);   // 如果删的是压缩包内图，也清
+    }
 
-        if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
-            imageList.removeAt(indexToDelete);
-            thumbnailWidget->setImageList(imageList, currentDir);
+    // ★ QCache 是主线程专用，无需锁
+    pixmapCache.remove(imageToDelete);
 
-            if (imageList.isEmpty()) {
-                pixmap = QPixmap();
-                currentImagePath.clear();
-                currentImageIndex = -1;
-                if (currentViewMode == SingleView) {
-                    switchToThumbnailView();
-                }
-            } else {
-                int newIndex = indexToDelete;
-                if (newIndex >= imageList.size()) {
-                    newIndex = imageList.size() - 1;
-                }
+    // ★ 缩略图缓存（静态，内部自己加锁）
+    ThumbnailWidget::clearThumbnailCacheForImage(imageToDelete);
 
-                if (currentViewMode == SingleView) {
-                    loadImageByIndex(newIndex);
-                } else {
-                    currentImageIndex = newIndex;
-                    thumbnailWidget->setSelectedIndex(newIndex);
-                }
+    if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
+        imageList.removeAt(indexToDelete);
+        thumbnailWidget->setImageList(imageList, currentDir);
+
+        if (imageList.isEmpty()) {
+            pixmap = QPixmap();
+            currentImagePath.clear();
+            currentImageIndex = -1;
+            if (currentViewMode == SingleView) {
+                switchToThumbnailView();
+            }
+        } else {
+            int newIndex = indexToDelete;
+            if (newIndex >= imageList.size()) {
+                newIndex = imageList.size() - 1;
             }
 
-            update();
-            updateWindowTitle();
+            if (currentViewMode == SingleView) {
+                loadImageByIndex(newIndex);      // 这里会再锁 cacheMutex，但现在锁已释放 ✓
+            } else {
+                currentImageIndex = newIndex;
+                thumbnailWidget->setSelectedIndex(newIndex);
+            }
         }
-    } else {
-        QMessageBox::critical(this, tr("错误"), tr("移动图片到回收站失败"));
+
+        update();
+        updateWindowTitle();
     }
 }
 

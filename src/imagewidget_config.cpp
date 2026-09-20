@@ -23,7 +23,7 @@ void ImageWidget::closeEvent(QCloseEvent *event)
 void ImageWidget::loadConfiguration()
 {
     ConfigManager::Config config = configManager->loadConfig();
-    qDebug() << "加载配置：透明背景 =" << config.transparentBackground;
+    //qDebug() << "加载配置：透明背景 =" << config.transparentBackground;
 
     // 同步所有字段到 currentConfig
     currentConfig.windowPosition = config.windowPosition;
@@ -36,6 +36,13 @@ void ImageWidget::loadConfiguration()
     currentConfig.lastViewMode = config.lastViewMode;
     currentConfig.lastImageIndex = config.lastImageIndex;
     currentConfig.lastImagePath = config.lastImagePath;
+    currentConfig.maxDecodeSize = config.maxDecodeSize;
+    currentConfig.pixmapCacheSize = config.pixmapCacheSize;
+    currentConfig.preloadRange = config.preloadRange;
+
+
+    // 立即应用到缓存
+    pixmapCache.setMaxCost(qMax(1, currentConfig.pixmapCacheSize));
 
     applyConfiguration(config);
 }
@@ -64,8 +71,14 @@ void ImageWidget::saveConfiguration()
     config.lastImageIndex = currentImageIndex;
     config.lastImagePath = currentImagePath;
 
+    config.maxDecodeSize = currentConfig.maxDecodeSize;
+    config.pixmapCacheSize = currentConfig.pixmapCacheSize;
+    config.preloadRange = currentConfig.preloadRange;
+
+
+
     configManager->saveConfig(config);
-    qDebug() << "保存配置：透明背景 =" << config.transparentBackground;
+    //qDebug() << "保存配置：透明背景 =" << config.transparentBackground;
 }
 
 // imagewidget_config.cpp - 修改 applyConfiguration 方法
@@ -146,13 +159,13 @@ void ImageWidget::applyConfiguration(const ConfigManager::Config &config)
         move(savedGeometry.topLeft());
         resize(savedGeometry.size());
         showNormal();
-        qDebug() << "应用配置：窗口正常大小";
+        //qDebug() << "应用配置：窗口正常大小";
     } else {
         // 如果是最大化，先设置正常大小再最大化
         move(savedGeometry.topLeft());
         resize(savedGeometry.size());
         showMaximized();
-        qDebug() << "应用配置：窗口最大化";
+        //qDebug() << "应用配置：窗口最大化";
     }
 
     // 恢复上次打开的图片路径（但不自动加载，避免覆盖当前状态）
@@ -218,13 +231,13 @@ void ImageWidget::toggleAlwaysOnTop()
 
     if (wasSingleView && hadImage && wasTranslucent) {
         updateMask();  // 第一次设置形状
-        qDebug() << "置顶切换后重新生成掩码";
+        //qDebug() << "置顶切换后重新生成掩码";
 
         // 延迟再次设置形状，给窗口管理器时间
         QTimer::singleShot(200, this, [this]() {
             if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
                 updateMask();  // 第二次设置
-                qDebug() << "置顶切换后延迟再次生成掩码";
+                //qDebug() << "置顶切换后延迟再次生成掩码";
 
 #ifdef Q_OS_LINUX
                 // 同步 X11 请求，确保处理完毕
@@ -295,39 +308,23 @@ void ImageWidget::toggleTransparentBackground()
     bool currentState = testAttribute(Qt::WA_TranslucentBackground);
 
     if (!currentState) {
-        // 尝试开启透明背景
-        if (m_transparentBackgroundReady) {
-            // 窗口已支持透明背景，直接动态切换
-            setAttribute(Qt::WA_TranslucentBackground, true);
-            setAutoFillBackground(false);
-            if (currentViewMode == SingleView && !pixmap.isNull()) {
-                updateMask();
-            }
-            currentConfig.transparentBackground = true;
-            saveConfiguration();
-            update();
-            qDebug() << "透明背景已动态开启";
-        } else {
-            // 首次开启，需要重启才能完全生效
-            QMessageBox::StandardButton reply = QMessageBox::question(this,
-                                                                      tr("需要重启"),
-                                                                      tr("开启透明背景需要重启程序才能完全生效。是否立即重启？"),
-                                                                      QMessageBox::Yes | QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                currentConfig.transparentBackground = true;
-                saveConfiguration();
-                restartApplication();  // 需要事先实现该函数
-            }
-            // 如果用户选择 No，则什么都不做（保持关闭状态）
+        setAttribute(Qt::WA_TranslucentBackground, true);
+        setAutoFillBackground(false);
+        m_transparentBackgroundReady = true;
+        if (currentViewMode == SingleView && !pixmap.isNull()) {
+            updateMask();
         }
+        currentConfig.transparentBackground = true;
+        saveConfiguration();
+        update();
+        //qDebug() << "透明背景已开启";
     } else {
-        // 关闭透明背景：总是可以直接动态关闭
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
         clearMask();
         currentConfig.transparentBackground = false;
         saveConfiguration();
         update();
-        qDebug() << "透明背景已关闭";
+        //qDebug() << "透明背景已关闭";
     }
 }

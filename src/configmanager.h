@@ -27,6 +27,11 @@ public:
         QString lastImagePath;   // 最后查看的图片路径（备用）
 
 
+        // 图片解码
+        int maxDecodeSize = 4000;   // 0 = 不限制；否则最长边上限（像素）
+        int pixmapCacheSize = 30;      // ★ 本次要加的
+        int preloadRange = 10;    // ★ 前后各预加载几张（0 = 禁用）
+
         bool skipMoveToTrashConfirmation = false;   // 是否跳过回收站删除确认
         bool skipPermanentDeleteConfirmation = false; // 是否跳过永久删除确认
         //Config();       // 默认构造函数
@@ -57,6 +62,8 @@ public:
 
 private:
     QString configPath;
+
+    int pixmapCacheSize = 50;      // 主图 QPixmap 缓存条目数，0 = 禁用缓存
 
 };
 

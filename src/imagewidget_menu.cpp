@@ -202,12 +202,27 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     QMenu *windowshowMenu = contextMenu.addMenu(tr("窗口"));
 
     // 沉浸模式选项（放在最前面，突出显示）
-    bool isImmersive = isMaximized() && !hasTitleBar() && hasTransparentBackground();
-    QAction *immersiveAction = windowshowMenu->addAction(
-        isImmersive ? tr("退出沉浸模式 (Ctrl+F)") : tr("沉浸模式 (Ctrl+F)")
-        );
-    connect(immersiveAction, &QAction::triggered, this, &ImageWidget::toggleImmersiveMode);
-    windowshowMenu->addSeparator();  // 与其他选项分隔
+    // ✅ 两个独立的菜单项
+    bool isImmersive = isMaximized() && !hasTitleBar();
+    bool isTransparentImm = isImmersive && hasTransparentBackground();
+
+    QAction *immersiveBlackAction = windowshowMenu->addAction(
+        (isImmersive && !isTransparentImm) ? tr("退出黑色沉浸 (Ctrl+F)")
+                                           : tr("黑色沉浸模式 (Ctrl+F)"));
+    connect(immersiveBlackAction, &QAction::triggered, this, [this]() {
+        toggleImmersiveMode(false);
+    });
+
+    QAction *immersiveTransparentAction = windowshowMenu->addAction(
+        isTransparentImm ? tr("退出透明沉浸 (Ctrl+Shift+F)")
+                         : tr("透明沉浸模式 (Ctrl+Shift+F)"));
+    connect(immersiveTransparentAction, &QAction::triggered, this, [this]() {
+        toggleImmersiveMode(true);
+    });
+
+
+
+    windowshowMenu->addSeparator();
 
     QAction *windowshowAction1 = windowshowMenu->addAction(
         hasTitleBar() ? tr("隐藏标题栏") : tr("显示标题栏"));
@@ -302,6 +317,199 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
     slideshowMenu->addSeparator();
 
+    // ==================== 缩放方式 ====================
+    windowshowMenu->addSeparator();
+
+    QMenu *scaleModeMenu = windowshowMenu->addMenu(tr("缩放方式（Ctrl+B）"));
+
+    QAction *scaleFitAction = scaleModeMenu->addAction(tr("完整适应窗口"));
+    QAction *scaleBoxAction = scaleModeMenu->addAction(tr("统一包围盒"));
+
+    scaleFitAction->setCheckable(true);
+    scaleBoxAction->setCheckable(true);
+
+    scaleFitAction->setChecked(slideScaleMode == SlideFitWindow);
+    scaleBoxAction->setChecked(slideScaleMode == SlideBoundingBox);
+
+    connect(scaleFitAction, &QAction::triggered, this, [this]() {
+        slideScaleMode = SlideFitWindow;
+        boxZoom = 1.0;
+        if (currentViewMode == SingleView && !pixmap.isNull()) {
+            fitToWindow();
+        }
+    });
+
+    connect(scaleBoxAction, &QAction::triggered, this, [this]() {
+        slideScaleMode = SlideBoundingBox;
+        boxZoom = 1.0;
+        if (currentViewMode == SingleView && !pixmap.isNull()) {
+            fitToWindow();
+        }
+    });
+
+
+    // ==================== 图片解码尺寸 ====================
+    QMenu *decodeMenu = contextMenu.addMenu(tr("图片解码尺寸"));
+
+    QAction *decode1k        = decodeMenu->addAction(tr("1000 像素 (极速)"));
+    QAction *decode2k        = decodeMenu->addAction(tr("2000 像素 (高速)"));
+    QAction *decode4k        = decodeMenu->addAction(tr("4000 像素 (推荐)"));
+    QAction *decode8k        = decodeMenu->addAction(tr("8000 像素 (高清晰)"));
+    QAction *decodeUnlimited = decodeMenu->addAction(tr("不限制 (可能很慢)"));
+
+    decode1k->setCheckable(true);
+    decode2k->setCheckable(true);
+    decode4k->setCheckable(true);
+    decode8k->setCheckable(true);
+    decodeUnlimited->setCheckable(true);
+
+    int cur = currentConfig.maxDecodeSize;
+    decode1k->setChecked(cur == 1000);
+    decode2k->setChecked(cur == 2000);
+    decode4k->setChecked(cur == 4000);
+    decode8k->setChecked(cur == 8000);
+    decodeUnlimited->setChecked(cur == 0);
+
+    auto setDecodeSize = [this](int size) {
+        // ① 保存配置
+        currentConfig.maxDecodeSize = size;
+        saveConfiguration();
+
+        // ★ 代际 +1，作废所有在途预加载
+        m_cacheGeneration.fetch_add(1);
+
+        qDebug() << "解码尺寸上限设为:"
+                 << (size == 0 ? QStringLiteral("不限制") : QString::number(size));
+
+        // ② 清空主图 / 压缩包缓存
+        {
+            QMutexLocker locker(&cacheMutex);
+            imageCache.clear();
+            archiveImageCache.clear();
+        }
+
+        // ③ 清空缩略图缓存 + 触发重新加载
+        if (thumbnailWidget) {
+            thumbnailWidget->clearThumbnailCache();
+
+            // ★ 关键：重置图片列表，让 ThumbnailWidget 重新走批量加载
+            if (!imageList.isEmpty()) {
+                if (isArchiveMode) {
+                    // 压缩包模式：传带 "|" 的路径
+                    QStringList thumbnailPaths;
+                    for (const QString &f : imageList) {
+                        thumbnailPaths.append(currentArchivePath + "|" + f);
+                    }
+                    thumbnailWidget->setImageList(thumbnailPaths, QDir());
+                } else {
+                    thumbnailWidget->setImageList(imageList, currentDir);
+                }
+            } else {
+                thumbnailWidget->update();   // 空列表就刷一下重绘
+            }
+        }
+
+        // ④ 重载当前单张图
+        if (!currentImagePath.isEmpty() && currentViewMode == SingleView) {
+            loadImage(currentImagePath, false);
+        }
+    };
+
+    connect(decode1k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(1000); });
+    connect(decode2k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(2000); });
+    connect(decode4k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(4000); });
+    connect(decode8k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(8000); });
+    connect(decodeUnlimited, &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(0); });
+
+
+    // ==================== 缓存条目数 ====================
+    QMenu *cacheMenu = contextMenu.addMenu(tr("缓存图片数"));
+
+    QAction *cache10  = cacheMenu->addAction(tr("10 张 (低内存)"));
+    QAction *cache30  = cacheMenu->addAction(tr("30 张"));
+    QAction *cache50  = cacheMenu->addAction(tr("50 张 (推荐)"));
+    QAction *cache100 = cacheMenu->addAction(tr("100 张"));
+    QAction *cache200 = cacheMenu->addAction(tr("200 张 (高内存)"));
+    QAction *cacheOff = cacheMenu->addAction(tr("不缓存 (最省内存)"));
+
+    QList<QPair<QAction*, int>> cacheItems = {
+        {cache10,  10},
+        {cache30,  30},
+        {cache50,  50},
+        {cache100, 100},
+        {cache200, 200},
+        {cacheOff, 0}
+    };
+
+    int curCache = currentConfig.pixmapCacheSize;
+    for (auto &item : cacheItems) {
+        item.first->setCheckable(true);
+        item.first->setChecked(curCache == item.second);
+    }
+
+    auto setCacheSize = [this](int n) {
+        currentConfig.pixmapCacheSize = n;
+        saveConfiguration();
+
+        if (n <= 0) {
+            pixmapCache.clear();
+            pixmapCache.setMaxCost(1);      // QCache 不接受 0，用 1 变相禁用
+            //qDebug() << "缓存已禁用";
+        } else {
+            pixmapCache.setMaxCost(n);
+            //qDebug() << "缓存上限:" << n << "张，当前条数:" << pixmapCache.size();
+        }
+    };
+
+    for (auto &item : cacheItems) {
+        int n = item.second;
+        connect(item.first, &QAction::triggered, this, [setCacheSize, n]() {
+            setCacheSize(n);
+        });
+    }
+
+
+    QMenu *preloadMenu = contextMenu.addMenu(tr("预加载范围"));
+
+    QAction *pl0  = preloadMenu->addAction(tr("0 张 (省内存)"));
+    QAction *pl3  = preloadMenu->addAction(tr("前后各 3 张"));
+    QAction *pl5  = preloadMenu->addAction(tr("前后各 5 张"));
+    QAction *pl10 = preloadMenu->addAction(tr("前后各 10 张 (推荐)"));
+    QAction *pl20 = preloadMenu->addAction(tr("前后各 20 张 (吃内存)"));
+
+    QList<QPair<QAction*, int>> items = {
+        {pl0, 0}, {pl3, 3}, {pl5, 5}, {pl10, 10}, {pl20, 20}
+    };
+
+    int cur2 = currentConfig.preloadRange;
+    for (auto &it : items) {
+        it.first->setCheckable(true);
+        it.first->setChecked(cur2 == it.second);
+    }
+
+    auto setPreload = [this](int n) {
+        currentConfig.preloadRange = n;
+        saveConfiguration();
+        qDebug() << "预加载范围:" << n;
+    };
+
+    for (auto &it : items) {
+        int n = it.second;
+        connect(it.first, &QAction::triggered, this, [setPreload, n]() {
+            setPreload(n);
+        });
+    }
+
+
+
+    // 显示当前模式的提示（可选）
+    scaleModeMenu->addSeparator();
+    QAction *currentModeInfo = scaleModeMenu->addAction(
+        slideScaleMode == SlideBoundingBox ? tr("当前：包围盒") : tr("当前：完整适应"));
+    currentModeInfo->setEnabled(false);
+
+    slideshowMenu->addSeparator();
+
     QMenu *intervalMenu = slideshowMenu->addMenu(tr("切换间隔"));
     QAction *interval1s = intervalMenu->addAction(tr("1秒"));
     QAction *interval2s = intervalMenu->addAction(tr("2秒"));
@@ -345,7 +553,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     if (canvasMode && canvasOverlay && canvasOverlay->isVisible()) {
         QTimer::singleShot(0, canvasOverlay, [this]() {
             canvasOverlay->forceStayOnTop();
-            qDebug() << "菜单关闭：强制覆盖层置顶";
+            //qDebug() << "菜单关闭：强制覆盖层置顶";
         });
     }
 }

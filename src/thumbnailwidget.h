@@ -14,6 +14,9 @@
 #include <QCache>
 #include <QTimer>
 #include <QSet>
+#include <QThreadPool>
+#include <atomic>
+
 
 class ImageWidget;  // 前向声明
 
@@ -31,17 +34,14 @@ public:
     void ensureVisible(int index);
     void clearThumbnailCache();
     static void clearThumbnailCacheForImage(const QString &imagePath);
-    void stopLoading();
+
 
     // 性能优化方法
     void setThumbnailSize(const QSize &size);
     void setCacheSize(int maxSizeMB);
 
     // 诊断方法
-    void diagnoseLoadingIssues();
-    void logThumbnailStatus();
-    void retryFailedThumbnails();
-    void forceReloadAll();
+
 
 signals:
     void thumbnailClicked(int index);
@@ -57,33 +57,22 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private slots:
-    void processBatchLoad();
+
 
 private:
     // 核心方法
-    bool isArchiveFile(const QString &fileName) const;
-    QPixmap createArchiveIcon() const;
+
     QPixmap loadThumbnail(const QString &path);
     void updateThumbnails();
-    void selectThumbnailAtPosition(const QPoint &pos);
+
 
     // 性能优化方法
-    void startLoadingAllThumbnails();
-    void loadThumbnailsBatch(const QStringList &fileNames);
-    QPixmap loadSingleThumbnail(const QString &fileName);
-    QPixmap loadImageFileFast(const QString &filePath);
-    int calculateItemsPerRow() const;
-    void drawThumbnailItem(QPainter &painter, int index, int x, int y,
-                           const QString &fileName, const QPixmap &thumbnail, bool isArchive);
-    QString getCacheKey(const QString &fileName) const;
-    QString getDisplayName(const QString &fileName) const;
-    void updateMinimumHeight();
+
+
+
 
     // 缓存管理
     void cleanupOldCache();
-    QPixmap getCachedThumbnail(const QString &cacheKey);
-    QPixmap scaleThumbnailWithAspectRatio(const QPixmap &original) const;
-    QImage scaleImageWithAspectRatio(const QImage &original) const;
 
     // 基础成员
     ImageWidget *imageWidget;
@@ -119,8 +108,8 @@ private:
 
     struct PerformanceConfig {
         int maxCacheMemoryMB = 100;           // 最大缓存内存 100MB (改为MB单位)
-        int batchLoadSize = 1;                // 每次批量加载1个
-        int batchLoadDelay = 150;              // 批次间延迟150ms
+        int batchLoadSize = 1;         // ★ 1 → 12（每批 12 张）
+        int batchLoadDelay = 20;        // ★ 150 → 30ms
         int preloadRange = 1;                 // 预加载前后1个
         bool enableLazyLoading = true;        // 启用懒加载
         bool enablePriorityLoading = true;    // 启用优先级加载
@@ -131,9 +120,48 @@ private:
     QSet<QString> failedThumbnails;
     QMap<QString, QString> loadingErrors;
     QTimer *diagnosticTimer;
+
+
+
+private:
+    // 缩略图加载相关
+    QImage loadSingleThumbnail(const QString &fileName);
+    QImage loadImageFileFast(const QString &filePath);
+    QImage createArchiveIconImage() const;
+    QImage scaleImageWithAspectRatio(const QImage &original) const;
+
+    // 缓存相关
+    QPixmap getCachedThumbnail(const QString &cacheKey);
     int calculateCostForPixmap(const QPixmap &pixmap) const;
     void logCacheStats();
+    void logThumbnailStatus();
+    void diagnoseLoadingIssues();
+    void forceReloadAll();
+    void retryFailedThumbnails();
     void finishLoading();
+
+    // 布局 / 绘制相关
+    void updateMinimumHeight();
+    int calculateItemsPerRow() const;
+    void selectThumbnailAtPosition(const QPoint &pos);
+    void drawThumbnailItem(QPainter &painter, int index,
+                           int x, int y, const QString &fileName,
+                           const QPixmap &thumbnail, bool isArchive);
+    void processBatchLoad();
+    void loadThumbnailsBatch(const QStringList &fileNames);
+    void startLoadingAllThumbnails();
+    void stopLoading();
+    QString getCacheKey(const QString &fileName) const;
+    QString getDisplayName(const QString &fileName) const;
+    bool isArchiveFile(const QString &fileName) const;
+
+
+private:
+    QThreadPool *m_pool = nullptr;   // 缩略图专用线程池
+    std::atomic<int> m_generation{0};
+
+private:
+    QString m_thumbCacheDir;
 
 };
 

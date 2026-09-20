@@ -108,13 +108,20 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
 
 ImageWidget::~ImageWidget()
 {
-    // 确保销毁控制面板
+    // 1. 销毁控制面板（UI 层面的，先做）
     destroyControlPanel();
 
-    // delete slideshowTimer;      // ⚠️ 有父对象，Qt 会自动删除
-    // delete thumbnailWidget;     // ⚠️ 有父对象，Qt 会自动删除
-    // delete scrollArea;          // ⚠️ 有父对象，Qt 会自动删除
+    // 2. 等所有 QtConcurrent 后台任务结束
+    //    - 此时 thumbnailWidget、imageCache、archiveHandler 都还活着
+    //    - 后台线程的 QPointer<ThumbnailWidget> guard 不为 null，能正常跑完
+    //    - 最多等 2 秒，避免 UI 卡死太久
+    if (!QThreadPool::globalInstance()->waitForDone(2000)) {
+        qWarning() << "等待后台任务超时，可能有任务仍在运行";
+    }
+
+    // 3. 之后再删自己 new 的对象（thumbnailWidget/scrollArea 是子对象，Qt 自动删）
     delete configManager;
+    configManager = nullptr;
 }
 
 void ImageWidget::setCurrentDir(const QDir &dir)
@@ -155,15 +162,11 @@ void ImageWidget::ensureFocus()
 
 void ImageWidget::testKeyboard()
 {
-    qDebug() << "=== 键盘测试开始 ===";
-    qDebug() << "当前焦点部件:"
-             << (QApplication::focusWidget()
-                     ? QApplication::focusWidget()->objectName()
-                     : "无");
-    qDebug() << "缩略图部件焦点状态:" << thumbnailWidget->hasFocus();
-    qDebug() << "当前模式:"
-             << (currentViewMode == SingleView ? "单张" : "缩略图");
-    qDebug() << "图片列表大小:" << imageList.size();
-    qDebug() << "当前选中索引:" << currentImageIndex;
-    qDebug() << "=== 键盘测试结束 ===";
+    //qDebug() << "=== 键盘测试开始 ===";
+    //qDebug() << "当前焦点部件:"<< (QApplication::focusWidget() ? QApplication::focusWidget()->objectName() : "无");
+    //qDebug() << "缩略图部件焦点状态:" << thumbnailWidget->hasFocus();
+    //qDebug() << "当前模式:"<< (currentViewMode == SingleView ? "单张" : "缩略图");
+    //qDebug() << "图片列表大小:" << imageList.size();
+    //qDebug() << "当前选中索引:" << currentImageIndex;
+    //qDebug() << "=== 键盘测试结束 ===";
 }

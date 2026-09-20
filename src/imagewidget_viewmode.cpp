@@ -39,7 +39,7 @@ void ImageWidget::switchToThumbnailView()
             disableMousePassthrough();
             clearMask();
 
-            qDebug() << "终极清除：窗口已重新映射，形状应已恢复";
+            //qDebug() << "终极清除：窗口已重新映射，形状应已恢复";
         }
     });
 
@@ -51,7 +51,7 @@ void ImageWidget::switchToThumbnailView()
 
     // 设置当前选中的缩略图索引
     if (currentImageIndex >= 0 && currentImageIndex < imageList.size()) {
-        qDebug() << "切换到缩略图模式，设置选中索引:" << currentImageIndex;
+        //qDebug() << "切换到缩略图模式，设置选中索引:" << currentImageIndex;
         thumbnailWidget->setSelectedIndex(currentImageIndex);
 
         // 延迟确保滚动位置正确
@@ -60,7 +60,7 @@ void ImageWidget::switchToThumbnailView()
         });
     } else if (!imageList.isEmpty()) {
         currentImageIndex = 0;
-        qDebug() << "切换到缩略图模式，设置默认选中索引:" << currentImageIndex;
+        //qDebug() << "切换到缩略图模式，设置默认选中索引:" << currentImageIndex;
         thumbnailWidget->setSelectedIndex(0);
 
         // 延迟确保滚动位置正确
@@ -68,7 +68,7 @@ void ImageWidget::switchToThumbnailView()
             thumbnailWidget->ensureVisible(0);
         });
     } else {
-        qDebug() << "切换到缩略图模式，无图片可选中";
+        //qDebug() << "切换到缩略图模式，无图片可选中";
         currentImageIndex = -1;
     }
 
@@ -114,9 +114,9 @@ void ImageWidget::onThumbnailClicked(int index)
     if (isArchiveFile(fileName)) {
         // 打开压缩包
         if (openArchive(filePath)) {
-            qDebug() << "成功打开压缩包:" << filePath;
+            //qDebug() << "成功打开压缩包:" << filePath;
         } else {
-            qDebug() << "打开压缩包失败:" << filePath;
+            //qDebug() << "打开压缩包失败:" << filePath;
             QMessageBox::warning(this, tr("错误"),
                                  tr("无法打开压缩包文件: %1").arg(fileName));
         }
@@ -138,12 +138,13 @@ void ImageWidget::onEnsureRectVisible(const QRect &rect)
     scrollArea->ensureVisible(rect.x(), rect.y(), rect.width(), rect.height());
 }
 
-void ImageWidget::toggleImmersiveMode()
+void ImageWidget::toggleImmersiveMode(bool useTransparent)
 {
-    bool currentlyImmersive = isMaximized() && !hasTitleBar();
+    bool currentlyImmersive   = isMaximized() && !hasTitleBar();
+    bool currentlyTransparent = hasTransparentBackground();
 
-    // ---------- 退出沉浸模式 ----------
-    if (currentlyImmersive) {
+    // ---------- 情况 1：已在沉浸模式，且背景类型相同 → 退出 ----------
+    if (currentlyImmersive && currentlyTransparent == useTransparent) {
         bool wasVisible = isVisible();
         QRect normalGeometry = geometry();
         if (wasVisible) hide();
@@ -165,28 +166,14 @@ void ImageWidget::toggleImmersiveMode()
             setGeometry(normalGeometry);
             showNormal();
         }
-
         setUpdatesEnabled(true);
         update();
         saveConfiguration();
         return;
     }
 
-    // ---------- 进入沉浸模式 ----------
-    // 弹出二选一对话框
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle(tr("选择沉浸背景"));
-    msgBox.setText(tr("请选择沉浸模式的背景类型："));
-    QPushButton *transparentBtn = msgBox.addButton(tr("透明背景"), QMessageBox::AcceptRole);
-    QPushButton *blackBtn = msgBox.addButton(tr("黑色背景"), QMessageBox::RejectRole);
-    msgBox.setDefaultButton(blackBtn);
-
-    msgBox.exec();
-    bool useTransparent = (msgBox.buttonRole(msgBox.clickedButton()) == QMessageBox::AcceptRole);
-
-    // 应用沉浸模式（无闪烁）
+    // ---------- 情况 2：进入或切换到目标沉浸模式 ----------
     bool wasVisible = isVisible();
-    QRect normalGeometry = geometry();
     if (wasVisible) hide();
     setUpdatesEnabled(false);
 
@@ -201,35 +188,28 @@ void ImageWidget::toggleImmersiveMode()
     currentConfig.transparentBackground = useTransparent;
     currentConfig.windowMaximized = true;
 
-    if (wasVisible) {
-        // 不要 hide，而是直接显示并延迟最大化
-        show();   // 确保窗口可见（如果已隐藏则显示）
-        // 等待一帧，让窗口管理器处理标志变化
-        QTimer::singleShot(0, this, [this]() {
-            showMaximized();
-            // 如果还需要其他操作（如 updateMask）可以放在这里
-            if (currentConfig.transparentBackground && currentViewMode == SingleView && !pixmap.isNull()) {
-                updateMask();
-            } else {
-                clearMask();
-            }
-            setUpdatesEnabled(true);
-            update();
-        });
-    } else {
-        // 窗口本来不可见？正常情况不会发生，但保留处理
+    show();   // 确保窗口可见
+    // 延迟一帧让 WM 处理 flags 变化后再最大化
+    QTimer::singleShot(0, this, [this, useTransparent]() {
         showMaximized();
-    }
+        if (useTransparent && currentViewMode == SingleView && !pixmap.isNull()) {
+            updateMask();
+        } else {
+            clearMask();
+        }
+        setUpdatesEnabled(true);
+        update();
+    });
 
-    setUpdatesEnabled(true);
-    update();
     saveConfiguration();
 
-    // 如果选择透明背景且需要重启，询问是否重启
+    // 透明背景首次启用提示重启
     if (useTransparent && !m_transparentBackgroundReady) {
         QMessageBox::StandardButton reply = QMessageBox::question(this,
-                                                                  tr("需要重启"),
-                                                                  tr("透明背景需要重启程序才能完全生效。是否立即重启？"),
+                                                                  tr("APP需要重启"),
+                                                                  tr("透明背景首次切换需要重启程序才能完全生效。\n\n"
+
+                                                                     "如果不重启，可能会有残影。确定立即重启APP？"),
                                                                   QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes) {
             restartApplication();

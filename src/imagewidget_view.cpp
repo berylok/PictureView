@@ -71,6 +71,19 @@ void ImageWidget::paintEvent(QPaintEvent *event)
         painter.drawPixmap(offset, scaledPixmap);
     }
 
+
+    // // 包围盒 ：在 paintEvent 里，画完图片之后加：
+    // if (currentViewMode == SingleView && slideScaleMode == SlideBoundingBox) {
+    //     double shortSide = qMin(width(), height());
+    //     double boxSide   = shortSide * 0.85;
+    //     QRectF boxRect(0, 0, boxSide, boxSide);
+    //     boxRect.moveCenter(QRectF(rect()).center());
+
+    //     painter.setPen(QPen(QColor(255, 255, 255, 40), 1, Qt::DashLine));
+    //     painter.setBrush(Qt::NoBrush);
+    //     painter.drawRect(boxRect);
+    // }
+
     // 5. 变换状态提示（保持不变）
     if (isTransformed()) {
         painter.setPen(Qt::yellow);
@@ -91,27 +104,52 @@ bool ImageWidget::shouldShowNavigationArrows(const QSize &scaledSize)
     return scaledSize.width() > 600 && scaledSize.height() > 600;
 }
 
+// 让图贴到"当前（可能被滚轮放大过）包围盒"的 scaleFactor
+double ImageWidget::computeBoxBaseScale() const
+{
+    if (pixmap.isNull()) return 1.0;
+
+    QSize ws = size();
+    if (ws.isEmpty()) {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        ws = screen->availableGeometry().size();
+    }
+
+    double shortSide = qMin(ws.width(), ws.height());
+    double boxSide   = shortSide * 0.85 * boxZoom;   // ★ 乘 boxZoom
+
+    double wRatio = boxSide / pixmap.width();
+    double hRatio = boxSide / pixmap.height();
+    return qMin(wRatio, hRatio);
+}
+
 void ImageWidget::fitToWindow()
 {
     if (pixmap.isNull()) return;
 
-    QSize windowSize = this->size();
-    if (windowSize.isEmpty() || windowSize.width() <= 0 || windowSize.height() <= 0) {
+    QSize ws = size();
+    if (ws.isEmpty()) {
         QScreen *screen = QGuiApplication::primaryScreen();
-        QRect desktopRect = screen->availableGeometry();
-        windowSize = desktopRect.size();
+        ws = screen->availableGeometry().size();
     }
 
-    QSize imageSize = pixmap.size();
-    double widthRatio = static_cast<double>(windowSize.width()) / imageSize.width();
-    double heightRatio = static_cast<double>(windowSize.height()) / imageSize.height();
+    if (slideScaleMode == SlideBoundingBox) {
+        // 包围盒：所有图视觉统一
+        scaleFactor = computeBoxBaseScale();
+    } else {
+        // 完整适应窗口（默认）
+        double wRatio = (double)ws.width()  / pixmap.width();
+        double hRatio = (double)ws.height() / pixmap.height();
+        scaleFactor = qMin(wRatio, hRatio);
+    }
 
-    scaleFactor = qMin(widthRatio, heightRatio);
+    scaleFactor = qMax(scaleFactor, 0.05);
+
     panOffset = QPointF(0, 0);
-    currentViewStateType = FitToWindow; // 设置为合适大小模式
-    updateMask(); //掩码更新
-    update();
+    currentViewStateType = FitToWindow;
 
+    updateMask();
+    update();
 }
 
 void ImageWidget::actualSize()
@@ -153,25 +191,30 @@ void ImageWidget::actualSize()
 
 void ImageWidget::wheelEvent(QWheelEvent *event)
 {
-    if (currentViewMode != SingleView) return;
+    if (currentViewMode != SingleView || pixmap.isNull()) return;
 
-    currentViewStateType = ManualAdjustment;
-    double zoomFactor = 1.15;
+    double step = (event->angleDelta().y() > 0) ? 1.15 : (1.0 / 1.15);
     double oldScale = scaleFactor;
 
-    if (event->angleDelta().y() > 0)
-        scaleFactor *= zoomFactor;
-    else
-        scaleFactor /= zoomFactor;
-    scaleFactor = qBound(0.03, scaleFactor, 8.0);
+    if (slideScaleMode == SlideBoundingBox) {
+        // 包围盒模式：改框大小
+        boxZoom *= step;
+        boxZoom = qBound(0.2, boxZoom, 8.0);
+        scaleFactor = computeBoxBaseScale();
+    } else {
+        // 完整适应模式：直接改缩放
+        scaleFactor *= step;
+        scaleFactor = qBound(0.05, scaleFactor, 10.0);
+    }
 
-    QPointF mousePos = event->position();
-    QPointF viewCenter(width()/2.0, height()/2.0);
-    QPointF imagePos = (mousePos - viewCenter - panOffset) / oldScale;
-    panOffset = mousePos - viewCenter - imagePos * scaleFactor;
+    // 以鼠标为中心
+    QPointF mousePos   = event->position();
+    QPointF viewCenter(width() / 2.0, height() / 2.0);
+    QPointF imagePos   = (mousePos - viewCenter - panOffset) / oldScale;
+    panOffset          = mousePos - viewCenter - imagePos * scaleFactor;
 
-    // 只重绘，不立即更新掩码
-    m_maskDirty = true;   // 标记掩码需要更新
+    currentViewStateType = ManualAdjustment;
+    m_maskDirty = true;
     update();
 }
 
@@ -286,15 +329,11 @@ void ImageWidget::setMask(const QRegion &region)
 {
     // 🚨 缩略图模式下禁止任何 setMask 调用！
     if (currentViewMode != SingleView) {
-        qDebug() << "\n🔥 非法 setMask 调用！当前模式:"
-                 << (currentViewMode == SingleView ? "SingleView" : "ThumbnailView")
-                 << "，已拦截。堆栈如下：";
 #ifdef Q_OS_LINUX
         void* callstack[128];
         int frames = backtrace(callstack, 128);
         char** strs = backtrace_symbols(callstack, frames);
         for (int i = 0; i < frames; ++i) {
-            qDebug() << "  " << strs[i];
         }
         free(strs);
 #endif
@@ -306,8 +345,6 @@ void ImageWidget::setMask(const QRegion &region)
 
 void ImageWidget::clearMask()
 {
-    qDebug() << "【clearMask】调用，模式:"
-             << (currentViewMode == SingleView ? "SingleView" : "ThumbnailView");
     QWidget::clearMask();
 }
 
@@ -323,7 +360,7 @@ void ImageWidget::clearX11Shape()
         // 清除输入形状，恢复全窗口可点
         XShapeCombineMask(display, windowId, ShapeInput, 0, 0, None, ShapeSet);
         XFlush(display);
-        qDebug() << "X11 形状已清除";
+        //qDebug() << "X11 形状已清除";
     }
     XCloseDisplay(display);
 #endif
@@ -347,7 +384,7 @@ void ImageWidget::setX11ShapeRect(const QRect &rect)
         int count = 0;
         int ordering = 0;
         XRectangle *rects = XShapeGetRectangles(display, windowId, ShapeInput, &count, &ordering);
-        qDebug() << "实际 X11 输入形状矩形数:" << count;
+        //qDebug() << "实际 X11 输入形状矩形数:" << count;
         for (int i = 0; i < count; ++i) {
             qDebug() << "  " << rects[i].x << rects[i].y << rects[i].width << rects[i].height;
         }

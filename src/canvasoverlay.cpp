@@ -32,12 +32,12 @@ CanvasOverlay::CanvasOverlay(ImageWidget* parent)
     setFocusPolicy(Qt::NoFocus);
 
     //setWindowOpacity(0.7);
-    qDebug() << "CanvasOverlay 窗口已创建（Tool类型，更稳定置顶）";
+    //qDebug() << "CanvasOverlay 窗口已创建（Tool类型，更稳定置顶）";
 }
 
 CanvasOverlay::~CanvasOverlay()
 {
-    qDebug() << "CanvasOverlay 窗口销毁";
+    //qDebug() << "CanvasOverlay 窗口销毁";
 }
 
 void CanvasOverlay::setImage(const QPixmap& pixmap)
@@ -58,12 +58,12 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
 
     QPainter painter(this);
 
-    qDebug() << "CanvasOverlay::paintEvent - 开始绘制";
-    // qDebug() << "  窗口尺寸:" << size();
-    // qDebug() << "  图片是否为空:" << m_displayState.image.isNull();
-    // qDebug() << "  图片尺寸:" << m_displayState.image.size();
-    // qDebug() << "  缩放比例:" << m_displayState.scaleFactor;
-    // qDebug() << "  平移偏移:" << m_displayState.panOffset;
+    //qDebug() << "CanvasOverlay::paintEvent - 开始绘制";
+    // //qDebug() << "  窗口尺寸:" << size();
+    // //qDebug() << "  图片是否为空:" << m_displayState.image.isNull();
+    // //qDebug() << "  图片尺寸:" << m_displayState.image.size();
+    // //qDebug() << "  缩放比例:" << m_displayState.scaleFactor;
+    // //qDebug() << "  平移偏移:" << m_displayState.panOffset;
 
     // // 1. 填充背景（比主窗口稍暗）
     // painter.fillRect(rect(), QColor(25, 25, 35, 180));
@@ -79,7 +79,7 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
 
     // 3. 如果有图片，按照主窗口的显示方式绘制
     if (!m_displayState.image.isNull()) {
-        qDebug() << "按照主窗口方式绘制图片...";
+        //qDebug() << "按照主窗口方式绘制图片...";
 
         // 方法1：直接使用主窗口的计算结果
         if (m_displayState.imageRect.isValid()) {
@@ -88,8 +88,8 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
             QRect targetRect = m_displayState.imageRect;
             targetRect.translate(geometry().topLeft() - m_parentWidget->geometry().topLeft());
 
-            qDebug() << "  使用主窗口显示区域:" << m_displayState.imageRect;
-            qDebug() << "  画布中目标区域:" << targetRect;
+            //qDebug() << "  使用主窗口显示区域:" << m_displayState.imageRect;
+            //qDebug() << "  画布中目标区域:" << targetRect;
 
             // 绘制图片（使用与主窗口相同的缩放）
             painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -124,7 +124,7 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
             QRect targetRect = QRect(QPoint(0, 0), scaledSize);
             targetRect.moveCenter(rect().center() + m_displayState.panOffset.toPoint());
 
-            qDebug() << "  重新计算目标区域:" << targetRect;
+            //qDebug() << "  重新计算目标区域:" << targetRect;
 
             // 绘制图片
             painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -147,7 +147,7 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
         }
     } else if (!m_displayPixmap.isNull()) {
         // 备用：使用QPixmap绘制
-        qDebug() << "使用QPixmap绘制图片...";
+        //qDebug() << "使用QPixmap绘制图片...";
 
         QSize scaledSize = m_displayPixmap.size() * m_displayState.scaleFactor;
         QRect targetRect = QRect(QPoint(0, 0), scaledSize);
@@ -182,7 +182,7 @@ void CanvasOverlay::paintEvent(QPaintEvent* event)
                        .arg(int(m_displayState.scaleFactor * 100));
     painter.drawText(10, height() - 10, hint);
 
-    qDebug() << "CanvasOverlay::paintEvent - 绘制完成";
+    //qDebug() << "CanvasOverlay::paintEvent - 绘制完成";
 }
 
 // canvasoverlay.cpp - 修改 setDisplayState 函数
@@ -210,7 +210,7 @@ void CanvasOverlay::applyX11MousePassthrough()
 {
 #ifdef Q_OS_LINUX
     if (QGuiApplication::platformName().contains("xcb")) {
-        qDebug() << "应用X11鼠标穿透到CanvasOverlay（只穿透非图片区域）";
+        //qDebug() << "应用X11鼠标穿透到CanvasOverlay（只穿透非图片区域）";
 
         Display* display = XOpenDisplay(nullptr);
         if (!display) {
@@ -219,14 +219,14 @@ void CanvasOverlay::applyX11MousePassthrough()
         }
 
         Window windowId = (Window)winId();
-        qDebug() << "CanvasOverlay X11窗口ID:" << windowId;
+        //qDebug() << "CanvasOverlay X11窗口ID:" << windowId;
 
         // 获取图片显示区域
         QRect imageRect = QRect(0, 0, 0, 0);
         if (!m_displayPixmap.isNull()) {
             imageRect = m_displayPixmap.rect();
             imageRect.moveCenter(rect().center());
-            qDebug() << "图片显示区域:" << imageRect;
+            //qDebug() << "图片显示区域:" << imageRect;
         }
 
         if (!imageRect.isEmpty()) {
@@ -277,26 +277,26 @@ void CanvasOverlay::applyX11MousePassthrough()
                 // 如果图片填满整个窗口，则完全穿透
                 XShapeCombineRectangles(display, windowId, ShapeInput,
                                         0, 0, nullptr, 0, ShapeSet, YXBanded);
-                qDebug() << "图片填满窗口，完全穿透";
+                //qDebug() << "图片填满窗口，完全穿透";
             } else {
                 // 只穿透非图片区域
                 XShapeCombineRectangles(display, windowId, ShapeInput,
                                         0, 0, rects.data(), rects.size(), ShapeSet, YXBanded);
-                qDebug() << "已穿透非图片区域，矩形数量:" << rects.size();
+                //qDebug() << "已穿透非图片区域，矩形数量:" << rects.size();
             }
         } else {
             // 没有图片，完全穿透
             XShapeCombineRectangles(display, windowId, ShapeInput,
                                     0, 0, nullptr, 0, ShapeSet, YXBanded);
-            qDebug() << "无图片，完全穿透";
+            //qDebug() << "无图片，完全穿透";
         }
 
         XFlush(display);
         XCloseDisplay(display);
 
-        qDebug() << "CanvasOverlay X11穿透已应用（智能穿透）";
+        //qDebug() << "CanvasOverlay X11穿透已应用（智能穿透）";
     } else {
-        qDebug() << "非X11环境，CanvasOverlay仅依赖Qt穿透属性";
+        //qDebug() << "非X11环境，CanvasOverlay仅依赖Qt穿透属性";
     }
 #endif
 }
@@ -343,7 +343,7 @@ void CanvasOverlay::forceStayOnTop()
     XFlush(display);
     XCloseDisplay(display);
 
-    qDebug() << "CanvasOverlay: 强制置顶成功 (_NET_WM_STATE_ABOVE)";
+    //qDebug() << "CanvasOverlay: 强制置顶成功 (_NET_WM_STATE_ABOVE)";
 #endif
 
     // 4. 保留 Qt 置顶标志作为后备

@@ -16,10 +16,10 @@
 int main(int argc, char *argv[])
 {
     // === 在创建QApplication之前先检测环境变量 ===
-    qDebug() << "=== 程序启动 - 环境检测 ===";
-    qDebug() << "命令行参数:";
+    //qDebug() << "=== 程序启动 - 环境检测 ===";
+    //qDebug() << "命令行参数:";
     for (int i = 0; i < argc; ++i) {
-        qDebug() << "  argv[" << i << "]:" << argv[i];
+        //qDebug() << "  argv[" << i << "]:" << argv[i];
     }
 
     // 创建QApplication
@@ -38,21 +38,21 @@ int main(int argc, char *argv[])
 
     // 设置更高的内存分配限制（512MB）
     QImageReader::setAllocationLimit(512);
-    qDebug() << "设置内存分配限制为 512MB";
+    //qDebug() << "设置内存分配限制为 512MB";
 
     // === 在设置应用程序信息后检测Qt平台 ===
     // 设置应用程序信息
     app.setApplicationName("PictureView");
-    app.setApplicationVersion("1.5.3");
+    app.setApplicationVersion("1.6.0");
     app.setOrganizationName("berylok");
 
     // 打印环境信息
-    qDebug() << "=== 环境检测结果 ===";
-    qDebug() << "Qt运行平台:" << QGuiApplication::platformName();
-    qDebug() << "QT_QPA_PLATFORM环境变量:" << qgetenv("QT_QPA_PLATFORM");
-    qDebug() << "XDG_SESSION_TYPE环境变量:" << qgetenv("XDG_SESSION_TYPE");
-    qDebug() << "DISPLAY环境变量:" << qgetenv("DISPLAY");
-    qDebug() << "==================";
+    //qDebug() << "=== 环境检测结果 ===";
+    //qDebug() << "Qt运行平台:" << QGuiApplication::platformName();
+    //qDebug() << "QT_QPA_PLATFORM环境变量:" << qgetenv("QT_QPA_PLATFORM");
+    //qDebug() << "XDG_SESSION_TYPE环境变量:" << qgetenv("XDG_SESSION_TYPE");
+    //qDebug() << "DISPLAY环境变量:" << qgetenv("DISPLAY");
+    //qDebug() << "==================";
 
     // ... 以下是你原有的代码，保持不变 ...
 
@@ -116,8 +116,6 @@ int main(int argc, char *argv[])
         locale = parser.value(langOption);
     }
 
-    qDebug() << "Selected locale:" << locale;
-
     // ========== 加载翻译文件 ==========
     QTranslator appTranslator;
     QTranslator qtTranslator;
@@ -126,9 +124,7 @@ int main(int argc, char *argv[])
     QString qtTranslationsPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
     if (qtTranslator.load("qt_" + locale, qtTranslationsPath)) {
         app.installTranslator(&qtTranslator);
-        qDebug() << "✅ Loaded Qt translation for" << locale;
     } else {
-        qDebug() << "⚠️ Failed to load Qt translation for" << locale;
     }
 
     // 2. 加载应用程序翻译（支持多路径搜索）
@@ -144,14 +140,12 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    qDebug() << "Using translation path:" << appTranslationsPath;
+
 
     if (appTranslator.load("PictureView_" + locale, appTranslationsPath)) {
         app.installTranslator(&appTranslator);
-        qDebug() << "✅ Loaded application translation for" << locale;
     } else {
-        qDebug() << "❌ Failed to load application translation for" << locale
-                 << "from" << appTranslationsPath;
+
     }
 
 
@@ -177,7 +171,7 @@ int main(int argc, char *argv[])
         ImageWidget().registerFileAssociation("tiff", "tifffile", openCommand);
         ImageWidget().registerFileAssociation("tif", "tiffile", openCommand);
 
-        qDebug() << ("main", "File associations registered");
+        //qDebug() << ("main", "File associations registered");
         return 0;
     }
 
@@ -188,7 +182,7 @@ int main(int argc, char *argv[])
 
     if (argc > 1) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        qDebug() << ("main", "Opening file:") << filePath;
+        //qDebug() << ("main", "Opening file:") << filePath;
 
         if (QFile::exists(filePath)) {
             QFileInfo fileInfo(filePath);

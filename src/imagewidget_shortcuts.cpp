@@ -49,13 +49,7 @@ void ImageWidget::createShortcutActions()
     connect(aboutAction, &QAction::triggered, this, &ImageWidget::showAboutDialog);
     this->addAction(aboutAction);
 
-    qDebug() << "快捷键已创建: "
-             << "Ctrl+O (打开文件夹), "
-             << "Ctrl+Shift+O (打开图片), "
-             << "Ctrl+S (保存图片), "
-             << "Ctrl+C (拷贝图片), "
-             << "Ctrl+V (粘贴图片), "
-             << "F1 (关于)";
+
 
     // 新增编辑快捷键
     // 旋转快捷键：Ctrl+R 顺时针旋转90度
@@ -99,19 +93,24 @@ void ImageWidget::createShortcutActions()
             &ImageWidget::resetTransform);
     this->addAction(resetTransformAction);
 
-    qDebug() << "编辑快捷键已创建: "
-             << "Ctrl+R (顺时针旋转), "
-             << "Ctrl+Shift+R (逆时针旋转), "
-             << "Ctrl+H (水平镜像), "
-             << "Ctrl+Shift+V (垂直镜像), "
-             << "Ctrl+0 (重置变换)";
 
-    // 沉浸模式 Ctrl+F
-    QAction *immersiveAction = new QAction(tr("沉浸模式"), this);
-    immersiveAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
-    immersiveAction->setShortcutContext(Qt::ApplicationShortcut);
-    connect(immersiveAction, &QAction::triggered, this, &ImageWidget::toggleImmersiveMode);
-    this->addAction(immersiveAction);
+    // ✅ 黑色沉浸 Ctrl+F
+    QAction *immersiveBlackAction = new QAction(tr("黑色沉浸模式"), this);
+    immersiveBlackAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
+    immersiveBlackAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(immersiveBlackAction, &QAction::triggered, this, [this]() {
+        toggleImmersiveMode(false);
+    });
+    this->addAction(immersiveBlackAction);
+
+    // ✅ 透明沉浸 Ctrl+Shift+F
+    QAction *immersiveTransparentAction = new QAction(tr("透明沉浸模式"), this);
+    immersiveTransparentAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
+    immersiveTransparentAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(immersiveTransparentAction, &QAction::triggered, this, [this]() {
+        toggleImmersiveMode(true);
+    });
+    this->addAction(immersiveTransparentAction);
 
     // 在新窗口打开图片：Ctrl+N
     openInNewWindowAction = new QAction(tr("在新窗口打开图片"), this);
@@ -120,4 +119,18 @@ void ImageWidget::createShortcutActions()
     connect(openInNewWindowAction, &QAction::triggered, this, &ImageWidget::openImageInNewWindow);
     this->addAction(openInNewWindowAction);
 
+    QAction *toggleBoxModeAction = new QAction(tr("切换包围盒模式"), this);
+    toggleBoxModeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_B));
+    toggleBoxModeAction->setShortcutContext(Qt::ApplicationShortcut);
+    connect(toggleBoxModeAction, &QAction::triggered, this, [this]() {
+        slideScaleMode = (slideScaleMode == SlideBoundingBox)
+                             ? SlideFitWindow
+                             : SlideBoundingBox;
+        boxZoom = 1.0;
+        if (currentViewMode == SingleView && !pixmap.isNull()) {
+            fitToWindow();
+        }
+        //qDebug() << "包围盒模式:" << (slideScaleMode == SlideBoundingBox ? "开" : "关");
+    });
+    this->addAction(toggleBoxModeAction);
 }

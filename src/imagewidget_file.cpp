@@ -37,10 +37,10 @@ void ImageWidget::openFolder()
         if (!imageList.isEmpty()) {
             currentImageIndex = 0;
             thumbnailWidget->setSelectedIndex(0);
-            qDebug() << "设置选中索引为 0，图片列表大小:" << imageList.size();
+            //qDebug() << "设置选中索引为 0，图片列表大小:" << imageList.size();
         } else {
             currentImageIndex = -1;
-            qDebug() << "图片列表为空，选中索引保持为 -1";
+            //qDebug() << "图片列表为空，选中索引保持为 -1";
         }
 
         // 确保窗口正常显示
@@ -172,6 +172,6 @@ void ImageWidget::openImageInNewWindow()
         QMessageBox::critical(this, tr("启动失败"),
                               tr("无法启动新窗口。\n请检查程序路径：\n%1").arg(program));
     } else {
-        qDebug() << "新窗口已启动，PID:" << pid;
+        //qDebug() << "新窗口已启动，PID:" << pid;
     }
 }

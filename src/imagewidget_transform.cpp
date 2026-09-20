@@ -110,5 +110,5 @@ bool ImageWidget::isTransformed() const
 void ImageWidget::toggleTransformLock()
 {
     transformLocked = !transformLocked;
-    qDebug() << "变换锁定状态:" << (transformLocked ? "已锁定" : "已解锁");
+    //qDebug() << "变换锁定状态:" << (transformLocked ? "已锁定" : "已解锁");
 }

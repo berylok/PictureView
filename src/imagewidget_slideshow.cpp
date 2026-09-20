@@ -1,15 +1,12 @@
-
 // imagewidget_slideshow.cpp
 #include "imagewidget.h"
 
 void ImageWidget::startSlideshow()
 {
     if (imageList.size() > 1) {
-        // 不再预加载所有图片，改为按需加载
         isSlideshowActive = true;
         slideshowTimer->start(slideshowInterval);
         updateWindowTitle();
-        // 移除日志消息，避免干扰
     }
 }
 
@@ -22,11 +19,8 @@ void ImageWidget::stopSlideshow()
 
 void ImageWidget::toggleSlideshow()
 {
-    if (isSlideshowActive) {
-        stopSlideshow();
-    } else {
-        startSlideshow();
-    }
+    if (isSlideshowActive) stopSlideshow();
+    else                  startSlideshow();
 }
 
 void ImageWidget::setSlideshowInterval(int interval)
@@ -37,6 +31,10 @@ void ImageWidget::setSlideshowInterval(int interval)
     }
 }
 
+// ---------------------------------------------------------------------
+// 幻灯片推进 + 预加载下一张
+// 注意：工作线程内只允许使用 QImage，禁止 QPixmap。
+// ---------------------------------------------------------------------
 void ImageWidget::slideshowNext()
 {
     if (imageList.isEmpty()) {
@@ -46,43 +44,77 @@ void ImageWidget::slideshowNext()
 
     int nextIndex = (currentImageIndex + 1) % imageList.size();
 
-    // 预加载下一张图片（如果不在缓存中）
-    if (!imageCache.contains(currentDir.absoluteFilePath(imageList.at(nextIndex)))) {
-        QtConcurrent::run([this, nextIndex]() {
-            QString nextPath = currentDir.absoluteFilePath(imageList.at(nextIndex));
-            QPixmap tempPixmap;
-            if (tempPixmap.load(nextPath)) {
+    // ---------- 压缩包模式预加载 ----------
+    if (isArchiveMode) {
+        QString nextPath = imageList.at(nextIndex);
+        bool needLoad = false;
+        {
+            QMutexLocker locker(&cacheMutex);
+            needLoad = !archiveImageCache.contains(nextPath);
+        }
+        if (needLoad) {
+            QtConcurrent::run([this, nextPath]() {
+                QByteArray data = archiveHandler.extractFile(nextPath);
+                if (data.isEmpty()) return;
+
+                QImage img;
+                if (!img.loadFromData(data)) return;
+
                 QMutexLocker locker(&cacheMutex);
-                imageCache.insert(nextPath, tempPixmap);
-            }
-        });
+                archiveImageCache.insert(nextPath, img);
+                //qDebug() << "预加载压缩包图片:" << nextPath;
+            });
+        }
     }
+    // ---------- 普通文件模式预加载 ----------
+    else {
+        QString nextPath = currentDir.absoluteFilePath(imageList.at(nextIndex));
+        bool needLoad = false;
+        {
+            QMutexLocker locker(&cacheMutex);
+            needLoad = !imageCache.contains(nextPath);
+        }
+        if (needLoad) {
+            QtConcurrent::run([this, nextPath]() {
+                QImage img;
+                if (!img.load(nextPath)) return;
 
-    // 加载当前图片
-    loadImageByIndex(nextIndex, true);
-}
-
-void ImageWidget::preloadAllImages()
-{
-    imageCache.clear();
-
-    int loadedCount = 0;
-    for (const QString &fileName : imageList) {
-        QString filePath = currentDir.absoluteFilePath(fileName);
-        QPixmap tempPixmap;
-        if (tempPixmap.load(filePath)) {
-            imageCache.insert(filePath, tempPixmap);
-            loadedCount++;
-            // 移除单条日志消息，减少干扰
+                QMutexLocker locker(&cacheMutex);
+                imageCache.insert(nextPath, img);
+                //qDebug() << "预加载图片:" << nextPath;
+            });
         }
     }
 
+    loadImageByIndex(nextIndex, true);
+}
+
+// 主线程全量预加载（保留）
+void ImageWidget::preloadAllImages()
+{
+    {
+        QMutexLocker locker(&cacheMutex);
+        imageCache.clear();
+    }
+
+    for (const QString &fileName : std::as_const(imageList)) {
+        QString filePath = currentDir.absoluteFilePath(fileName);
+        QImage img;
+        if (img.load(filePath)) {
+            QMutexLocker locker(&cacheMutex);
+            imageCache.insert(filePath, img);
+        }
+    }
     updateWindowTitle();
 }
 
 void ImageWidget::clearImageCache()
 {
-    int cacheSize = imageCache.size();
-    imageCache.clear();
+    m_cacheGeneration.fetch_add(1);   // ★
+    {
+        QMutexLocker locker(&cacheMutex);
+        imageCache.clear();
+    }
+    pixmapCache.clear();
     updateWindowTitle();
 }

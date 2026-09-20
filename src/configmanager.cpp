@@ -32,7 +32,7 @@ ConfigManager::ConfigManager(const QString& filename)
         }
     }
     configPath = configDir + "/" + filename;
-    qDebug() << "Config file path:" << configPath;
+    //qDebug() << "Config file path:" << configPath;
 }
 
 // 保存配置到文件
@@ -52,6 +52,13 @@ bool ConfigManager::saveConfig(const Config& config)
     settings.setValue("TransparentBackground", config.transparentBackground);
     settings.setValue("TitleBarVisible", config.titleBarVisible);
     //settings.setValue("AlwaysOnTop", config.alwaysOnTop);
+    settings.endGroup();
+
+    // 最大解码尺寸
+    settings.beginGroup("Image");
+    settings.setValue("MaxDecodeSize", config.maxDecodeSize);
+    settings.setValue("PixmapCacheSize", config.pixmapCacheSize);   // ★
+    settings.setValue("PreloadRange", config.preloadRange);
     settings.endGroup();
 
     // 保存最近打开路径
@@ -80,7 +87,7 @@ ConfigManager::Config ConfigManager::loadConfig()
 
     // 如果配置文件不存在，返回默认配置
     if (!QFile::exists(configPath)) {
-        qDebug() << "Config file not found, using default settings";
+        //qDebug() << "Config file not found, using default settings";
         return config;
     }
 
@@ -114,7 +121,14 @@ ConfigManager::Config ConfigManager::loadConfig()
     config.lastImagePath = settings.value("LastImagePath", "").toString();
     settings.endGroup();
 
-    qDebug() << "Config loaded from:" << configPath;
+    // 最大解码尺寸
+    settings.beginGroup("Image");
+    config.maxDecodeSize = settings.value("MaxDecodeSize", 1000).toInt();
+    config.pixmapCacheSize = settings.value("PixmapCacheSize", 50).toInt();
+    config.preloadRange = settings.value("PreloadRange", 10).toInt();
+    settings.endGroup();
+
+    //qDebug() << "Config loaded from:" << configPath;
     return config;
 }
 

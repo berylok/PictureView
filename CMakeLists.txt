@@ -222,6 +222,7 @@ endif()
 # 编译特性设置
 target_compile_definitions(PictureView PRIVATE
     $<$<CONFIG:Debug>:QT_QML_DEBUG>
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
 )
 
 # 设置版本信息

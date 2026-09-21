@@ -622,7 +622,7 @@ void ThumbnailWidget::retryFailedThumbnails()
         QString fileName = cacheKey.contains("|") ? cacheKey
                                                   : QFileInfo(cacheKey).fileName();
 
-        QtConcurrent::run(m_pool, [guard, fileName, gen]() {   // ★ 用 m_pool
+        m_pool->start([guard, fileName, gen]() {
             if (!guard) return;
             if (guard->m_generation.load() != gen) return;     // ★ 检查代际
 

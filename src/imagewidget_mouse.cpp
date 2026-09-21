@@ -14,7 +14,7 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
         if (event->button() == Qt::RightButton) {
             // 临时禁用鼠标穿透以显示菜单
             disableMousePassthrough();
-            showContextMenu(event->globalPos());
+            showContextMenu(event->globalPosition().toPoint());
             // 菜单关闭后重新启用鼠标穿透
             if (canvasMode) {
                 enableMousePassthrough();
@@ -26,7 +26,7 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
     if (currentViewMode == ThumbnailView) {
         // 在缩略图模式下，只处理右键点击（显示菜单）
         if (event->button() == Qt::RightButton) {
-            showContextMenu(event->globalPos());
+            showContextMenu(event->globalPosition().toPoint());
         }
         // 左键和中键事件交给 ThumbnailWidget 处理
         else {
@@ -38,11 +38,11 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
         if (currentViewMode == SingleView) {
             if (event->button() == Qt::MiddleButton) {
                 isDraggingWindow = true;
-                dragStartPosition = event->globalPos() - frameGeometry().topLeft();
+                dragStartPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
                 return;
             }
             if (event->button() == Qt::RightButton) {
-                showContextMenu(event->globalPos());
+                showContextMenu(event->globalPosition().toPoint());
                 return;
             }
 
@@ -58,7 +58,7 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
 void ImageWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if (isDraggingWindow && (event->buttons() & Qt::MiddleButton)) {
-        QPoint newPosition = event->globalPos() - dragStartPosition;
+        QPoint newPosition = event->globalPosition().toPoint() - dragStartPosition;
         move(newPosition);
     } else if (isPanningImage && (event->buttons() & Qt::LeftButton)) {
         currentViewStateType = ManualAdjustment;
@@ -80,6 +80,11 @@ void ImageWidget::mouseReleaseEvent(QMouseEvent *event)
     } else if (event->button() == Qt::LeftButton) {
         isPanningImage = false;
 
+        // ★ 清缓存
+        m_dragCache = QPixmap();
+        m_dragCacheScale = -1.0;
+
+        update();   // 触发重绘，让画面切回平滑高质量
 
         if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
             m_maskDirty = true;
@@ -90,7 +95,6 @@ void ImageWidget::mouseReleaseEvent(QMouseEvent *event)
         updateMask();
     }
 }
-
 
 // 在 mouseDoubleClickEvent 中确保正确处理画布模式
 void ImageWidget::mouseDoubleClickEvent(QMouseEvent *event)

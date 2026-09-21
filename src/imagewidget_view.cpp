@@ -45,7 +45,7 @@ void ImageWidget::paintEvent(QPaintEvent *event)
                    (height() - scaledSize.height()) / 2.0 + panOffset.y());
     QRectF imageCanvasRect(offset, scaledSize);
 
-    // 4. 一步到位绘制（Qt 内部裁剪 + 缩放，自动处理两种情形）
+    // 4. 计算可见区和源矩形
     QRectF visibleRectF = imageCanvasRect.intersected(QRectF(rect()));
     if (visibleRectF.isEmpty()) return;
 
@@ -53,11 +53,27 @@ void ImageWidget::paintEvent(QPaintEvent *event)
     QSizeF  srcSize    = visibleRectF.size() / scaleFactor;
     QRectF  sourceRectF(srcTopLeft, srcSize);
 
-    if (currentConfig.smoothScaling) {
-        // ★ 平滑：一步到位，Qt 内部双线性插值
+    // ==================== 绘制 ====================
+    // ★ 图比窗口小 且 正在拖动：用缓存，1:1 贴
+    bool imageSmallerThanWindow = (scaledSize.width()  <= width() &&
+                                   scaledSize.height() <= height());
+
+    if (isPanningImage && imageSmallerThanWindow) {
+        // 缓存失效就重建（scaleFactor 变了就重建）
+        if (m_dragCache.isNull() || m_dragCacheScale != scaleFactor) {
+            m_dragCache = pixmap.scaled(scaledSize.toSize(),
+                                        Qt::IgnoreAspectRatio,
+                                        Qt::FastTransformation);
+            m_dragCacheScale = scaleFactor;
+        }
+        painter.drawPixmap(offset, m_dragCache);
+    }
+    // 平滑模式：一步到位
+    else if (currentConfig.smoothScaling) {
         painter.drawPixmap(visibleRectF, pixmap, sourceRectF);
-    } else {
-        // ★ 像素：手动 FastTransformation，强制最近邻，才能看到方块
+    }
+    // 像素模式：手动 Fast
+    else {
         QPixmap piece = pixmap.copy(sourceRectF.toRect())
                             .scaled(visibleRectF.size().toSize(),
                                     Qt::IgnoreAspectRatio,
@@ -65,19 +81,7 @@ void ImageWidget::paintEvent(QPaintEvent *event)
         painter.drawPixmap(visibleRectF.topLeft(), piece);
     }
 
-    // // 包围盒 ：在 paintEvent 里，画完图片之后加：
-    // if (currentViewMode == SingleView && slideScaleMode == SlideBoundingBox) {
-    //     double shortSide = qMin(width(), height());
-    //     double boxSide   = shortSide * 0.85;
-    //     QRectF boxRect(0, 0, boxSide, boxSide);
-    //     boxRect.moveCenter(QRectF(rect()).center());
-
-    //     painter.setPen(QPen(QColor(255, 255, 255, 40), 1, Qt::DashLine));
-    //     painter.setBrush(Qt::NoBrush);
-    //     painter.drawRect(boxRect);
-    // }
-
-    // 5. 变换状态提示（保持不变）
+    // 5. 变换状态提示
     if (isTransformed()) {
         painter.setPen(Qt::yellow);
         painter.setFont(QFont("Arial", 10));
@@ -306,9 +310,10 @@ void ImageWidget::updateMask()
     }
 
     if (maskScale < 1.0) {
-        maskBitmap = maskBitmap.scaled(scaledPiece.size(),
-                                       Qt::KeepAspectRatio,
-                                       Qt::FastTransformation);
+        maskBitmap = QBitmap::fromPixmap(
+            maskBitmap.scaled(scaledPiece.size(),
+                              Qt::KeepAspectRatio,
+                              Qt::FastTransformation));
     }
 
     QRegion finalMask;

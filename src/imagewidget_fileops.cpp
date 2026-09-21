@@ -302,7 +302,7 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
                 int maxDecode = currentConfig.maxDecodeSize;
                 QPointer<ImageWidget> guard(this);
 
-                QtConcurrent::run([guard, itemPath, maxDecode, currentGen]() {
+                QThreadPool::globalInstance()->start([guard, itemPath, maxDecode, currentGen]() {
                     if (!guard) return;
 
                     QImage img = loadImageWithLimit(itemPath, maxDecode);
@@ -330,7 +330,7 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
                 int maxDecode = currentConfig.maxDecodeSize;
                 QPointer<ImageWidget> guard(this);
 
-                QtConcurrent::run([guard, itemPath, maxDecode]() {
+                QThreadPool::globalInstance()->start([guard, itemPath, maxDecode]() {
                     if (!guard) return;
 
                     QImage img = loadImageWithLimit(itemPath, maxDecode);

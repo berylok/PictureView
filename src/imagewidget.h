@@ -323,6 +323,9 @@ private:
     // double  m_dragCacheScale = -1.0;
     // qint64  m_dragCachePixmapKey = 0; // pixmap.cacheKey()，检测图片变化
     // void makeDragCache();
+    // ==================== 拖动缓存 ====================
+    QPixmap m_dragCache;
+    double  m_dragCacheScale = -1.0;
 
 public:
     int getImageCount() const { return imageList.size(); }

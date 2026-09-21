@@ -53,7 +53,7 @@ void ImageWidget::slideshowNext()
             needLoad = !archiveImageCache.contains(nextPath);
         }
         if (needLoad) {
-            QtConcurrent::run([this, nextPath]() {
+            QThreadPool::globalInstance()->start([this, nextPath]() {
                 QByteArray data = archiveHandler.extractFile(nextPath);
                 if (data.isEmpty()) return;
 
@@ -75,13 +75,12 @@ void ImageWidget::slideshowNext()
             needLoad = !imageCache.contains(nextPath);
         }
         if (needLoad) {
-            QtConcurrent::run([this, nextPath]() {
+            QThreadPool::globalInstance()->start([this, nextPath]() {
                 QImage img;
                 if (!img.load(nextPath)) return;
 
                 QMutexLocker locker(&cacheMutex);
                 imageCache.insert(nextPath, img);
-                //qDebug() << "预加载图片:" << nextPath;
             });
         }
     }

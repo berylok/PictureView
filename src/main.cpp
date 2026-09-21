@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     // 注册文件关联选项
     QCommandLineOption registerOption(
         "register",
-        ("main", "Register file associations"));
+        QCoreApplication::translate("main", "Register file associations"));
     parser.addOption(registerOption);
 
     parser.process(app);

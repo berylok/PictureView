@@ -22,6 +22,7 @@
 #include "canvasoverlay.h"
 #include <QCache>
 
+
 class ImageWidget : public QWidget
 {
     Q_OBJECT
@@ -76,12 +77,14 @@ public:
 
     // ==================== 工具方法 ====================
     void updateWindowTitle();
-    QString getShortPathName(const QString &longPath);
     void logMessage(const QString &message);
-    void registerFileAssociation(const QString &fileExtension,
-                                 const QString &fileTypeName,
-                                 const QString &openCommand);
     void openFolder();
+
+    // 新
+    static QString getShortPathName(const QString &longPath);
+    static void registerFileAssociation(const QString &fileExtension,
+                                        const QString &fileTypeName,
+                                        const QString &openCommand);
 
     ConfigManager::Config currentConfig;
     ConfigManager *configManager;
@@ -315,6 +318,14 @@ private:
     // 私有成员
     std::atomic<int> m_cacheGeneration{0};
 
+    // // ==================== 拖动缓存 ====================
+    // QPixmap m_dragCache;              // 拖动期间的全图缩放缓存
+    // double  m_dragCacheScale = -1.0;
+    // qint64  m_dragCachePixmapKey = 0; // pixmap.cacheKey()，检测图片变化
+    // void makeDragCache();
+
+public:
+    int getImageCount() const { return imageList.size(); }
 
 };
 

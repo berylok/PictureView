@@ -32,6 +32,11 @@ public:
         int pixmapCacheSize = 30;      // ★ 本次要加的
         int preloadRange = 10;    // ★ 前后各预加载几张（0 = 禁用）
 
+        // 外观
+        QString highlightColor = "#00A0E9";   // 默认蓝色（原来是 0,120,215）
+        // 图片显示
+        bool smoothScaling = true;    // true = 平滑插值；false = 像素（最近邻）
+
         bool skipMoveToTrashConfirmation = false;   // 是否跳过回收站删除确认
         bool skipPermanentDeleteConfirmation = false; // 是否跳过永久删除确认
         //Config();       // 默认构造函数

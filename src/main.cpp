@@ -159,19 +159,18 @@ int main(int argc, char *argv[])
 
     if (parser.isSet(registerOption)) {
         QString exePath = QCoreApplication::applicationFilePath();
-        QString shortExePath = ImageWidget().getShortPathName(exePath);
+        QString shortExePath = ImageWidget::getShortPathName(exePath);        // ✅ 直接调
         QString openCommand = QString("\"%1\" \"%2\"").arg(shortExePath).arg("%1");
 
-        ImageWidget().registerFileAssociation("png", "pngfile", openCommand);
-        ImageWidget().registerFileAssociation("jpg", "jpgfile", openCommand);
-        ImageWidget().registerFileAssociation("bmp", "bmpfile", openCommand);
-        ImageWidget().registerFileAssociation("jpeg", "jpegfile", openCommand);
-        ImageWidget().registerFileAssociation("webp", "webpfile", openCommand);
-        ImageWidget().registerFileAssociation("gif", "giffile", openCommand);
-        ImageWidget().registerFileAssociation("tiff", "tifffile", openCommand);
-        ImageWidget().registerFileAssociation("tif", "tiffile", openCommand);
+        ImageWidget::registerFileAssociation("png", "pngfile", openCommand);   // ✅
+        ImageWidget::registerFileAssociation("jpg", "jpgfile", openCommand);   // ✅
+        ImageWidget::registerFileAssociation("bmp", "bmpfile", openCommand);
+        ImageWidget::registerFileAssociation("jpeg", "jpegfile", openCommand);
+        ImageWidget::registerFileAssociation("webp", "webpfile", openCommand);
+        ImageWidget::registerFileAssociation("gif", "giffile", openCommand);
+        ImageWidget::registerFileAssociation("tiff", "tifffile", openCommand);
+        ImageWidget::registerFileAssociation("tif", "tiffile", openCommand);
 
-        //qDebug() << ("main", "File associations registered");
         return 0;
     }
 
@@ -180,10 +179,21 @@ int main(int argc, char *argv[])
     // 加载配置（必须在处理命令行参数之前）
     window.loadConfiguration();
 
+    QColor hl(window.currentConfig.highlightColor);
+    if (hl.isValid()) {
+        QPalette p = app.palette();
+        p.setColor(QPalette::Active,   QPalette::Highlight, hl);
+        p.setColor(QPalette::Inactive, QPalette::Highlight, hl);
+        // 文字颜色：亮色底用黑字，暗色底用白字
+        Qt::GlobalColor text = (hl.lightness() > 128) ? Qt::black : Qt::white;
+        p.setColor(QPalette::Active,   QPalette::HighlightedText, text);
+        p.setColor(QPalette::Inactive, QPalette::HighlightedText, text);
+        app.setPalette(p);
+    }
+
+    bool fileHandled = false;
     if (argc > 1) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        //qDebug() << ("main", "Opening file:") << filePath;
-
         if (QFile::exists(filePath)) {
             QFileInfo fileInfo(filePath);
             if (fileInfo.isDir()) {
@@ -193,13 +203,24 @@ int main(int argc, char *argv[])
                 window.loadImage(filePath);
                 window.switchToSingleView();
             }
+            fileHandled = true;
+        }
+    }
+
+    // ★ 独立判断，无论是否有参数
+    if (!fileHandled) {
+        // ★ 先恢复上次打开的文件夹
+        const QString &lastPath = window.currentConfig.lastOpenPath;
+        if (!lastPath.isEmpty() && QDir(lastPath).exists()) {
+            window.setCurrentDir(QDir(lastPath));
+            window.loadImageList();       // 扫描目录，填 imageList
+        }
+
+        if (window.getLastViewMode() == 1 && window.getImageCount() > 0) {
+            int idx = qBound(0, window.getLastImageIndex(), window.getImageCount() - 1);
+            window.switchToSingleView(idx);
         } else {
-            // 无命令行参数：根据保存的视图模式恢复
-            if (window.getLastViewMode() == 1) {  // 1 表示 SingleView
-                window.switchToSingleView(window.getLastImageIndex());
-            } else {
-                window.switchToThumbnailView();
-            }
+            window.switchToThumbnailView();
         }
     }
 

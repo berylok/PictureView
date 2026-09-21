@@ -1,4 +1,3 @@
-
 #include "imagewidget.h"
 #include <QPainter>
 #include <QWheelEvent>
@@ -23,6 +22,9 @@ void ImageWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
     QPainter painter(this);
 
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
     // 1. 背景填充
     if (testAttribute(Qt::WA_TranslucentBackground))
         painter.fillRect(rect(), QColor(0, 0, 0, 0));
@@ -43,34 +45,25 @@ void ImageWidget::paintEvent(QPaintEvent *event)
                    (height() - scaledSize.height()) / 2.0 + panOffset.y());
     QRectF imageCanvasRect(offset, scaledSize);
 
-    // 4. ★ 关键判断：缩放后图片是否大于窗口
-    bool largerThanWindow = (scaledSize.width()  > width() ||
-                             scaledSize.height() > height());
+    // 4. 一步到位绘制（Qt 内部裁剪 + 缩放，自动处理两种情形）
+    QRectF visibleRectF = imageCanvasRect.intersected(QRectF(rect()));
+    if (visibleRectF.isEmpty()) return;
 
-    if (largerThanWindow) {
-        // ---------- 按需渲染：只处理窗口内的可见部分 ----------
-        QRectF visibleRectF = imageCanvasRect.intersected(QRectF(rect()));
-        if (visibleRectF.isEmpty()) return;
+    QPointF srcTopLeft = (visibleRectF.topLeft() - offset) / scaleFactor;
+    QSizeF  srcSize    = visibleRectF.size() / scaleFactor;
+    QRectF  sourceRectF(srcTopLeft, srcSize);
 
-        // 映射回原图子矩形
-        QPointF srcTopLeft = (visibleRectF.topLeft() - offset) / scaleFactor;
-        QSizeF  srcSize    = visibleRectF.size() / scaleFactor;
-        QRect sourceRect(srcTopLeft.toPoint(), srcSize.toSize());
-
-        // 缩放可见块
-        QSize targetSize = visibleRectF.size().toSize();
-        QPixmap piece = pixmap.copy(sourceRect)
-                            .scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        painter.drawPixmap(visibleRectF.topLeft(), piece);
-
+    if (currentConfig.smoothScaling) {
+        // ★ 平滑：一步到位，Qt 内部双线性插值
+        painter.drawPixmap(visibleRectF, pixmap, sourceRectF);
     } else {
-        // ---------- 图片完全在窗口内：直接缩放全图 ----------
-        QPixmap scaledPixmap = pixmap.scaled(scaledSize.toSize(),
-                                             Qt::KeepAspectRatio,
-                                             Qt::SmoothTransformation);
-        painter.drawPixmap(offset, scaledPixmap);
+        // ★ 像素：手动 FastTransformation，强制最近邻，才能看到方块
+        QPixmap piece = pixmap.copy(sourceRectF.toRect())
+                            .scaled(visibleRectF.size().toSize(),
+                                    Qt::IgnoreAspectRatio,
+                                    Qt::FastTransformation);
+        painter.drawPixmap(visibleRectF.topLeft(), piece);
     }
-
 
     // // 包围盒 ：在 paintEvent 里，画完图片之后加：
     // if (currentViewMode == SingleView && slideScaleMode == SlideBoundingBox) {
@@ -386,7 +379,7 @@ void ImageWidget::setX11ShapeRect(const QRect &rect)
         XRectangle *rects = XShapeGetRectangles(display, windowId, ShapeInput, &count, &ordering);
         //qDebug() << "实际 X11 输入形状矩形数:" << count;
         for (int i = 0; i < count; ++i) {
-            qDebug() << "  " << rects[i].x << rects[i].y << rects[i].width << rects[i].height;
+            //qDebug() << "  " << rects[i].x << rects[i].y << rects[i].width << rects[i].height;
         }
         XFree(rects);
 
@@ -420,7 +413,7 @@ void ImageWidget::setX11Shape(const QRegion &region)
         XShapeCombineRectangles(display, windowId, ShapeInput,
                                 0, 0, rects.data(), rects.size(), ShapeSet, YXBanded);
         XFlush(display);
-        qDebug() << "X11 形状已更新，矩形数:" << rects.size();
+        //qDebug() << "X11 形状已更新，矩形数:" << rects.size();
     }
     XCloseDisplay(display);
 #endif

@@ -32,12 +32,13 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     totalCount(0),
     futureWatcher(nullptr),
     isLoading(false),
-    // ✅ 使用 maxCacheMemoryMB 并转换为字节
-    smartThumbnailCache(perfConfig.maxCacheMemoryMB * 1024 * 1024),
     currentBatchIndex(0),
     batchLoadTimer(this),
     diagnosticTimer(nullptr)
 {
+    // ★ 在函数体里初始化，此时 perfConfig 已经构造好了
+    smartThumbnailCache.setMaxCost(perfConfig.maxCacheMemoryMB * 1024 * 1024);
+
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
 
@@ -171,7 +172,7 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
     const int gen = m_generation.load();       // ★ 捕获当前代际
     QPointer<ThumbnailWidget> guard = this;
 
-    QtConcurrent::run(m_pool, [guard, fileNames, gen]() {   // ★ 用 m_pool
+    m_pool->start( [guard, fileNames, gen]() {   // ★ 用 m_pool
         qDebug() << "[" << QTime::currentTime() << "] 工作线程启动，处理"<< fileNames.size() << "个文件";
         if (!guard) return;
         if (guard->m_generation.load() != gen) return;      // ★ 检查
@@ -227,7 +228,7 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
                                       }
                                   }, Qt::QueuedConnection);
 
-        qDebug() << "[" << QTime::currentTime() << "] worker done,"<< loadedResults.size() << "个";
+         qDebug() << "[" << QTime::currentTime() << "] worker done,"<< resultCount << "个";
     });
 }
 // 新增完成处理函数
@@ -415,7 +416,14 @@ void ThumbnailWidget::drawThumbnailItem(QPainter &painter, int index,
     if (index == selectedIndex) {
         QPainterPath path;
         path.addRoundedRect(borderRect.adjusted(-3, -3, 3, 3), 5, 5);
-        painter.fillPath(path, QColor(0, 120, 215, 200));
+        // ★ 从 ImageWidget 的 currentConfig 拿颜色
+        QColor hl("#00A0E9");
+        if (imageWidget) {
+            hl = QColor(imageWidget->currentConfig.highlightColor);
+            if (!hl.isValid()) hl = QColor("#00A0E9");
+        }
+        hl.setAlpha(200);
+        painter.fillPath(path, hl);
     }
 
     // 绘制背景
@@ -924,7 +932,7 @@ void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
     } else if (event->button() == Qt::RightButton) {
         QMouseEvent newEvent(event->type(),
                              mapToParent(event->pos()),
-                             event->globalPos(),
+                             event->globalPosition(),
                              event->button(),
                              event->buttons(),
                              event->modifiers());

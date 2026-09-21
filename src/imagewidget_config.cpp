@@ -39,7 +39,8 @@ void ImageWidget::loadConfiguration()
     currentConfig.maxDecodeSize = config.maxDecodeSize;
     currentConfig.pixmapCacheSize = config.pixmapCacheSize;
     currentConfig.preloadRange = config.preloadRange;
-
+    currentConfig.highlightColor = config.highlightColor;
+    currentConfig.smoothScaling = config.smoothScaling;
 
     // 立即应用到缓存
     pixmapCache.setMaxCost(qMax(1, currentConfig.pixmapCacheSize));
@@ -75,7 +76,8 @@ void ImageWidget::saveConfiguration()
     config.pixmapCacheSize = currentConfig.pixmapCacheSize;
     config.preloadRange = currentConfig.preloadRange;
 
-
+    config.highlightColor = currentConfig.highlightColor;
+    config.smoothScaling = currentConfig.smoothScaling;
 
     configManager->saveConfig(config);
     //qDebug() << "保存配置：透明背景 =" << config.transparentBackground;

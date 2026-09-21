@@ -16,7 +16,7 @@ void ImageWidget::openFolder()
     }
 
     QString folderPath = QFileDialog::getExistingDirectory(
-        this, tr("选择图片文件夹"), initialPath);
+        nullptr, tr("选择图片文件夹"), initialPath);
 
     if (!folderPath.isEmpty()) {
         // 更新最后打开路径
@@ -69,7 +69,7 @@ void ImageWidget::openImage() {
         "所有文件 (*.*)";
 
     QString fileName = QFileDialog::getOpenFileName(
-        this, tr("打开图片或压缩包"), initialPath, filter);
+        nullptr, tr("打开图片或压缩包"), initialPath, filter);
 
     if (!fileName.isEmpty()) {
         QFileInfo fileInfo(fileName);

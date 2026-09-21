@@ -8,32 +8,44 @@
 #include <QApplication>
 #include <QProcess>
 #include "platform_compat.h"
+#include <QColorDialog>
+#include <QIcon>
+#include <QPixmap>
 
 void ImageWidget::showContextMenu(const QPoint &globalPos)
 {
     QMenu contextMenu;
 
-    // 设置菜单样式，确保在画布模式下正常显示
-    contextMenu.setStyleSheet(
-        "QMenu { "
-        "   background-color: white; "
-        "   color: black; "
-        "   border: 1px solid #cccccc; "
-        "}"
-        "QMenu::item { "
-        "   padding: 5px 20px 5px 20px; "
-        "   background-color: transparent; "
-        "}"
-        "QMenu::item:selected { "
-        "   background-color: #0066cc; "
-        "   color: white; "
-        "}"
-        "QMenu::separator { "
-        "   height: 1px; "
-        "   background-color: #cccccc; "
-        "   margin: 5px 0px 5px 0px; "
-        "}"
-        );
+    // 设置菜单样式
+    // ★ 从配置读高亮色
+    QColor hl(currentConfig.highlightColor);
+    if (!hl.isValid()) hl = QColor("#00A0E9");
+
+    // 文字色：亮底用黑字，暗底用白字
+    QString hlTextColor = (hl.lightness() > 160) ? "black" : "white";
+
+    QString menuStyle = QString(
+                            "QMenu { "
+                            "   background-color: white; "
+                            "   color: black; "
+                            "   border: 1px solid #cccccc; "
+                            "}"
+                            "QMenu::item { "
+                            "   padding: 5px 20px 5px 20px; "
+                            "   background-color: transparent; "
+                            "}"
+                            "QMenu::item:selected { "
+                            "   background-color: %1; "
+                            "   color: %2; "
+                            "}"
+                            "QMenu::separator { "
+                            "   height: 1px; "
+                            "   background-color: #cccccc; "
+                            "   margin: 5px 0px 5px 0px; "
+                            "}"
+                            ).arg(hl.name(), hlTextColor);
+
+    contextMenu.setStyleSheet(menuStyle);
 
     // 如果在压缩包模式下，添加返回上级目录的选项
     if (isArchiveMode) {
@@ -220,6 +232,28 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         toggleImmersiveMode(true);
     });
 
+    windowshowMenu->addSeparator();
+    QMenu *scalingMenu = windowshowMenu->addMenu(tr("图片缩放方式"));
+
+    QAction *smoothAct = scalingMenu->addAction(tr("平滑插值（推荐）"));
+    QAction *pixelAct  = scalingMenu->addAction(tr("像素（最近邻）"));
+
+    smoothAct->setCheckable(true);
+    pixelAct->setCheckable(true);
+    smoothAct->setChecked(currentConfig.smoothScaling);
+    pixelAct->setChecked(!currentConfig.smoothScaling);
+
+    connect(smoothAct, &QAction::triggered, this, [this]() {
+        currentConfig.smoothScaling = true;
+        saveConfiguration();
+        update();
+    });
+
+    connect(pixelAct, &QAction::triggered, this, [this]() {
+        currentConfig.smoothScaling = false;
+        saveConfiguration();
+        update();
+    });
 
 
     windowshowMenu->addSeparator();
@@ -239,6 +273,64 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
                                    : tr("透明背景（最大化+隐藏标题+透明背景+设置后重开程序）"));
     connect(windowshowAction3, &QAction::triggered, this,
             &ImageWidget::toggleTransparentBackground);
+
+    // ==================== 高亮颜色 ====================
+    windowshowMenu->addSeparator();
+    QMenu *highlightMenu = windowshowMenu->addMenu(tr("高亮颜色"));
+
+    struct HighlightPreset {
+        const char *name;
+        const char *color;
+    };
+    static const HighlightPreset presets[] = {
+                                              { QT_TR_NOOP("蓝色（默认）"), "#00A0E9" },
+                                              { QT_TR_NOOP("琥珀色"),       "#FFA500" },
+                                              { QT_TR_NOOP("橙红色"),       "#FF7830" },
+                                              { QT_TR_NOOP("暖金色"),       "#E6B450" },
+                                              { QT_TR_NOOP("蜜桃色"),       "#FFBE82" },
+                                              { QT_TR_NOOP("珊瑚色"),       "#FF645A" },
+                                              { QT_TR_NOOP("青绿色"),       "#20B2AA" },
+                                              { QT_TR_NOOP("紫色"),         "#9B59B6" },
+                                              { QT_TR_NOOP("粉色"),         "#FF69B4" },
+                                              { QT_TR_NOOP("灰白色"),       "#CCCCCC" },
+                                              };
+
+    QString current = currentConfig.highlightColor.toUpper();
+
+    for (const auto &p : presets) {
+        QAction *act = highlightMenu->addAction(tr(p.name));
+
+        // 前面画个小色块
+        QPixmap swatch(16, 16);
+        swatch.fill(QColor(p.color));
+        act->setIcon(QIcon(swatch));
+
+        act->setCheckable(true);
+        act->setChecked(current == QString(p.color).toUpper());
+
+        QString colorStr = p.color;
+        connect(act, &QAction::triggered, this, [this, colorStr]() {
+            currentConfig.highlightColor = colorStr;
+            saveConfiguration();
+            if (thumbnailWidget) thumbnailWidget->update();
+            qDebug() << "高亮颜色设为:" << colorStr;
+        });
+    }
+
+    // 自定义选项
+    highlightMenu->addSeparator();
+    QAction *customAct = highlightMenu->addAction(tr("自定义..."));
+    connect(customAct, &QAction::triggered, this, [this]() {
+        QColor c = QColorDialog::getColor(
+            QColor(currentConfig.highlightColor),
+            this, tr("选择高亮颜色"));
+        if (c.isValid()) {
+            currentConfig.highlightColor = c.name();   // #RRGGBB
+            saveConfiguration();
+            if (thumbnailWidget) thumbnailWidget->update();
+        }
+    });
+
 
     // 透明度子菜单
     QMenu *opacitySubMenu = windowshowMenu->addMenu(tr("透明度"));
@@ -347,6 +439,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         }
     });
 
+    contextMenu.addSeparator();
 
     // ==================== 图片解码尺寸 ====================
     QMenu *decodeMenu = contextMenu.addMenu(tr("图片解码尺寸"));
@@ -535,6 +628,7 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     connect(interval5s, &QAction::triggered, [this]() { setSlideshowInterval(5000); });
     connect(interval10s, &QAction::triggered, [this]() { setSlideshowInterval(10000); });
 
+    contextMenu.addSeparator();
     // 帮助菜单
     QMenu *helpMenu = contextMenu.addMenu(tr("帮助"));
     QAction *aboutAction = helpMenu->addAction(tr("关于 (F1)"));

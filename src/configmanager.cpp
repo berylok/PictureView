@@ -52,6 +52,8 @@ bool ConfigManager::saveConfig(const Config& config)
     settings.setValue("TransparentBackground", config.transparentBackground);
     settings.setValue("TitleBarVisible", config.titleBarVisible);
     //settings.setValue("AlwaysOnTop", config.alwaysOnTop);
+    settings.setValue("HighlightColor", config.highlightColor);   // ★
+    settings.setValue("SmoothScaling", config.smoothScaling);       // ★
     settings.endGroup();
 
     // 最大解码尺寸
@@ -73,6 +75,8 @@ bool ConfigManager::saveConfig(const Config& config)
     settings.setValue("LastImageIndex", config.lastImageIndex);
     settings.setValue("LastImagePath", config.lastImagePath);
     settings.endGroup();
+
+
 
 
     settings.sync();
@@ -107,6 +111,8 @@ ConfigManager::Config ConfigManager::loadConfig()
         settings.value("TitleBarVisible", config.titleBarVisible).toBool();
     // config.alwaysOnTop = settings.value("AlwaysOnTop",
     // config.alwaysOnTop).toBool();
+    config.highlightColor        = settings.value("HighlightColor", "#00A0E9").toString();   // ★
+    config.smoothScaling         = settings.value("SmoothScaling", true).toBool();  // ★
     settings.endGroup();
 
     // 加载最近打开路径

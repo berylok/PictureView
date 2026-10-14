@@ -103,6 +103,7 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     // 初始重绘以确保无残影
     update();
 
+    updateCacheLimits();
 
 }
 
@@ -169,4 +170,50 @@ void ImageWidget::testKeyboard()
     //qDebug() << "图片列表大小:" << imageList.size();
     //qDebug() << "当前选中索引:" << currentImageIndex;
     //qDebug() << "=== 键盘测试结束 ===";
+}
+
+void ImageWidget::updateCacheLimits()
+{
+    const int decodeSize = qMax(256, currentConfig.maxDecodeSize);
+    qint64 singleBytes = static_cast<qint64>(decodeSize) * decodeSize * 3;
+
+    int imgCount = currentConfig.imageCacheCount;
+    if (imgCount <= 0)
+        imgCount = currentConfig.preloadRange * 2 + 6;
+
+    // 硬上限：防止极端配置 OOM
+    const qint64 HARD_CAP = 4LL * 1024 * 1024 * 1024;
+    qint64 imgBytes = singleBytes * imgCount;
+    if (imgBytes > HARD_CAP) {
+        qWarning() << "⚠️ imageCache 需求" << imgBytes / 1024.0 / 1024.0
+                   << "MB 超过 4GB 上限，已截断。";
+        imgBytes = HARD_CAP;
+    }
+
+    imageCache.setMaxCost(imgBytes);
+    archiveImageCache.setMaxCost(imgBytes);
+
+    qDebug() << "=== 缓存配置 ===";
+    qDebug() << "解码尺寸:" << decodeSize << "px"
+             << "| 单张估算:" << singleBytes / 1024.0 / 1024.0 << "MB";
+    qDebug() << "imageCache 上限:"
+             << imageCache.maxCost() / 1024.0 / 1024.0 << "MB"
+             << "(" << imgCount << "张)";
+    qDebug() << "archiveImageCache 上限:"
+             << archiveImageCache.maxCost() / 1024.0 / 1024.0 << "MB";
+    qDebug() << "pixmapCache 上限:" << pixmapCache.maxCost() << "张";
+    qDebug() << "===================";
+}
+
+void ImageWidget::selectImageByName(const QString &fileName)
+{
+    int idx = imageList.indexOf(fileName);
+    if (idx < 0) return;
+
+    currentImageIndex = idx;
+    if (thumbnailWidget) {
+        thumbnailWidget->setSelectedIndex(idx);
+        thumbnailWidget->ensureVisible(idx);
+    }
+    updateWindowTitle();
 }

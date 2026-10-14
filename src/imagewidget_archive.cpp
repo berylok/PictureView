@@ -9,6 +9,7 @@
 
 #include <QImageReader>
 #include <QBuffer>
+#include <QFileInfo>
 
 bool ImageWidget::openArchive(const QString &filePath)
 {
@@ -30,6 +31,7 @@ bool ImageWidget::openArchive(const QString &filePath)
     // 加载压缩包中的图片列表
     loadArchiveImageList();
 
+    thumbnailWidget->setArchiveMode(QFileInfo(filePath).fileName());
     // 切换到缩略图模式
     switchToThumbnailView();
 
@@ -77,6 +79,14 @@ void ImageWidget::closeArchive()
         isArchiveMode = false;
         currentArchivePath.clear();
         imageList.clear();
+        {
+            QMutexLocker locker(&cacheMutex);
+            archiveImageCache.clear();
+        }
+        // ★ 新增：清除缩略图横幅
+        if (thumbnailWidget) {
+            thumbnailWidget->setArchiveMode(QString());
+        }
     }
 }
 
@@ -116,26 +126,46 @@ bool ImageWidget::loadImageFromArchive(const QString &filePath)
 {
     if (!isArchiveMode) return false;
 
-    QByteArray imageData = archiveHandler.extractFile(filePath);
-    if (imageData.isEmpty()) {
-        return false;
-    }
-
     QPixmap loadedPixmap;
-    if (!loadedPixmap.loadFromData(imageData)) {
-        return false;
+
+    // ① 先查缓存
+    {
+        QMutexLocker locker(&cacheMutex);
+        if (QImage *p = archiveImageCache.object(filePath)) {
+            loadedPixmap = QPixmap::fromImage(*p);
+        }
     }
 
-    // 保存原始图片并重置变换状态
+    // ② 未命中 → 解压 + 解码
+    if (loadedPixmap.isNull()) {
+        QByteArray imageData = archiveHandler.extractFile(filePath);
+        if (imageData.isEmpty()) {
+            return false;
+        }
+
+        QImage img;
+        if (!img.loadFromData(imageData)) {
+            return false;
+        }
+
+        loadedPixmap = QPixmap::fromImage(img);
+
+        // ③ 写入缓存（注意是按字节数 cost 的 QCache）
+        {
+            QMutexLocker locker(&cacheMutex);
+            archiveImageCache.insert(filePath, new QImage(img),
+                                     static_cast<int>(img.sizeInBytes()));
+        }
+    }
+
+    // ============ 以下保持你原有逻辑 ============
     originalPixmap = loadedPixmap;
     pixmap = loadedPixmap;
 
-    // 重置变换状态
     rotationAngle = 0;
     isHorizontallyFlipped = false;
     isVerticallyFlipped = false;
 
-    // 设置视图状态
     switch (currentViewStateType) {
     case FitToWindow:
         fitToWindow();
@@ -144,13 +174,10 @@ bool ImageWidget::loadImageFromArchive(const QString &filePath)
         actualSize();
         break;
     case ManualAdjustment:
-        // 保持当前的缩放和偏移
         break;
     }
 
     currentImagePath = currentArchivePath + "|" + filePath;
-
-    // 确保当前图片索引正确设置
     currentImageIndex = imageList.indexOf(filePath);
 
     update();
@@ -179,9 +206,8 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
     // 缓存命中
     {
         QMutexLocker locker(&cacheMutex);
-        auto it = archiveImageCache.constFind(archivePath);
-        if (it != archiveImageCache.constEnd()) {
-            return it.value();
+        if (QImage *p = archiveImageCache.object(archivePath)) {
+            return *p;
         }
     }
 
@@ -212,7 +238,8 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
         }
         {
             QMutexLocker locker(&cacheMutex);
-            archiveImageCache.insert(archivePath, errorImage);
+            archiveImageCache.insert(archivePath, new QImage(errorImage),
+                                     static_cast<int>(errorImage.sizeInBytes()));
         }
         return errorImage;
     }
@@ -232,25 +259,26 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
         (origSize.width() > maxDecode || origSize.height() > maxDecode)) {
         reader.setScaledSize(origSize.scaled(maxDecode, maxDecode, Qt::KeepAspectRatio));
     }
-    reader.read(&image);
+    // ---------- 解码 ----------
+    if (!reader.read(&image) || image.isNull()) {
+        // 失败 → 返回红色占位图
+        QImage failedImage(thumbnailSize, QImage::Format_ARGB32_Premultiplied);
+        failedImage.fill(QColor(255, 100, 100));
+        {
+            QPainter painter(&failedImage);
+            painter.setPen(Qt::white);
+            painter.setFont(QFont("Arial", 8, QFont::Bold));
+            painter.drawText(failedImage.rect(), Qt::AlignCenter,
+                             QString("加载失败\n%1\n%2字节")
+                                 .arg(internalFile)
+                                 .arg(imageData.size()));
+        }
+        return failedImage;
+    }
 
-    // ---------- 解码失败：错误占位图 ----------
-    QImage failedImage(thumbnailSize, QImage::Format_ARGB32_Premultiplied);
-    failedImage.fill(QColor(255, 100, 100));
-    {
-        QPainter painter(&failedImage);
-        painter.setPen(Qt::white);
-        painter.setFont(QFont("Arial", 8, QFont::Bold));
-        painter.drawText(failedImage.rect(), Qt::AlignCenter,
-                         QString("加载失败\n%1\n%2字节")
-                             .arg(internalFile)
-                             .arg(imageData.size()));
-    }
-    {
-        QMutexLocker locker(&cacheMutex);
-        archiveImageCache.insert(archivePath, failedImage);
-    }
-    return failedImage;
+    // ---------- 成功 → 返回缩略图 ----------
+    return image.scaled(thumbnailSize, Qt::KeepAspectRatio,
+                        Qt::SmoothTransformation);
 }
 // 创建默认的压缩包缩略图
 QImage ImageWidget::createDefaultArchiveThumbnail()

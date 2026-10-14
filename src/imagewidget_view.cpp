@@ -14,7 +14,7 @@
 #include <cxxabi.h>
 #endif
 
-
+#include <QFileInfo>
 
 
 void ImageWidget::paintEvent(QPaintEvent *event)
@@ -92,6 +92,33 @@ void ImageWidget::paintEvent(QPaintEvent *event)
         if (isVerticallyFlipped)   info << "垂直镜像";
         if (!info.isEmpty())
             painter.drawText(10, 30, info.join(" "));
+    }
+
+    // 6. 压缩包角标（顶部居中）
+    if (isArchiveMode && currentViewMode == SingleView) {
+        QString hint = QString("📦 %1    ESC 返回上级")
+                           .arg(QFileInfo(currentArchivePath).fileName());
+
+        QFont f = painter.font();
+        f.setBold(true);
+        f.setPointSize(11);
+        painter.setFont(f);
+
+        QFontMetrics fm(f);
+        int w = fm.horizontalAdvance(hint) + 32;
+        int h = fm.height() + 18;
+
+        // ★ 顶部居中
+        QRect hintRect((width() - w) / 2, 16, w, h);
+
+        // 实色橙色底 + 深橙边框
+        painter.setBrush(QColor(255, 140, 0));
+        painter.setPen(QPen(QColor(180, 90, 0), 2));
+        painter.drawRoundedRect(hintRect, 8, 8);
+
+        // 白字
+        painter.setPen(Qt::white);
+        painter.drawText(hintRect, Qt::AlignCenter, hint);
     }
 }
 

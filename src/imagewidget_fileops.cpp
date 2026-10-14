@@ -77,10 +77,9 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
 
     //qDebug() << "文件大小:" << fileInfo.size() << "字节";
 
-    // 检查是否是压缩包
+    // 压缩包：不自动打开，只显示图标，等用户双击
     if (ArchiveHandler::isSupportedArchive(filePath)) {
-        //qDebug() << "检测为压缩包文件";
-        return openArchive(filePath);
+        return false;
     }
 
     // 如果是压缩包模式，从压缩包加载
@@ -112,17 +111,19 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
             }
         }
 
-        // ★ 第 2 级：imageCache（QImage，要转换）
+        // ★ 第 2 级：imageCache（QCache，按字节数淘汰）
         if (loadedPixmap.isNull()) {
             QImage cached;
             {
                 QMutexLocker locker(&cacheMutex);
-                auto it = imageCache.constFind(filePath);
-                if (it != imageCache.constEnd()) cached = it.value();
+                if (QImage *p = imageCache.object(filePath)) {
+                    cached = *p;
+                }
             }
             if (!cached.isNull()) {
                 loadedPixmap = QPixmap::fromImage(cached);
-                pixmapCache.insert(filePath, new QPixmap(loadedPixmap));   // 提升到第 1 级
+
+                pixmapCache.insert(filePath, new QPixmap(loadedPixmap), 1);   // cost=1 张
                 //qDebug() << "命中 QImage 缓存:" << filePath;
             }
         }
@@ -141,9 +142,12 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
         // 从磁盘加载后：
         {
             QMutexLocker locker(&cacheMutex);
-            imageCache.insert(filePath, img);
+            imageCache.insert(filePath, new QImage(img),
+                              static_cast<int>(img.sizeInBytes()));
         }
-        pixmapCache.insert(filePath, new QPixmap(loadedPixmap));   // ★
+        {
+            pixmapCache.insert(filePath, new QPixmap(loadedPixmap), 1);   // cost=1 张
+        }
     }
 
     if (loadedPixmap.isNull()) {
@@ -316,7 +320,8 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
                     }
 
                     QMutexLocker locker(&guard->cacheMutex);
-                    guard->imageCache.insert(itemPath, img);
+                    guard->imageCache.insert(itemPath, new QImage(img),
+                                             static_cast<int>(img.sizeInBytes()));
                 });
             } else {
                 QString itemPath = currentDir.absoluteFilePath(imageList.at(idx));
@@ -338,7 +343,8 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
                     if (!guard) return;
 
                     QMutexLocker locker(&guard->cacheMutex);
-                    guard->imageCache.insert(itemPath, img);
+                    guard->imageCache.insert(itemPath, new QImage(img),
+                                             static_cast<int>(img.sizeInBytes()));
                 });
             }
         }
@@ -349,64 +355,48 @@ bool ImageWidget::loadImageByIndex(int index, bool fromCache)
 
 void ImageWidget::loadNextImage()
 {
-    //qDebug() << "=== loadNextImage 开始 ===";
-    //qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
-    //qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
-
-    if (imageList.isEmpty()) {
-        //qDebug() << "图片列表为空，返回";
-        return;
-    }
-
-    int nextIndex = (currentImageIndex + 1) % imageList.size();
-    //qDebug() << "计算出的下一个索引:" << nextIndex;
+    if (imageList.isEmpty()) return;
 
     if (currentViewMode == SingleView) {
-        //qDebug() << "单张模式，加载图片";
-        loadImageByIndex(nextIndex, true);
+        // 单图模式：跳过压缩包，往后找第一张真图
+        const int n = imageList.size();
+        for (int step = 1; step <= n; ++step) {
+            int idx = (currentImageIndex + step) % n;
+            if (!ArchiveHandler::isSupportedArchive(imageList.at(idx))) {
+                loadImageByIndex(idx, true);
+                return;
+            }
+        }
+        // 全是压缩包 → 什么也不做
     } else {
-        // 缩略图模式下，只更新索引和选中状态
-        //qDebug() << "缩略图模式，更新选中状态";
+        int nextIndex = (currentImageIndex + 1) % imageList.size();
         currentImageIndex = nextIndex;
         thumbnailWidget->setSelectedIndex(currentImageIndex);
         thumbnailWidget->ensureVisible(currentImageIndex);
         updateWindowTitle();
-
-        //qDebug() << "更新后的当前索引:" << currentImageIndex;
     }
-
-    //qDebug() << "=== loadNextImage 结束 ===";
 }
 
 void ImageWidget::loadPreviousImage()
 {
-    //qDebug() << "=== loadPreviousImage 开始 ===";
-    //qDebug() << "当前模式:" << (currentViewMode == SingleView ? "单张" : "缩略图");
-    //qDebug() << "当前索引:" << currentImageIndex << "，图片总数:" << imageList.size();
-
-    if (imageList.isEmpty()) {
-        //qDebug() << "图片列表为空，返回";
-        return;
-    }
-
-    int prevIndex = (currentImageIndex - 1 + imageList.size()) % imageList.size();
-    //qDebug() << "计算出的上一个索引:" << prevIndex;
+    if (imageList.isEmpty()) return;
 
     if (currentViewMode == SingleView) {
-        //qDebug() << "单张模式，加载图片";
-        loadImageByIndex(prevIndex, true);
+        const int n = imageList.size();
+        for (int step = 1; step <= n; ++step) {
+            int idx = (currentImageIndex - step + n) % n;
+            if (!ArchiveHandler::isSupportedArchive(imageList.at(idx))) {
+                loadImageByIndex(idx, true);
+                return;
+            }
+        }
     } else {
-        // 缩略图模式下，只更新索引和选中状态
-        //qDebug() << "缩略图模式，更新选中状态";
+        int prevIndex = (currentImageIndex - 1 + imageList.size()) % imageList.size();
         currentImageIndex = prevIndex;
         thumbnailWidget->setSelectedIndex(currentImageIndex);
         thumbnailWidget->ensureVisible(currentImageIndex);
         updateWindowTitle();
-
-        //qDebug() << "更新后的当前索引:" << currentImageIndex;
     }
-
-    //qDebug() << "=== loadPreviousImage 结束 ===";
 }
 
 void ImageWidget::dragEnterEvent(QDragEnterEvent *event)
@@ -522,8 +512,10 @@ void ImageWidget::performDeleteCurrentImage()
     // ★ QCache 是主线程专用，无需锁
     pixmapCache.remove(imageToDelete);
 
-    // ★ 缩略图缓存（静态，内部自己加锁）
-    ThumbnailWidget::clearThumbnailCacheForImage(imageToDelete);
+    // ★ 缩略图缓存
+    if (thumbnailWidget) {
+        thumbnailWidget->clearThumbnailCacheForImage(imageToDelete);
+    }
 
     if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
         imageList.removeAt(indexToDelete);

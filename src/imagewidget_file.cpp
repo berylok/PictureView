@@ -77,7 +77,17 @@ void ImageWidget::openImage() {
         saveConfiguration();
 
         if (ArchiveHandler::isSupportedArchive(fileName)) {
-            openArchive(fileName);
+            // 压缩包：切到所在目录的缩略图模式，并高亮它
+            currentDir = fileInfo.absoluteDir();
+            loadImageList();
+            switchToThumbnailView();
+
+            int idx = imageList.indexOf(fileInfo.fileName());
+            if (idx >= 0) {
+                currentImageIndex = idx;
+                thumbnailWidget->setSelectedIndex(idx);
+                thumbnailWidget->ensureVisible(idx);
+            }
         } else {
             loadImage(fileName);
             switchToSingleView();

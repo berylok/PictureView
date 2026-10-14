@@ -33,14 +33,14 @@ public:
     int getSelectedIndex() const;
     void ensureVisible(int index);
     void clearThumbnailCache();
-    static void clearThumbnailCacheForImage(const QString &imagePath);
+    void clearThumbnailCacheForImage(const QString &imagePath);
 
 
     // 性能优化方法
     void setThumbnailSize(const QSize &size);
     void setCacheSize(int maxSizeMB);
 
-    // 诊断方法
+    void setArchiveMode(const QString &archiveName);   // 空字符串 = 非压缩包
 
 
 signals:
@@ -87,10 +87,6 @@ private:
     int totalCount;
     QFutureWatcher<QPixmap> *futureWatcher;
     bool isLoading;
-
-    // 静态缓存 - 保持向后兼容
-    static QMap<QString, QPixmap> thumbnailCache;
-    static QMutex cacheMutex;
 
     // === 性能优化成员 ===
 
@@ -163,6 +159,8 @@ private:
 private:
     QString m_thumbCacheDir;
 
+    QString m_archiveName;   // 压缩包模式时存包名，否则空
+    int bannerHeight() const { return m_archiveName.isEmpty() ? 0 : 36; }
 };
 
 #endif // THUMBNAILWIDGET_H

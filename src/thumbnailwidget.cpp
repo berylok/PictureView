@@ -18,10 +18,6 @@
 #include <QStandardPaths>
 #include <QCryptographicHash>
 
-// 初始化静态成员变量
-QMap<QString, QPixmap> ThumbnailWidget::thumbnailCache;
-QMutex ThumbnailWidget::cacheMutex;
-
 ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     : QWidget(parent),
     imageWidget(imageWidget),
@@ -83,6 +79,14 @@ ThumbnailWidget::~ThumbnailWidget()
     if (m_pool) {
         m_pool->waitForDone(2000);   // 最多 2 秒
     }
+}
+
+void ThumbnailWidget::setArchiveMode(const QString &archiveName)
+{
+    if (m_archiveName == archiveName) return;   // 没变不重绘
+    m_archiveName = archiveName;
+    updateMinimumHeight();                       // 高度变了
+    update();
 }
 
 // 修改 setImageList 方法，加载所有缩略图
@@ -210,11 +214,6 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
 
                                           guard->smartThumbnailCache.insert(
                                               cacheKey, new QPixmap(thumbnail), cost);
-
-                                          {
-                                              QMutexLocker locker(&guard->cacheMutex);
-                                              guard->thumbnailCache.insert(cacheKey, thumbnail);
-                                          }
 
                                           guard->loadedCount++;
                                       }
@@ -364,8 +363,24 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
     // 设置只绘制脏矩形区域
     painter.setClipRect(event->rect());
 
-    int itemsPerRow = calculateItemsPerRow();
+    const int bannerH = bannerHeight();
+    // ============ 压缩包横幅 ============
+    if (bannerH > 0) {
+        QRect bannerRect(0, 0, width(), bannerH);
+        painter.fillRect(bannerRect, QColor(255, 165, 0));   // 橙色
 
+        painter.setPen(Qt::white);
+        QFont f = painter.font();
+        f.setBold(true);
+        f.setPointSize(10);
+        painter.setFont(f);
+        painter.drawText(bannerRect.adjusted(12, 0, -12, 0),
+                         Qt::AlignVCenter | Qt::AlignLeft,
+                         QString("📦 正在浏览压缩包：%1   按 ESC 返回上级目录")
+                             .arg(m_archiveName));
+    }
+
+    int itemsPerRow = calculateItemsPerRow();
     // 绘制所有缩略图
     for (int i = 0; i < imageList.size(); ++i) {
         QString fileName = imageList.at(i);
@@ -374,7 +389,7 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
         int row = i / itemsPerRow;
         int col = i % itemsPerRow;
         int currentX = thumbnailSpacing + col * (thumbnailSize.width() + thumbnailSpacing);
-        int currentY = thumbnailSpacing + row * (thumbnailSize.height() + thumbnailSpacing + 25);
+        int currentY = bannerH + thumbnailSpacing + row * (thumbnailSize.height() + thumbnailSpacing + 25);
 
         QRect thumbRect(currentX, currentY, thumbnailSize.width(), thumbnailSize.height() + 25);
 
@@ -483,7 +498,7 @@ void ThumbnailWidget::updateMinimumHeight()
 
     int itemsPerRow = calculateItemsPerRow();
     int rows = (imageList.size() + itemsPerRow - 1) / itemsPerRow;
-    int minHeight = thumbnailSpacing + rows * (thumbnailSize.height() + thumbnailSpacing + 25);
+    int minHeight = bannerHeight() + thumbnailSpacing + rows * (thumbnailSize.height() + thumbnailSpacing + 25);
     setMinimumHeight(minHeight);
 }
 
@@ -530,30 +545,21 @@ void ThumbnailWidget::stopLoading()
 // 诊断方法
 void ThumbnailWidget::diagnoseLoadingIssues()
 {
-    //qDebug() << "=== 缩略图加载问题诊断 ===";
-    //qDebug() << "总图片数量:" << imageList.size();
-    //qDebug() << "智能缓存数量:" << smartThumbnailCache.size();
-    //qDebug() << "静态缓存数量:" << thumbnailCache.size();
-    //qDebug() << "已加载数量:" << loadedCount;
-    //qDebug() << "失败缩略图:" << failedThumbnails.size();
-
     // 检查每个文件的状态
     for (int i = 0; i < imageList.size(); ++i) {
         QString fileName = imageList.at(i);
         QString cacheKey = getCacheKey(fileName);
 
         bool inSmartCache = smartThumbnailCache.contains(cacheKey);
-        bool inStaticCache = thumbnailCache.contains(cacheKey);
         bool isFailed = failedThumbnails.contains(cacheKey);
 
-        if (!inSmartCache && !inStaticCache && !isFailed) {
+        if (!inSmartCache && !isFailed) {
             //qDebug() << "未加载的文件:" << fileName;
             //qDebug() << "  - 索引:" << i;
             //qDebug() << "  - 缓存键:" << cacheKey;
             //qDebug() << "  - 是否压缩包:" << (fileName.contains("|") || isArchiveFile(fileName));
         }
     }
-
     //qDebug() << "=== 诊断结束 ===";
 }
 
@@ -569,7 +575,7 @@ void ThumbnailWidget::logThumbnailStatus()
         QString fileName = imageList.at(i);
         QString cacheKey = getCacheKey(fileName);
 
-        if (smartThumbnailCache.contains(cacheKey) || thumbnailCache.contains(cacheKey)) {
+        if (smartThumbnailCache.contains(cacheKey)) {
             loaded++;
         }
     }
@@ -593,10 +599,6 @@ void ThumbnailWidget::forceReloadAll()
 
     // 清空所有缓存和状态
     smartThumbnailCache.clear();
-    {
-        QMutexLocker locker(&cacheMutex);
-        thumbnailCache.clear();
-    }
 
     pendingLoadRequests.clear();
     failedThumbnails.clear();
@@ -644,11 +646,6 @@ void ThumbnailWidget::retryFailedThumbnails()
                                           int cost = guard->calculateCostForPixmap(pixmap);
                                           guard->smartThumbnailCache.insert(key, new QPixmap(pixmap), cost);
 
-                                          {
-                                              QMutexLocker locker(&cacheMutex);
-                                              thumbnailCache.insert(key, pixmap);
-                                          }
-
                                           guard->failedThumbnails.remove(key);
                                           guard->loadingErrors.remove(key);
                                           guard->loadedCount++;
@@ -694,7 +691,7 @@ void ThumbnailWidget::ensureVisible(int index)
     int col = index % itemsPerRow;
 
     int x = thumbnailSpacing + col * (thumbnailSize.width() + thumbnailSpacing);
-    int y = thumbnailSpacing + row * (thumbnailSize.height() + thumbnailSpacing + 25);
+    int y = bannerHeight() + thumbnailSpacing + row * (thumbnailSize.height() + thumbnailSpacing + 25);
 
     // 创建一个稍大的矩形区域，确保缩略图完全可见
     QRect visibleRect(x, y, thumbnailSize.width(), thumbnailSize.height() + 25);
@@ -703,15 +700,12 @@ void ThumbnailWidget::ensureVisible(int index)
 
 void ThumbnailWidget::clearThumbnailCache()
 {
-    QMutexLocker locker(&cacheMutex);
-    thumbnailCache.clear();
     smartThumbnailCache.clear();
 }
 
 void ThumbnailWidget::clearThumbnailCacheForImage(const QString &imagePath)
 {
-    QMutexLocker locker(&cacheMutex);
-    thumbnailCache.remove(imagePath);
+    smartThumbnailCache.remove(imagePath);
 }
 
 void ThumbnailWidget::setThumbnailSize(const QSize &size)
@@ -720,8 +714,6 @@ void ThumbnailWidget::setThumbnailSize(const QSize &size)
         thumbnailSize = size;
         // 尺寸变化时清空缓存
         smartThumbnailCache.clear();
-        QMutexLocker locker(&cacheMutex);
-        thumbnailCache.clear();
         update();
     }
 }
@@ -743,7 +735,7 @@ void ThumbnailWidget::selectThumbnailAtPosition(const QPoint &pos)
     if (imageList.isEmpty()) return;
 
     int x = thumbnailSpacing;
-    int y = thumbnailSpacing;
+    int y = bannerHeight() + thumbnailSpacing;
     int maxWidth = width();
 
     for (int i = 0; i < imageList.size(); ++i) {
@@ -838,46 +830,12 @@ int ThumbnailWidget::calculateCostForPixmap(const QPixmap &pixmap) const
     return pixmap.width() * pixmap.height() * 4;
 }
 
-// 添加缓存统计方法
-// thumbnailwidget.cpp
-
 void ThumbnailWidget::logCacheStats()
 {
-    //qDebug() << "========================================";
-    //qDebug() << "=== 缩略图缓存统计 ===";
-    //qDebug() << "智能缓存条目数:" << smartThumbnailCache.size();
-    //qDebug() << "智能缓存总成本:" << smartThumbnailCache.totalCost() / (1024.0 * 1024.0) << "MB";
-    //qDebug() << "智能缓存最大容量:" << smartThumbnailCache.maxCost() / (1024.0 * 1024.0) << "MB";
-    //qDebug() << "智能缓存使用率:" << QString::number(smartThumbnailCache.totalCost() * 100.0 /
-                                                         //smartThumbnailCache.maxCost(), 'f', 1) << "%";
-
-    // 静态缓存统计
-    QMutexLocker locker(&cacheMutex);
-    qDebug() << "静态缓存条目数:" << thumbnailCache.size();
-
-    // 计算静态缓存估算内存（粗略）
-    int staticCacheMemory = 0;
-    for (auto it = thumbnailCache.begin(); it != thumbnailCache.end(); ++it) {
-        staticCacheMemory += it->width() * it->height() * 4;
-    }
-    qDebug() << "静态缓存估算内存:" << staticCacheMemory / (1024.0 * 1024.0) << "MB";
-
-
-
     if (!failedThumbnails.isEmpty() && failedThumbnails.size() <= 10) {
         for (const QString& key : failedThumbnails) {
         }
     }
-
-    // 性能配置
-    //qDebug() << "=== 性能配置 ===";
-    //qDebug() << "最大缓存内存:" << perfConfig.maxCacheMemoryMB << "MB";
-    //qDebug() << "批量加载大小:" << perfConfig.batchLoadSize;
-    //qDebug() << "批量加载延迟:" << perfConfig.batchLoadDelay << "ms";
-    //qDebug() << "预加载范围:" << preloadRange;
-    //qDebug() << "懒加载模式:" << (perfConfig.enableLazyLoading ? "启用" : "禁用");
-    //qDebug() << "加载状态:" << (isLoading ? "加载中" : "空闲");
-    //qDebug() << "========================================";
 }
 
 // 设置缓存大小（MB）
@@ -898,29 +856,13 @@ void ThumbnailWidget::setCacheSize(int maxSizeMB)
 // 优化获取缓存方法
 QPixmap ThumbnailWidget::getCachedThumbnail(const QString &cacheKey)
 {
-    // 优先使用智能缓存（自动管理内存）
     if (QPixmap* cached = smartThumbnailCache.object(cacheKey)) {
         if (!cached->isNull()) {
             return *cached;
         }
     }
-
-    // 回退到静态缓存
-    QMutexLocker locker(&cacheMutex);
-    if (thumbnailCache.contains(cacheKey)) {
-        QPixmap pixmap = thumbnailCache.value(cacheKey);
-        if (!pixmap.isNull()) {
-            // 提升到智能缓存，并正确计算成本
-            int cost = calculateCostForPixmap(pixmap);
-            smartThumbnailCache.insert(cacheKey, new QPixmap(pixmap), cost);
-        }
-        return pixmap;
-    }
-
     return QPixmap();
 }
-
-// thumbnailwidget.cpp
 
 void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
 {

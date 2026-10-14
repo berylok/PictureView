@@ -248,7 +248,7 @@ private:
     ArchiveHandler archiveHandler;
     bool isArchiveMode;
     QString currentArchivePath;
-    QMap<QString, QImage> archiveImageCache;    //
+    QCache<QString, QImage> archiveImageCache;  //
     QDir previousDir;
     QStringList previousImageList;
     int previousImageIndex;
@@ -313,7 +313,7 @@ private:
     double computeBoxBaseScale() const;               // 让图贴合包围盒的 scale
 
     // ==================== 缓存 ====================
-    QMap<QString, QImage>  imageCache;        // 已有，工作线程写
+    QCache<QString, QImage>  imageCache;
     QCache<QString, QPixmap> pixmapCache;
     // 私有成员
     std::atomic<int> m_cacheGeneration{0};
@@ -327,8 +327,16 @@ private:
     QPixmap m_dragCache;
     double  m_dragCacheScale = -1.0;
 
+
+
+    void updateCacheLimits();
+
+
 public:
     int getImageCount() const { return imageList.size(); }
+    void selectImageByName(const QString &fileName);
+
+
 
 };
 

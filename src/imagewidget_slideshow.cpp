@@ -53,16 +53,17 @@ void ImageWidget::slideshowNext()
             needLoad = !archiveImageCache.contains(nextPath);
         }
         if (needLoad) {
-            QThreadPool::globalInstance()->start([this, nextPath]() {
-                QByteArray data = archiveHandler.extractFile(nextPath);
+            QPointer<ImageWidget> guard(this);
+            QThreadPool::globalInstance()->start([guard, nextPath]() {
+                if (!guard) return;
+                QByteArray data = guard->archiveHandler.extractFile(nextPath);
                 if (data.isEmpty()) return;
-
                 QImage img;
                 if (!img.loadFromData(data)) return;
-
-                QMutexLocker locker(&cacheMutex);
-                archiveImageCache.insert(nextPath, img);
-                //qDebug() << "预加载压缩包图片:" << nextPath;
+                if (!guard) return;
+                QMutexLocker locker(&guard->cacheMutex);
+                guard->archiveImageCache.insert(nextPath, new QImage(img),
+                                                static_cast<int>(img.sizeInBytes()));
             });
         }
     }
@@ -80,7 +81,8 @@ void ImageWidget::slideshowNext()
                 if (!img.load(nextPath)) return;
 
                 QMutexLocker locker(&cacheMutex);
-                imageCache.insert(nextPath, img);
+                archiveImageCache.insert(nextPath, new QImage(img),
+                                         static_cast<int>(img.sizeInBytes()));
             });
         }
     }
@@ -101,7 +103,8 @@ void ImageWidget::preloadAllImages()
         QImage img;
         if (img.load(filePath)) {
             QMutexLocker locker(&cacheMutex);
-            imageCache.insert(filePath, img);
+            imageCache.insert(filePath, new QImage(img),
+                              static_cast<int>(img.sizeInBytes()));
         }
     }
     updateWindowTitle();

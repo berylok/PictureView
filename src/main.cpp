@@ -12,6 +12,7 @@
 
 #include <QStyleFactory>
 #include <QPalette>
+#include "archivehandler.h"
 
 int main(int argc, char *argv[])
 {
@@ -107,11 +108,18 @@ int main(int argc, char *argv[])
     }
 
 
-    // 命令行参数覆盖
+    // ★ 一次性声明所有命令行选项
     QCommandLineParser parser;
-    QCommandLineOption langOption("lang", "Override system language (e.g., zh_CN, ru_RU)", "language");
+    QCommandLineOption langOption("lang",
+                                  "Override system language (e.g., zh_CN, ru_RU)", "language");
+    QCommandLineOption registerOption("register",
+                                      "Register file associations");
     parser.addOption(langOption);
+    parser.addOption(registerOption);
+
+    // ★ 只 process 一次
     parser.process(app);
+
     if (parser.isSet(langOption)) {
         locale = parser.value(langOption);
     }
@@ -149,14 +157,6 @@ int main(int argc, char *argv[])
     }
 
 
-    // 注册文件关联选项
-    QCommandLineOption registerOption(
-        "register",
-        QCoreApplication::translate("main", "Register file associations"));
-    parser.addOption(registerOption);
-
-    parser.process(app);
-
     if (parser.isSet(registerOption)) {
         QString exePath = QCoreApplication::applicationFilePath();
         QString shortExePath = ImageWidget::getShortPathName(exePath);        // ✅ 直接调
@@ -193,17 +193,26 @@ int main(int argc, char *argv[])
 
     bool fileHandled = false;
     if (argc > 1) {
-        QString filePath = QString::fromLocal8Bit(argv[1]);
-        if (QFile::exists(filePath)) {
-            QFileInfo fileInfo(filePath);
-            if (fileInfo.isDir()) {
-                window.setCurrentDir(QDir(filePath));
-                window.loadImageList();
-            } else {
-                window.loadImage(filePath);
-                window.switchToSingleView();
+        QStringList posArgs = parser.positionalArguments();
+        if (!posArgs.isEmpty()) {
+            QString filePath = posArgs.first();
+            if (QFile::exists(filePath)) {
+                QFileInfo fileInfo(filePath);
+                if (fileInfo.isDir()) {
+                    window.setCurrentDir(QDir(filePath));
+                    window.loadImageList();
+                } else if (ArchiveHandler::isSupportedArchive(filePath)) {
+                    // 压缩包：切到所在目录的缩略图模式，并选中它，不进去
+                    window.setCurrentDir(fileInfo.absoluteDir());
+                    window.loadImageList();
+                    window.switchToThumbnailView();
+                    window.selectImageByName(fileInfo.fileName());   // ← 见下面
+                } else {
+                    window.loadImage(filePath);
+                    window.switchToSingleView();
+                }
+                fileHandled = true;
             }
-            fileHandled = true;
         }
     }
 

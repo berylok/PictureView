@@ -30,7 +30,10 @@ public:
         // 图片解码
         int maxDecodeSize = 4000;   // 0 = 不限制；否则最长边上限（像素）
         int pixmapCacheSize = 30;      // ★ 本次要加的
-        int preloadRange = 10;    // ★ 前后各预加载几张（0 = 禁用）
+        int preloadRange = 2;    // ★ 前后各预加载几张（0 = 禁用）
+
+        int imageCacheCount = 0;    // 主图缓存张数；0 = 自动（= preloadRange*2+6）
+        int pixmapCacheCount = 0;   // QPixmap 缓存张数；0 = 自动
 
         // 外观
         QString highlightColor = "#00A0E9";   // 默认蓝色（原来是 0,120,215）

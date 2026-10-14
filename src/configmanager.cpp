@@ -61,6 +61,8 @@ bool ConfigManager::saveConfig(const Config& config)
     settings.setValue("MaxDecodeSize", config.maxDecodeSize);
     settings.setValue("PixmapCacheSize", config.pixmapCacheSize);   // ★
     settings.setValue("PreloadRange", config.preloadRange);
+    settings.setValue("ImageCacheCount", config.imageCacheCount);
+    settings.setValue("PixmapCacheCount", config.pixmapCacheCount);
     settings.endGroup();
 
     // 保存最近打开路径
@@ -75,6 +77,7 @@ bool ConfigManager::saveConfig(const Config& config)
     settings.setValue("LastImageIndex", config.lastImageIndex);
     settings.setValue("LastImagePath", config.lastImagePath);
     settings.endGroup();
+
 
 
 
@@ -131,7 +134,9 @@ ConfigManager::Config ConfigManager::loadConfig()
     settings.beginGroup("Image");
     config.maxDecodeSize = settings.value("MaxDecodeSize", 1000).toInt();
     config.pixmapCacheSize = settings.value("PixmapCacheSize", 50).toInt();
-    config.preloadRange = settings.value("PreloadRange", 10).toInt();
+    config.preloadRange = settings.value("PreloadRange", 2).toInt();
+    config.imageCacheCount = settings.value("ImageCacheCount", 0).toInt();
+    config.pixmapCacheCount = settings.value("PixmapCacheCount", 0).toInt();
     settings.endGroup();
 
     //qDebug() << "Config loaded from:" << configPath;

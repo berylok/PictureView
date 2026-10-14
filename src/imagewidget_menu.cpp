@@ -153,40 +153,42 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
       openfileshowMenu->addSeparator();
 
-    // 1. 在新窗口打开图片
-    QAction *openInNewWindowAction = new QAction(tr("在新窗口打开图片(Ctrl+N)"), this);
-    QString imgPath = getCurrentImagePath();  // 用于初始启用状态
+    // 获取当前是否有可用图片
+    QString imgPath = getCurrentImagePath();
     bool hasValidImage = !imgPath.isEmpty() && QFile::exists(imgPath) && !isArchiveMode;
-    openInNewWindowAction->setVisible(hasValidImage);
 
-    connect(openInNewWindowAction, &QAction::triggered, this,
-            [this, getCurrentImagePath]() {  // 按值捕获 getCurrentImagePath
-                QString path = getCurrentImagePath();
-                if (!path.isEmpty() && QFile::exists(path)) {
-                    QString program = QCoreApplication::applicationFilePath();
-                    QStringList arguments;
-                    arguments << path;
-                    QProcess::startDetached(program, arguments);
-                } else {
-                    QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
-                }
-            });
-    openfileshowMenu->addAction(openInNewWindowAction);
+    // 1. 在新窗口打开图片
+    if (hasValidImage) {
+        QAction *openInNewWindowAction =
+            openfileshowMenu->addAction(tr("在新窗口打开图片(Ctrl+N)"));
+        connect(openInNewWindowAction, &QAction::triggered, this,
+                [this, getCurrentImagePath]() {
+                    QString path = getCurrentImagePath();
+                    if (!path.isEmpty() && QFile::exists(path)) {
+                        QString program = QCoreApplication::applicationFilePath();
+                        QStringList arguments;
+                        arguments << path;
+                        QProcess::startDetached(program, arguments);
+                    } else {
+                        QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
+                    }
+                });
+    }
 
     // 2. 打开图片所在文件夹
-    QAction *showInFolderAction = new QAction(tr("打开图片所在文件夹"), this);
-    showInFolderAction->setVisible(hasValidImage);
-
-    connect(showInFolderAction, &QAction::triggered, this,
-            [this, getCurrentImagePath]() {  // 同样捕获
-                QString path = getCurrentImagePath();
-                if (!path.isEmpty() && QFile::exists(path)) {
-                    PlatformCompat::showInFolder(path);
-                } else {
-                    QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
-                }
-            });
-    openfileshowMenu->addAction(showInFolderAction);
+    if (hasValidImage) {
+        QAction *showInFolderAction =
+            openfileshowMenu->addAction(tr("打开图片所在文件夹"));
+        connect(showInFolderAction, &QAction::triggered, this,
+                [this, getCurrentImagePath]() {
+                    QString path = getCurrentImagePath();
+                    if (!path.isEmpty() && QFile::exists(path)) {
+                        PlatformCompat::showInFolder(path);
+                    } else {
+                        QMessageBox::warning(this, tr("警告"), tr("没有可用的图片文件"));
+                    }
+                });
+    }
 
     openfileshowMenu->addSeparator();
 
@@ -232,104 +234,29 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         toggleImmersiveMode(true);
     });
 
-    windowshowMenu->addSeparator();
-    QMenu *scalingMenu = windowshowMenu->addMenu(tr("图片缩放方式"));
-
-    QAction *smoothAct = scalingMenu->addAction(tr("平滑插值（推荐）"));
-    QAction *pixelAct  = scalingMenu->addAction(tr("像素（最近邻）"));
-
-    smoothAct->setCheckable(true);
-    pixelAct->setCheckable(true);
-    smoothAct->setChecked(currentConfig.smoothScaling);
-    pixelAct->setChecked(!currentConfig.smoothScaling);
-
-    connect(smoothAct, &QAction::triggered, this, [this]() {
-        currentConfig.smoothScaling = true;
-        saveConfiguration();
-        update();
-    });
-
-    connect(pixelAct, &QAction::triggered, this, [this]() {
-        currentConfig.smoothScaling = false;
-        saveConfiguration();
-        update();
-    });
 
 
     windowshowMenu->addSeparator();
 
-    QAction *windowshowAction1 = windowshowMenu->addAction(
+    // ==================== 经典窗口控制（保留的旧功能） ====================
+    QMenu *legacyWindowMenu = windowshowMenu->addMenu(tr("经典窗口控制"));
+
+    QAction *windowshowAction1 = legacyWindowMenu->addAction(
         hasTitleBar() ? tr("隐藏标题栏") : tr("显示标题栏"));
     connect(windowshowAction1, &QAction::triggered, this,
             &ImageWidget::toggleTitleBar);
 
-    QAction *windowshowAction2 = windowshowMenu->addAction(
+    QAction *windowshowAction2 = legacyWindowMenu->addAction(
         isAlwaysOnTop() ? tr("取消置顶") : tr("窗口置顶"));
     connect(windowshowAction2, &QAction::triggered, this,
             &ImageWidget::toggleAlwaysOnTop);
 
-    QAction *windowshowAction3 = windowshowMenu->addAction(
+    QAction *windowshowAction3 = legacyWindowMenu->addAction(
         hasTransparentBackground() ? tr("黑色背景")
-                                   : tr("透明背景（最大化+隐藏标题+透明背景+设置后重开程序）"));
+                                   : tr("透明背景（APP需重开）"));
     connect(windowshowAction3, &QAction::triggered, this,
             &ImageWidget::toggleTransparentBackground);
 
-    // ==================== 高亮颜色 ====================
-    windowshowMenu->addSeparator();
-    QMenu *highlightMenu = windowshowMenu->addMenu(tr("高亮颜色"));
-
-    struct HighlightPreset {
-        const char *name;
-        const char *color;
-    };
-    static const HighlightPreset presets[] = {
-                                              { QT_TR_NOOP("蓝色（默认）"), "#00A0E9" },
-                                              { QT_TR_NOOP("琥珀色"),       "#FFA500" },
-                                              { QT_TR_NOOP("橙红色"),       "#FF7830" },
-                                              { QT_TR_NOOP("暖金色"),       "#E6B450" },
-                                              { QT_TR_NOOP("蜜桃色"),       "#FFBE82" },
-                                              { QT_TR_NOOP("珊瑚色"),       "#FF645A" },
-                                              { QT_TR_NOOP("青绿色"),       "#20B2AA" },
-                                              { QT_TR_NOOP("紫色"),         "#9B59B6" },
-                                              { QT_TR_NOOP("粉色"),         "#FF69B4" },
-                                              { QT_TR_NOOP("灰白色"),       "#CCCCCC" },
-                                              };
-
-    QString current = currentConfig.highlightColor.toUpper();
-
-    for (const auto &p : presets) {
-        QAction *act = highlightMenu->addAction(tr(p.name));
-
-        // 前面画个小色块
-        QPixmap swatch(16, 16);
-        swatch.fill(QColor(p.color));
-        act->setIcon(QIcon(swatch));
-
-        act->setCheckable(true);
-        act->setChecked(current == QString(p.color).toUpper());
-
-        QString colorStr = p.color;
-        connect(act, &QAction::triggered, this, [this, colorStr]() {
-            currentConfig.highlightColor = colorStr;
-            saveConfiguration();
-            if (thumbnailWidget) thumbnailWidget->update();
-            qDebug() << "高亮颜色设为:" << colorStr;
-        });
-    }
-
-    // 自定义选项
-    highlightMenu->addSeparator();
-    QAction *customAct = highlightMenu->addAction(tr("自定义..."));
-    connect(customAct, &QAction::triggered, this, [this]() {
-        QColor c = QColorDialog::getColor(
-            QColor(currentConfig.highlightColor),
-            this, tr("选择高亮颜色"));
-        if (c.isValid()) {
-            currentConfig.highlightColor = c.name();   // #RRGGBB
-            saveConfiguration();
-            if (thumbnailWidget) thumbnailWidget->update();
-        }
-    });
 
 
     // 透明度子菜单
@@ -439,6 +366,65 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         }
     });
 
+
+    // ==================== 高亮颜色 ====================
+
+    QMenu *highlightMenu = windowshowMenu->addMenu(tr("高亮颜色"));
+
+    struct HighlightPreset {
+        const char *name;
+        const char *color;
+    };
+    static const HighlightPreset presets[] = {
+                                               { QT_TR_NOOP("蓝色（默认）"), "#00A0E9" },
+                                               { QT_TR_NOOP("琥珀色"),       "#FFA500" },
+                                               { QT_TR_NOOP("橙红色"),       "#FF7830" },
+                                               { QT_TR_NOOP("暖金色"),       "#E6B450" },
+                                               { QT_TR_NOOP("蜜桃色"),       "#FFBE82" },
+                                               { QT_TR_NOOP("珊瑚色"),       "#FF645A" },
+                                               { QT_TR_NOOP("青绿色"),       "#20B2AA" },
+                                               { QT_TR_NOOP("紫色"),         "#9B59B6" },
+                                               { QT_TR_NOOP("粉色"),         "#FF69B4" },
+                                               { QT_TR_NOOP("灰白色"),       "#CCCCCC" },
+                                               };
+
+    QString current = currentConfig.highlightColor.toUpper();
+
+    for (const auto &p : presets) {
+        QAction *act = highlightMenu->addAction(tr(p.name));
+
+        // 前面画个小色块
+        QPixmap swatch(16, 16);
+        swatch.fill(QColor(p.color));
+        act->setIcon(QIcon(swatch));
+
+        act->setCheckable(true);
+        act->setChecked(current == QString(p.color).toUpper());
+
+        QString colorStr = p.color;
+        connect(act, &QAction::triggered, this, [this, colorStr]() {
+            currentConfig.highlightColor = colorStr;
+            saveConfiguration();
+            if (thumbnailWidget) thumbnailWidget->update();
+            qDebug() << "高亮颜色设为:" << colorStr;
+        });
+    }
+
+    // 自定义选项
+    highlightMenu->addSeparator();
+    QAction *customAct = highlightMenu->addAction(tr("自定义..."));
+    connect(customAct, &QAction::triggered, this, [this]() {
+        QColor c = QColorDialog::getColor(
+            QColor(currentConfig.highlightColor),
+            this, tr("选择高亮颜色"));
+        if (c.isValid()) {
+            currentConfig.highlightColor = c.name();   // #RRGGBB
+            saveConfiguration();
+            if (thumbnailWidget) thumbnailWidget->update();
+        }
+    });
+
+
     contextMenu.addSeparator();
 
     // ==================== 图片解码尺寸 ====================
@@ -473,6 +459,9 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
         qDebug() << "解码尺寸上限设为:"
                  << (size == 0 ? QStringLiteral("不限制") : QString::number(size));
+
+        // ★ 新增：解码尺寸变了，缓存上限也得重算
+        updateCacheLimits();
 
         // ② 清空主图 / 压缩包缓存
         {
@@ -513,6 +502,40 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     connect(decode4k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(4000); });
     connect(decode8k,        &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(8000); });
     connect(decodeUnlimited, &QAction::triggered, this, [setDecodeSize]() { setDecodeSize(0); });
+
+    // ==================== 预加载范围 ====================
+    QMenu *preloadMenu = contextMenu.addMenu(tr("预加载范围"));
+
+    QAction *pl0  = preloadMenu->addAction(tr("0 张 (省内存)"));
+    QAction *pl3  = preloadMenu->addAction(tr("前后各 3 张"));
+    QAction *pl5  = preloadMenu->addAction(tr("前后各 5 张"));
+    QAction *pl10 = preloadMenu->addAction(tr("前后各 10 张 (推荐)"));
+    QAction *pl20 = preloadMenu->addAction(tr("前后各 20 张 (吃内存)"));
+
+    QList<QPair<QAction*, int>> items = {
+        {pl0, 0}, {pl3, 3}, {pl5, 5}, {pl10, 10}, {pl20, 20}
+    };
+
+    int cur2 = currentConfig.preloadRange;
+    for (auto &it : items) {
+        it.first->setCheckable(true);
+        it.first->setChecked(cur2 == it.second);
+    }
+
+    auto setPreload = [this](int n) {
+        currentConfig.preloadRange = n;
+        saveConfiguration();
+        qDebug() << "预加载范围:" << n;
+        // ★ 新增：预加载范围变了，imageCache 上限跟着变
+        updateCacheLimits();
+    };
+
+    for (auto &it : items) {
+        int n = it.second;
+        connect(it.first, &QAction::triggered, this, [setPreload, n]() {
+            setPreload(n);
+        });
+    }
 
 
     // ==================== 缓存条目数 ====================
@@ -562,36 +585,29 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     }
 
 
-    QMenu *preloadMenu = contextMenu.addMenu(tr("预加载范围"));
+    // ==================== 显示插值 ====================
+    QMenu *scalingMenu = contextMenu.addMenu(tr("显示插值"));
 
-    QAction *pl0  = preloadMenu->addAction(tr("0 张 (省内存)"));
-    QAction *pl3  = preloadMenu->addAction(tr("前后各 3 张"));
-    QAction *pl5  = preloadMenu->addAction(tr("前后各 5 张"));
-    QAction *pl10 = preloadMenu->addAction(tr("前后各 10 张 (推荐)"));
-    QAction *pl20 = preloadMenu->addAction(tr("前后各 20 张 (吃内存)"));
+    QAction *smoothAct = scalingMenu->addAction(tr("平滑插值（推荐）"));
+    QAction *pixelAct  = scalingMenu->addAction(tr("像素（最近邻）"));
 
-    QList<QPair<QAction*, int>> items = {
-        {pl0, 0}, {pl3, 3}, {pl5, 5}, {pl10, 10}, {pl20, 20}
-    };
+    smoothAct->setCheckable(true);
+    pixelAct->setCheckable(true);
+    smoothAct->setChecked(currentConfig.smoothScaling);
+    pixelAct->setChecked(!currentConfig.smoothScaling);
 
-    int cur2 = currentConfig.preloadRange;
-    for (auto &it : items) {
-        it.first->setCheckable(true);
-        it.first->setChecked(cur2 == it.second);
-    }
-
-    auto setPreload = [this](int n) {
-        currentConfig.preloadRange = n;
+    connect(smoothAct, &QAction::triggered, this, [this]() {
+        currentConfig.smoothScaling = true;
         saveConfiguration();
-        qDebug() << "预加载范围:" << n;
-    };
+        update();
+    });
 
-    for (auto &it : items) {
-        int n = it.second;
-        connect(it.first, &QAction::triggered, this, [setPreload, n]() {
-            setPreload(n);
-        });
-    }
+    connect(pixelAct, &QAction::triggered, this, [this]() {
+        currentConfig.smoothScaling = false;
+        saveConfiguration();
+        update();
+    });
+
 
 
 

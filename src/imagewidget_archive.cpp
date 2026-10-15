@@ -203,14 +203,6 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
         return defaultArchiveIcon;
     }
 
-    // 缓存命中
-    {
-        QMutexLocker locker(&cacheMutex);
-        if (QImage *p = archiveImageCache.object(archivePath)) {
-            return *p;
-        }
-    }
-
     QStringList parts = archivePath.split("|");
     if (parts.size() != 2) {
         return createDefaultArchiveThumbnail();
@@ -236,11 +228,6 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
             painter.drawText(errorImage.rect(), Qt::AlignCenter,
                              "提取失败\n数据为空");
         }
-        {
-            QMutexLocker locker(&cacheMutex);
-            archiveImageCache.insert(archivePath, new QImage(errorImage),
-                                     static_cast<int>(errorImage.sizeInBytes()));
-        }
         return errorImage;
     }
 
@@ -253,11 +240,14 @@ QImage ImageWidget::getArchiveThumbnailImage(const QString &archivePath)
     reader.setDevice(&buffer);
     reader.setAutoTransform(true);
 
-    int maxDecode = currentConfig.maxDecodeSize;     //
-    QSize origSize = reader.size();
-    if (origSize.isValid() &&
-        (origSize.width() > maxDecode || origSize.height() > maxDecode)) {
-        reader.setScaledSize(origSize.scaled(maxDecode, maxDecode, Qt::KeepAspectRatio));
+    int maxDecode = currentConfig.maxDecodeSize;
+    if (maxDecode > 0) {                          // ★ 加这个判断
+        QSize origSize = reader.size();
+        if (origSize.isValid() &&
+            (origSize.width() > maxDecode || origSize.height() > maxDecode)) {
+            reader.setScaledSize(origSize.scaled(maxDecode, maxDecode,
+                                                 Qt::KeepAspectRatio));
+        }
     }
     // ---------- 解码 ----------
     if (!reader.read(&image) || image.isNull()) {

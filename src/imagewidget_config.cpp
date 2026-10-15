@@ -310,23 +310,29 @@ void ImageWidget::toggleTransparentBackground()
     bool currentState = testAttribute(Qt::WA_TranslucentBackground);
 
     if (!currentState) {
+        // ============ 开启透明背景 ============
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
         m_transparentBackgroundReady = true;
+
         if (currentViewMode == SingleView && !pixmap.isNull()) {
+            clearX11Shape();      // ★ 先清旧的
             updateMask();
+        } else {
+            clearX11Shape();      // ★ 非单图模式也要清（可能是从透明单图切过来的残留）
         }
+
         currentConfig.transparentBackground = true;
         saveConfiguration();
         update();
-        //qDebug() << "透明背景已开启";
     } else {
+        // ============ 关闭透明背景 ============
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
         clearMask();
+        clearX11Shape();          // ★ 关键：清 X11 Shape
         currentConfig.transparentBackground = false;
         saveConfiguration();
         update();
-        //qDebug() << "透明背景已关闭";
     }
 }

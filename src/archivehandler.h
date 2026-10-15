@@ -1,11 +1,10 @@
-
-
 #ifndef ARCHIVEHANDLER_H
 #define ARCHIVEHANDLER_H
 
 #include <QString>
 #include <QStringList>
 #include <QByteArray>
+#include <QMutex>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -31,12 +30,15 @@ public:
     QByteArray extractFile(const QString &filePath);
 
     // 获取压缩包基本信息
-    QString getArchivePath() const { return archivePath; }
-    bool isOpen() const { return archive != nullptr; }
+    QString getArchivePath() const;
+    bool isOpen() const;
 
 private:
+    void closeArchiveInternal();   // ★ 新增：内部版本，不加锁
+
     struct archive *archive;
     QString archivePath;
+    mutable QMutex m_mutex;        // ★ 新增：线程安全锁
 
     // 检查文件是否是图片
     bool isImageFile(const QString &fileName);

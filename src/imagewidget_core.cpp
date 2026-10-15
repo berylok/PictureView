@@ -63,6 +63,66 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setFrameShape(QFrame::NoFrame);
 
+    // ============ 滚动条样式（深色背景可见） ============
+    scrollArea->setStyleSheet(R"(
+        QScrollBar:vertical {
+            background: #1a1a1a;
+            width: 14px;
+            margin: 0;
+            border: none;
+            border-radius: 7px;
+        }
+        QScrollBar::handle:vertical {
+            background: #666;
+            min-height: 40px;
+            border-radius: 6px;
+            margin: 2px;
+        }
+        QScrollBar::handle:vertical:hover {
+            background: #999;
+        }
+        QScrollBar::handle:vertical:pressed {
+            background: #bbb;
+        }
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0;
+            background: none;
+            border: none;
+        }
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: none;
+        }
+
+        QScrollBar:horizontal {
+            background: #1a1a1a;
+            height: 14px;
+            margin: 0;
+            border: none;
+            border-radius: 7px;
+        }
+        QScrollBar::handle:horizontal {
+            background: #666;
+            min-width: 40px;
+            border-radius: 6px;
+            margin: 2px;
+        }
+        QScrollBar::handle:horizontal:hover {
+            background: #999;
+        }
+        QScrollBar::add-line:horizontal,
+        QScrollBar::sub-line:horizontal {
+            width: 0;
+            background: none;
+            border: none;
+        }
+        QScrollBar::add-page:horizontal,
+        QScrollBar::sub-page:horizontal {
+            background: none;
+        }
+    )");
+
     // 设置滚动条不接收焦点
     scrollArea->horizontalScrollBar()->setFocusPolicy(Qt::NoFocus);
     scrollArea->verticalScrollBar()->setFocusPolicy(Qt::NoFocus);
@@ -174,14 +234,17 @@ void ImageWidget::testKeyboard()
 
 void ImageWidget::updateCacheLimits()
 {
-    const int decodeSize = qMax(256, currentConfig.maxDecodeSize);
+    // ★ 不限制时按 8192 估算（覆盖绝大多数原图尺寸）
+    const int decodeSize = (currentConfig.maxDecodeSize > 0)
+                               ? currentConfig.maxDecodeSize
+                               : 8192;
+
     qint64 singleBytes = static_cast<qint64>(decodeSize) * decodeSize * 3;
 
     int imgCount = currentConfig.imageCacheCount;
     if (imgCount <= 0)
         imgCount = currentConfig.preloadRange * 2 + 6;
 
-    // 硬上限：防止极端配置 OOM
     const qint64 HARD_CAP = 4LL * 1024 * 1024 * 1024;
     qint64 imgBytes = singleBytes * imgCount;
     if (imgBytes > HARD_CAP) {
@@ -194,8 +257,10 @@ void ImageWidget::updateCacheLimits()
     archiveImageCache.setMaxCost(imgBytes);
 
     qDebug() << "=== 缓存配置 ===";
-    qDebug() << "解码尺寸:" << decodeSize << "px"
-             << "| 单张估算:" << singleBytes / 1024.0 / 1024.0 << "MB";
+    qDebug() << "解码尺寸:" << (currentConfig.maxDecodeSize > 0
+                                    ? QString::number(currentConfig.maxDecodeSize) + " px"
+                                    : QStringLiteral("不限制（按 8192 估算）"));
+    qDebug() << "单张估算:" << singleBytes / 1024.0 / 1024.0 << "MB";
     qDebug() << "imageCache 上限:"
              << imageCache.maxCost() / 1024.0 / 1024.0 << "MB"
              << "(" << imgCount << "张)";

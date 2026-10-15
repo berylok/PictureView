@@ -65,12 +65,6 @@ private:
     QPixmap loadThumbnail(const QString &path);
     void updateThumbnails();
 
-
-    // 性能优化方法
-
-
-
-
     // 缓存管理
     void cleanupOldCache();
 

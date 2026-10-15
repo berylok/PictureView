@@ -409,50 +409,87 @@ void ImageWidget::dragEnterEvent(QDragEnterEvent *event)
 void ImageWidget::dropEvent(QDropEvent *event)
 {
     const QMimeData *mimeData = event->mimeData();
+    if (!mimeData->hasUrls()) return;
 
-    if (mimeData->hasUrls()) {
-        QList<QUrl> urlList = mimeData->urls();
-        if (urlList.isEmpty()) {
-            return;
+    QList<QUrl> urlList = mimeData->urls();
+    if (urlList.isEmpty()) return;
+
+    QString filePath = urlList.first().toLocalFile();
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists()) return;
+
+    // ============ 拖拽文件夹 ============
+    if (fileInfo.isDir()) {
+        currentConfig.lastOpenPath = fileInfo.absolutePath();
+        saveConfiguration();
+
+        QDir newDir(filePath);
+        bool dirChanged = (newDir != currentDir);
+
+        if (dirChanged) {
+            // ★ 切目录前清缓存
+            {
+                QMutexLocker locker(&cacheMutex);
+                imageCache.clear();
+                archiveImageCache.clear();
+            }
+            pixmapCache.clear();
         }
 
-        // 只处理第一个拖拽项
-        QString filePath = urlList.first().toLocalFile();
+        currentDir = newDir;
+        loadImageList();
 
-        QFileInfo fileInfo(filePath);
-        if (!fileInfo.exists()) {
-            return;
+        switchToThumbnailView();
+        currentImageIndex = -1;
+
+        if (!imageList.isEmpty()) {
+            currentImageIndex = 0;
+            thumbnailWidget->setSelectedIndex(0);
         }
 
-        if (fileInfo.isDir()) {
-            // 更新最后打开路径（使用图片所在文件夹）
+        update();
+        event->acceptProposedAction();
+        return;
+    }
+
+    // ============ 拖拽单个文件 ============
+    if (fileInfo.isFile()) {
+        // --- 压缩包：只选中，不进包 ---
+        if (ArchiveHandler::isSupportedArchive(filePath)) {
             currentConfig.lastOpenPath = fileInfo.absolutePath();
             saveConfiguration();
 
-            // 处理文件夹拖拽 - 切换到缩略图模式
-            currentDir = QDir(filePath);
+            QDir newDir = fileInfo.absoluteDir();
+            bool dirChanged = (newDir != currentDir);
+
+            if (dirChanged) {
+                {
+                    QMutexLocker locker(&cacheMutex);
+                    imageCache.clear();
+                    archiveImageCache.clear();
+                }
+                pixmapCache.clear();
+            }
+
+            currentDir = newDir;
             loadImageList();
 
-            // 无论当前是什么模式，都切换到缩略图模式
-            currentViewMode = ThumbnailView;
-            scrollArea->show();
-            currentImageIndex = -1;
-            update();
-        } else if (fileInfo.isFile()) {
-            // 处理文件拖拽
-            if (loadImage(filePath)) {
-                // 更新最后打开路径（使用图片所在文件夹）
-                currentConfig.lastOpenPath = fileInfo.absolutePath();
-                saveConfiguration();
+            int idx = imageList.indexOf(fileInfo.fileName());
+            if (idx >= 0) currentImageIndex = idx;
 
-                // 如果是单张模式，保持单张模式；如果是缩略图模式，切换到单张模式
-                if (currentViewMode == ThumbnailView) {
-                    switchToSingleView();
-                } else {
-                    update();
-                }
-                updateWindowTitle();
+            switchToThumbnailView();
+        }
+        // --- 普通图片 ---
+        else if (loadImage(filePath)) {
+            currentConfig.lastOpenPath = fileInfo.absolutePath();
+            saveConfiguration();
+
+            if (currentViewMode == ThumbnailView) {
+                switchToSingleView();
+            } else {
+                update();
             }
+            updateWindowTitle();
         }
 
         event->acceptProposedAction();

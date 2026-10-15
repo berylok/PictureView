@@ -8,9 +8,11 @@ void ImageWidget::switchToThumbnailView()
 {
     // 关键：禁用所有鼠标穿透（包括 X11 形状）
     disableMousePassthrough();
-
+    clearX11Shape();
     // 关闭透明背景属性
     setAttribute(Qt::WA_TranslucentBackground, false);
+
+    m_dragCache = QPixmap();
 
     scrollArea->show();
     scrollArea->raise();
@@ -21,7 +23,7 @@ void ImageWidget::switchToThumbnailView()
         if (currentViewMode == ThumbnailView) {
             // 1. 再次清除鼠标穿透（获取最新窗口尺寸）
             disableMousePassthrough();
-
+            clearX11Shape();
             // 2. 强制窗口重新映射（hide/show 会触发窗口管理器重置状态）
             bool wasVisible = isVisible();
             bool wasMaximized = isMaximized();
@@ -37,6 +39,7 @@ void ImageWidget::switchToThumbnailView()
 
             // 3. 再次清除，确保万无一失
             disableMousePassthrough();
+            clearX11Shape();
             clearMask();
 
             //qDebug() << "终极清除：窗口已重新映射，形状应已恢复";
@@ -82,22 +85,20 @@ void ImageWidget::switchToSingleView(int index)
     currentViewMode = SingleView;
     scrollArea->hide();
 
-    // 如果有有效的索引，加载对应的图片
     if (index >= 0 && index < imageList.size()) {
-        // 不再保存当前状态
         loadImageByIndex(index);
     }
 
-    // 🚨 关键：恢复用户之前设置的透明背景状态
-    // currentConfig 是从配置加载的当前设置，或者您也可以直接检查保存的状态
     if (currentConfig.transparentBackground) {
         setAttribute(Qt::WA_TranslucentBackground, true);
         setAutoFillBackground(false);
-        updateMask();   // 立即生成掩码
+        clearX11Shape();      // ★ 先清旧的，避免残留
+        updateMask();
     } else {
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
-        clearMask();    // 确保掩码被清除
+        clearMask();
+        clearX11Shape();      // ★ 加这一行
     }
 
     update();
@@ -110,24 +111,14 @@ void ImageWidget::onThumbnailClicked(int index)
     QString fileName = imageList.at(index);
     QString filePath = currentDir.absoluteFilePath(fileName);
 
-    // 检查是否是压缩包文件
     if (isArchiveFile(fileName)) {
         // 打开压缩包
-        if (openArchive(filePath)) {
-            //qDebug() << "成功打开压缩包:" << filePath;
-        } else {
-            //qDebug() << "打开压缩包失败:" << filePath;
+        if (!openArchive(filePath)) {
             QMessageBox::warning(this, tr("错误"),
                                  tr("无法打开压缩包文件: %1").arg(fileName));
         }
-    } else if (isArchiveMode) {
-        // 在压缩包模式下点击图片
-        currentImageIndex = index;
-        loadImageByIndex(index);
-        switchToSingleView();
     } else {
-        // 普通图片文件
-        currentImageIndex = index;
+        // 普通图片 / 压缩包内图片
         switchToSingleView(index);
     }
 }
@@ -157,6 +148,7 @@ void ImageWidget::toggleImmersiveMode(bool useTransparent)
         setAttribute(Qt::WA_TranslucentBackground, false);
         setAutoFillBackground(true);
         clearMask();
+        clearX11Shape();                     // ★ 新增
 
         currentConfig.titleBarVisible = true;
         currentConfig.transparentBackground = false;
@@ -188,14 +180,15 @@ void ImageWidget::toggleImmersiveMode(bool useTransparent)
     currentConfig.transparentBackground = useTransparent;
     currentConfig.windowMaximized = true;
 
-    show();   // 确保窗口可见
-    // 延迟一帧让 WM 处理 flags 变化后再最大化
+    show();
     QTimer::singleShot(0, this, [this, useTransparent]() {
         showMaximized();
         if (useTransparent && currentViewMode == SingleView && !pixmap.isNull()) {
+            clearX11Shape();                 // ★ 新增
             updateMask();
         } else {
             clearMask();
+            clearX11Shape();                 // ★ 新增
         }
         setUpdatesEnabled(true);
         update();
@@ -203,12 +196,10 @@ void ImageWidget::toggleImmersiveMode(bool useTransparent)
 
     saveConfiguration();
 
-    // 透明背景首次启用提示重启
     if (useTransparent && !m_transparentBackgroundReady) {
         QMessageBox::StandardButton reply = QMessageBox::question(this,
                                                                   tr("APP需要重启"),
                                                                   tr("透明背景首次切换需要重启程序才能完全生效。\n\n"
-
                                                                      "如果不重启，可能会有残影。确定立即重启APP？"),
                                                                   QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes) {

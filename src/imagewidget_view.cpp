@@ -248,9 +248,9 @@ void ImageWidget::resizeEvent(QResizeEvent *event)
 
     if (currentViewMode == ThumbnailView) {
         thumbnailWidget->update();
-        // ====== ADD THIS LINE ======
-        clearMask(); // 强制清除掩码，防止单图模式残留
-        // ==========================
+        // 强制清除掩码和 X11 形状，防止单图模式残留
+        clearMask();
+        clearX11Shape();      // ★ 新增
     } else if (currentViewMode == SingleView) {
         if (currentViewStateType == FitToWindow && !pixmap.isNull()) {
             fitToWindow();
@@ -260,10 +260,6 @@ void ImageWidget::resizeEvent(QResizeEvent *event)
         }
     }
 }
-
-
-
-
 
 void ImageWidget::updateMask()
 {

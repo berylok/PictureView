@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     // app.setPalette(palette);
 
     // 设置更高的内存分配限制（512MB）
-    QImageReader::setAllocationLimit(512);
+    QImageReader::setAllocationLimit(1024);   // 0 = 不限制
     //qDebug() << "设置内存分配限制为 512MB";
 
     // === 在设置应用程序信息后检测Qt平台 ===

@@ -507,9 +507,9 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
     QMenu *preloadMenu = contextMenu.addMenu(tr("预加载范围"));
 
     QAction *pl0  = preloadMenu->addAction(tr("0 张 (省内存)"));
-    QAction *pl3  = preloadMenu->addAction(tr("前后各 3 张"));
+    QAction *pl3  = preloadMenu->addAction(tr("前后各 3 张 (推荐)"));
     QAction *pl5  = preloadMenu->addAction(tr("前后各 5 张"));
-    QAction *pl10 = preloadMenu->addAction(tr("前后各 10 张 (推荐)"));
+    QAction *pl10 = preloadMenu->addAction(tr("前后各 10 张"));
     QAction *pl20 = preloadMenu->addAction(tr("前后各 20 张 (吃内存)"));
 
     QList<QPair<QAction*, int>> items = {
@@ -540,13 +540,13 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
 
     // ==================== 缓存条目数 ====================
     QMenu *cacheMenu = contextMenu.addMenu(tr("缓存图片数"));
-
+    QAction *cacheOff = cacheMenu->addAction(tr("不缓存 (最省内存)"));
     QAction *cache10  = cacheMenu->addAction(tr("10 张 (低内存)"));
     QAction *cache30  = cacheMenu->addAction(tr("30 张"));
-    QAction *cache50  = cacheMenu->addAction(tr("50 张 (推荐)"));
+    QAction *cache50  = cacheMenu->addAction(tr("50 张"));
     QAction *cache100 = cacheMenu->addAction(tr("100 张"));
     QAction *cache200 = cacheMenu->addAction(tr("200 张 (高内存)"));
-    QAction *cacheOff = cacheMenu->addAction(tr("不缓存 (最省内存)"));
+
 
     QList<QPair<QAction*, int>> cacheItems = {
         {cache10,  10},

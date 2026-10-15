@@ -21,26 +21,31 @@ void ImageWidget::openFolder()
     if (!folderPath.isEmpty()) {
         // 更新最后打开路径
         currentConfig.lastOpenPath = folderPath;
-        saveConfiguration(); // 立即保存配置
+        saveConfiguration();
 
         // 重置为合适大小模式
         currentViewStateType = FitToWindow;
 
         currentDir = QDir(folderPath);
+
+        // ★ 切目录前清缓存（避免新目录第一次翻图读盘）
+        {
+            QMutexLocker locker(&cacheMutex);
+            imageCache.clear();
+            archiveImageCache.clear();
+        }
+        pixmapCache.clear();
+
         loadImageList();
 
         // 确保切换到缩略图模式
-        switchToThumbnailView(); // 使用统一的切换函数
-
-        currentImageIndex = -1;
+        switchToThumbnailView();
 
         if (!imageList.isEmpty()) {
             currentImageIndex = 0;
             thumbnailWidget->setSelectedIndex(0);
-            //qDebug() << "设置选中索引为 0，图片列表大小:" << imageList.size();
         } else {
             currentImageIndex = -1;
-            //qDebug() << "图片列表为空，选中索引保持为 -1";
         }
 
         // 确保窗口正常显示
@@ -60,7 +65,7 @@ void ImageWidget::openImage() {
     QString filter =
         "图片文件 (*.png *.jpg *.jpeg *.bmp *.webp *.gif *.tiff *.tif);;"
         "PNG图片 (*.png);;"
-        "JPEG图片 (*.jpg *.jpeg);;"  // 明确包含 jpg 和 jpeg
+        "JPEG图片 (*.jpg *.jpeg);;"
         "BMP图片 (*.bmp);;"
         "WebP图片 (*.webp);;"
         "GIF图片 (*.gif);;"
@@ -71,27 +76,43 @@ void ImageWidget::openImage() {
     QString fileName = QFileDialog::getOpenFileName(
         nullptr, tr("打开图片或压缩包"), initialPath, filter);
 
-    if (!fileName.isEmpty()) {
-        QFileInfo fileInfo(fileName);
-        currentConfig.lastOpenPath = fileInfo.absolutePath();
-        saveConfiguration();
+    if (fileName.isEmpty()) return;
 
-        if (ArchiveHandler::isSupportedArchive(fileName)) {
-            // 压缩包：切到所在目录的缩略图模式，并高亮它
-            currentDir = fileInfo.absoluteDir();
-            loadImageList();
-            switchToThumbnailView();
+    QFileInfo fileInfo(fileName);
+    currentConfig.lastOpenPath = fileInfo.absolutePath();
+    saveConfiguration();
 
-            int idx = imageList.indexOf(fileInfo.fileName());
-            if (idx >= 0) {
-                currentImageIndex = idx;
-                thumbnailWidget->setSelectedIndex(idx);
-                thumbnailWidget->ensureVisible(idx);
+    if (ArchiveHandler::isSupportedArchive(fileName)) {
+        // ============ 压缩包：切到所在目录的缩略图模式，并高亮它 ============
+        QDir newDir = fileInfo.absoluteDir();
+        bool dirChanged = (newDir != currentDir);
+
+        if (dirChanged) {
+            // ★ 切目录前清缓存
+            {
+                QMutexLocker locker(&cacheMutex);
+                imageCache.clear();
+                archiveImageCache.clear();
             }
-        } else {
-            loadImage(fileName);
-            switchToSingleView();
+            pixmapCache.clear();
         }
+
+        currentDir = newDir;
+        loadImageList();
+
+        int idx = imageList.indexOf(fileInfo.fileName());
+        if (idx >= 0) {
+            currentImageIndex = idx;
+        } else {
+            currentImageIndex = -1;
+        }
+
+        switchToThumbnailView();   // 内部会处理选中和滚动
+    } else {
+        // ============ 普通图片：直接进单图模式 ============
+        // loadImage 内部会检测 dirChanged 并调用 loadImageList
+        loadImage(fileName);
+        switchToSingleView();
     }
 }
 
@@ -127,19 +148,36 @@ void ImageWidget::pasteImageFromClipboard()
     QClipboard *clipboard = QApplication::clipboard();
     const QMimeData *mimeData = clipboard->mimeData();
 
-    if (mimeData->hasImage()) {
-        QImage image = clipboard->image();
-        if (!image.isNull()) {
-            pixmap = QPixmap::fromImage(image);
-            scaleFactor = 1.0;
-            panOffset = QPointF(0, 0);
-            currentImagePath.clear();
-            currentImageIndex = -1;
-            imageList.clear();
-            update();
-            updateWindowTitle();
-        }
+    if (!mimeData || !mimeData->hasImage()) return;
+
+    QImage image = clipboard->image();
+    if (image.isNull()) return;
+
+    // 切到单图模式
+    currentViewMode = SingleView;
+    scrollArea->hide();
+
+    // 重置状态
+    pixmap = QPixmap::fromImage(image);
+    originalPixmap = pixmap;
+    scaleFactor = 1.0;
+    panOffset = QPointF(0, 0);
+    currentImagePath.clear();
+    currentImageIndex = -1;
+    imageList.clear();
+
+    // 重置变换
+    rotationAngle = 0;
+    isHorizontallyFlipped = false;
+    isVerticallyFlipped = false;
+
+    // 清缩略图列表
+    if (thumbnailWidget) {
+        thumbnailWidget->setImageList({}, QDir());
     }
+
+    update();
+    updateWindowTitle();
 }
 
 void ImageWidget::openImageInNewWindow()

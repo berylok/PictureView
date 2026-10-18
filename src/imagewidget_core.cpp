@@ -256,6 +256,10 @@ void ImageWidget::updateCacheLimits()
     imageCache.setMaxCost(imgBytes);
     archiveImageCache.setMaxCost(imgBytes);
 
+    if (thumbnailWidget) {
+        thumbnailWidget->setCacheSize(currentConfig.thumbCacheMB);
+    }
+
     qDebug() << "=== 缓存配置 ===";
     qDebug() << "解码尺寸:" << (currentConfig.maxDecodeSize > 0
                                     ? QString::number(currentConfig.maxDecodeSize) + " px"

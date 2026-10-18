@@ -584,6 +584,39 @@ void ImageWidget::showContextMenu(const QPoint &globalPos)
         });
     }
 
+    // ==================== 缩略图缓存 ====================
+    QMenu *thumbCacheMenu = contextMenu.addMenu(tr("缩略图缓存"));
+
+    QAction *tc50  = thumbCacheMenu->addAction(tr("50 MB (省内存)"));
+    QAction *tc100 = thumbCacheMenu->addAction(tr("100 MB"));
+    QAction *tc300 = thumbCacheMenu->addAction(tr("300 MB (推荐)"));
+    QAction *tc500 = thumbCacheMenu->addAction(tr("500 MB (大目录)"));
+
+    QList<QPair<QAction*, int>> thumbCacheItems = {
+        {tc50, 50}, {tc100, 100}, {tc300, 300}, {tc500, 500}
+    };
+
+    int curThumbMB = currentConfig.thumbCacheMB;
+    for (auto &item : thumbCacheItems) {
+        item.first->setCheckable(true);
+        item.first->setChecked(curThumbMB == item.second);
+    }
+
+    auto setThumbCacheSize = [this](int mb) {
+        currentConfig.thumbCacheMB = mb;
+        saveConfiguration();
+        if (thumbnailWidget) {
+            thumbnailWidget->setCacheSize(mb);
+        }
+    };
+
+    for (auto &item : thumbCacheItems) {
+        int mb = item.second;
+        connect(item.first, &QAction::triggered, this, [setThumbCacheSize, mb]() {
+            setThumbCacheSize(mb);
+        });
+    }
+
 
     // ==================== 显示插值 ====================
     QMenu *scalingMenu = contextMenu.addMenu(tr("显示插值"));

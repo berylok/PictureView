@@ -39,8 +39,13 @@ void ImageWidget::loadConfiguration()
     currentConfig.maxDecodeSize = config.maxDecodeSize;
     currentConfig.pixmapCacheSize = config.pixmapCacheSize;
     currentConfig.preloadRange = config.preloadRange;
+    currentConfig.thumbCacheMB = config.thumbCacheMB;
     currentConfig.highlightColor = config.highlightColor;
     currentConfig.smoothScaling = config.smoothScaling;
+
+    if (thumbnailWidget) {
+        thumbnailWidget->setCacheSize(currentConfig.thumbCacheMB);
+    }
 
     // 立即应用到缓存
     pixmapCache.setMaxCost(qMax(1, currentConfig.pixmapCacheSize));
@@ -75,7 +80,7 @@ void ImageWidget::saveConfiguration()
     config.maxDecodeSize = currentConfig.maxDecodeSize;
     config.pixmapCacheSize = currentConfig.pixmapCacheSize;
     config.preloadRange = currentConfig.preloadRange;
-
+    config.thumbCacheMB = currentConfig.thumbCacheMB;
     config.highlightColor = currentConfig.highlightColor;
     config.smoothScaling = currentConfig.smoothScaling;
 

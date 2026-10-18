@@ -97,9 +97,9 @@ private:
     // thumbnailwidget.h
 
     struct PerformanceConfig {
-        int maxCacheMemoryMB = 100;           // 最大缓存内存 100MB (改为MB单位)
+        int maxCacheMemoryMB = 300;           // 最大缓存内存 100MB (改为MB单位)
         int batchLoadSize = 1;         // ★ 1 → 12（每批 12 张）
-        int batchLoadDelay = 20;        // ★ 150 → 30ms
+        int batchLoadDelay = 0;        // ★ 150 → 30ms
         int preloadRange = 1;                 // 预加载前后1个
         bool enableLazyLoading = true;        // 启用懒加载
         bool enablePriorityLoading = true;    // 启用优先级加载

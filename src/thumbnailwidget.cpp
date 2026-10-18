@@ -71,6 +71,11 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     m_pool->setMaxThreadCount(qMax(2, QThread::idealThreadCount() / 2));
     qDebug() << "缩略图线程池大小:" << m_pool->maxThreadCount();
 
+    // 延迟 8 秒清理磁盘缓存（不抢启动资源）
+    QTimer::singleShot(8000, this, [this]() {
+        cleanupOldCache();
+    });
+
 }
 
 ThumbnailWidget::~ThumbnailWidget()
@@ -92,6 +97,8 @@ void ThumbnailWidget::setArchiveMode(const QString &archiveName)
 // 修改 setImageList 方法，加载所有缩略图
 void ThumbnailWidget::setImageList(const QStringList &list, const QDir &dir)
 {
+    qDebug() << "[setList] 调用，list.size:" << list.size()
+        << "gen:" << m_generation.load();
     qDebug() << "[" << QTime::currentTime() << "] setImageList 数量:" << list.size();
     qDebug() << "设置缩略图列表，数量:" << list.size();
 
@@ -114,6 +121,7 @@ void ThumbnailWidget::setImageList(const QStringList &list, const QDir &dir)
     pendingLoadRequests.clear();
     allFilesToLoad.clear();
 
+    updateMinimumHeight();
     update();
 
     emit loadingProgress(0, totalCount);
@@ -134,6 +142,10 @@ void ThumbnailWidget::startLoadingAllThumbnails()
 // 处理批量加载
 void ThumbnailWidget::processBatchLoad()
 {
+    qDebug() << "[batch] index:" << currentBatchIndex
+             << "/" << allFilesToLoad.size()
+             << "loaded:" << loadedCount;
+
     if (currentBatchIndex >= allFilesToLoad.size()) { finishLoading(); return; }
     isLoading = true;
 
@@ -146,7 +158,6 @@ void ThumbnailWidget::processBatchLoad()
         const QString &fileName = allFilesToLoad[i];
         QString cacheKey = getCacheKey(fileName);
 
-        // 主线程检查缓存，命中就跳过去加载
         if (smartThumbnailCache.contains(cacheKey)) {
             loadedCount++;
             continue;
@@ -156,15 +167,15 @@ void ThumbnailWidget::processBatchLoad()
     currentBatchIndex = endIndex;
 
     if (!batchFiles.isEmpty()) {
-        qDebug() << "[" << QTime::currentTime() << "] 提交批次，"<< batchFiles.size() << "个任务到线程池";
         loadThumbnailsBatch(batchFiles);
-    } else if (currentBatchIndex >= allFilesToLoad.size()
-               && loadedCount >= totalCount) {
-        finishLoading();
-    }
-
-    if (currentBatchIndex < allFilesToLoad.size()) {
-        batchLoadTimer.start();
+        // ★ 不在这里 start timer，等 worker 完成再启动
+    } else {
+        // 全是缓存命中，直接启动下一批
+        if (currentBatchIndex < allFilesToLoad.size()) {
+            batchLoadTimer.start();
+        } else if (loadedCount >= totalCount) {
+            finishLoading();
+        }
     }
 }
 
@@ -173,19 +184,32 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
 {
     if (fileNames.isEmpty()) return;
 
-    const int gen = m_generation.load();       // ★ 捕获当前代际
+    const int gen = m_generation.load();
     QPointer<ThumbnailWidget> guard = this;
 
-    m_pool->start( [guard, fileNames, gen]() {   // ★ 用 m_pool
-        qDebug() << "[" << QTime::currentTime() << "] 工作线程启动，处理"<< fileNames.size() << "个文件";
-        if (!guard) return;
-        if (guard->m_generation.load() != gen) return;      // ★ 检查
+    m_pool->start([guard, fileNames, gen]() {
+        qDebug() << "[worker] 启动，处理" << fileNames.size()
+            << "个文件，gen:" << gen;
+
+        if (!guard) {
+            qDebug() << "[worker] guard 失效，丢弃";
+            return;
+        }
+        if (guard->m_generation.load() != gen) {
+            qDebug() << "[worker] 代际变了，丢弃。gen:" << gen
+                     << "现在:" << guard->m_generation.load();
+            return;
+        }
 
         QList<QPair<QString, QImage>> loadedResults;
 
         for (const QString &fileName : fileNames) {
             if (!guard) return;
-            if (guard->m_generation.load() != gen) return;  // ★ 每张图都检查
+            if (guard->m_generation.load() != gen) {
+                qDebug() << "[worker] 循环中代际变了，丢弃，已处理:"
+                         << loadedResults.size();
+                return;
+            }
 
             QImage img = guard->loadSingleThumbnail(fileName);
             if (!img.isNull()) {
@@ -196,40 +220,41 @@ void ThumbnailWidget::loadThumbnailsBatch(const QStringList &fileNames)
         if (!guard) return;
         if (guard->m_generation.load() != gen) return;
 
+        const int resultCount = loadedResults.size();
 
-        // ⑤ 回主线程：QPixmap 只能在主线程创建
-        const int resultCount = loadedResults.size();   // ★ 先记住数量
         QMetaObject::invokeMethod(guard.data(),
                                   [guard, loadedResults = std::move(loadedResults)]() {
-            qDebug() << "[" << QTime::currentTime() << "] 批次完成，写缓存"<< loadedResults.size() << "张";
-                                      if (!guard) return;   // ⑥ 主线程执行时再判一次
+                                      qDebug() << "[callback] 写缓存" << loadedResults.size()
+                                          << "张，nextBatchIndex:" << guard->currentBatchIndex
+                                          << "/" << guard->allFilesToLoad.size();
+
+                                      if (!guard) return;
 
                                       for (const auto &pair : loadedResults) {
                                           QString cacheKey = guard->getCacheKey(pair.first);
-
                                           QPixmap thumbnail = QPixmap::fromImage(pair.second);
                                           if (thumbnail.isNull()) continue;
-
                                           int cost = guard->calculateCostForPixmap(thumbnail);
-
-                                          guard->smartThumbnailCache.insert(
-                                              cacheKey, new QPixmap(thumbnail), cost);
-
+                                          guard->smartThumbnailCache.insert(cacheKey, new QPixmap(thumbnail), cost);
                                           guard->loadedCount++;
                                       }
 
                                       emit guard->loadingProgress(guard->loadedCount, guard->totalCount);
                                       guard->update();
 
-                                      if (guard->currentBatchIndex >= guard->allFilesToLoad.size() &&
-                                          guard->loadedCount >= guard->totalCount) {
+                                      if (guard->currentBatchIndex < guard->allFilesToLoad.size()) {
+                                          qDebug() << "[callback] 启动下一批";
+                                          guard->batchLoadTimer.start();
+                                      } else if (guard->loadedCount >= guard->totalCount) {
+                                          qDebug() << "[callback] 全部完成";
                                           guard->finishLoading();
                                       }
                                   }, Qt::QueuedConnection);
 
-         qDebug() << "[" << QTime::currentTime() << "] worker done,"<< resultCount << "个";
+        qDebug() << "[worker] done，" << resultCount << "个";
     });
 }
+
 // 新增完成处理函数
 void ThumbnailWidget::finishLoading()
 {
@@ -416,7 +441,7 @@ void ThumbnailWidget::paintEvent(QPaintEvent *event)
         painter.drawText(10, 20, QString(tr("Loading: %1/%2")).arg(loadedCount).arg(totalCount));
     }
 
-    updateMinimumHeight();
+
 }
 
 
@@ -427,49 +452,73 @@ void ThumbnailWidget::drawThumbnailItem(QPainter &painter, int index,
 {
     QRect borderRect(x, y, thumbnailSize.width(), thumbnailSize.height());
 
-    // 绘制选中状态
+    // ============ 1. 背景 ============
+    painter.fillRect(borderRect, QColor(45, 45, 45));
+
+    // ============ 2. 缩略图 ============
+    if (!thumbnail.isNull()) {
+        int thumbX = x + (thumbnailSize.width() - thumbnail.width()) / 2;
+        int thumbY = y + (thumbnailSize.height() - thumbnail.height()) / 2;
+        QRect thumbRect(thumbX, thumbY, thumbnail.width(), thumbnail.height());
+        painter.drawPixmap(thumbRect, thumbnail);
+    } else if (isArchive) {
+        painter.drawImage(borderRect, createArchiveIconImage());
+    } else {
+        painter.setPen(QColor(150, 150, 150));
+        painter.drawText(borderRect, Qt::AlignCenter, tr("加载中..."));
+    }
+
+    // ============ 3. 选中高亮（画在最上层） ============
     if (index == selectedIndex) {
-        QPainterPath path;
-        path.addRoundedRect(borderRect.adjusted(-3, -3, 3, 3), 5, 5);
-        // ★ 从 ImageWidget 的 currentConfig 拿颜色
+        // 从配置拿高亮色
         QColor hl("#00A0E9");
         if (imageWidget) {
             hl = QColor(imageWidget->currentConfig.highlightColor);
             if (!hl.isValid()) hl = QColor("#00A0E9");
         }
-        hl.setAlpha(200);
-        painter.fillPath(path, hl);
-    }
 
-    // 绘制背景
-    painter.fillRect(borderRect, QColor(45, 45, 45));
+        // 外发光（半透明大边框）
+        QColor glow = hl;
+        glow.setAlpha(80);
+        painter.setPen(QPen(glow, 6));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(borderRect.adjusted(-3, -3, 3, 3));
 
-    // 绘制缩略图或占位符
-    if (!thumbnail.isNull()) {
-        // 计算居中位置
-        int thumbX = x + (thumbnailSize.width() - thumbnail.width()) / 2;
-        int thumbY = y + (thumbnailSize.height() - thumbnail.height()) / 2;
-        QRect thumbRect(thumbX, thumbY, thumbnail.width(), thumbnail.height());
+        // 实色粗边框（2px）
+        painter.setPen(QPen(hl, 3));
+        painter.drawRect(borderRect.adjusted(-1, -1, 1, 1));
 
-        painter.drawPixmap(thumbRect, thumbnail);
-
-        // 绘制边框
-        painter.setPen(QColor(100, 100, 100));
-        painter.drawRect(borderRect);
-    } else if (isArchive) {
-        // 压缩包图标 - 已经保持比例
-        painter.drawImage(borderRect, createArchiveIconImage());   // 不需要转 Pixmap
+        // 左上角小勾选角标
+        int badgeSize = 22;
+        QRect badgeRect(x + 4, y + 4, badgeSize, badgeSize);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(hl);
+        painter.drawEllipse(badgeRect);
+        painter.setPen(QPen(Qt::white, 2));
+        painter.drawText(badgeRect, Qt::AlignCenter, "✓");
     } else {
-        // 加载中占位符
-        painter.setPen(QColor(150, 150, 150));
-        painter.drawText(borderRect, Qt::AlignCenter, tr("加载中..."));
+        // 未选中：细灰边框
+        painter.setPen(QColor(100, 100, 100));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(borderRect);
     }
 
-    // 绘制文件名
+    // ============ 4. 文件名 ============
     QRect textRect(x, y + thumbnailSize.height(), thumbnailSize.width(), 20);
     QString displayName = getDisplayName(fileName);
 
-    painter.setPen(Qt::white);
+    // 选中时文件名也用高亮色
+    if (index == selectedIndex) {
+        QColor hl("#00A0E9");
+        if (imageWidget) {
+            hl = QColor(imageWidget->currentConfig.highlightColor);
+            if (!hl.isValid()) hl = QColor("#00A0E9");
+        }
+        painter.setPen(hl);
+    } else {
+        painter.setPen(Qt::white);
+    }
+
     painter.setFont(QFont("Microsoft YaHei", 8));
     painter.drawText(textRect, Qt::AlignCenter | Qt::TextElideMode::ElideMiddle, displayName);
 }
@@ -882,14 +931,54 @@ void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
     }
 }
 
+// void ThumbnailWidget::cleanupOldCache()
+// {
+//     QDir dir(m_thumbCacheDir);
+//     QDateTime cutoff = QDateTime::currentDateTime().addDays(-30);
+
+//     for (const QFileInfo &fi : dir.entryInfoList(QDir::Files)) {
+//         if (fi.lastRead() < cutoff && fi.lastModified() < cutoff) {
+//             QFile::remove(fi.absoluteFilePath());
+//         }
+//     }
+// }
+
 void ThumbnailWidget::cleanupOldCache()
 {
     QDir dir(m_thumbCacheDir);
-    QDateTime cutoff = QDateTime::currentDateTime().addDays(-30);
+    if (!dir.exists()) return;
 
-    for (const QFileInfo &fi : dir.entryInfoList(QDir::Files)) {
+    const qint64 MAX_TOTAL_BYTES = 200LL * 1024 * 1024;   // 200 MB
+    const int    MAX_AGE_DAYS    = 7;                     // 7 天
+
+    // 按修改时间排序，最新在前
+    QFileInfoList files = dir.entryInfoList(QDir::Files, QDir::Time);
+
+    QDateTime cutoff = QDateTime::currentDateTime().addDays(-MAX_AGE_DAYS);
+
+    QFileInfoList keepList;
+    qint64 totalBytes = 0;
+
+    // ---------- 第一轮：删超龄的 ----------
+    for (const QFileInfo &fi : files) {
         if (fi.lastRead() < cutoff && fi.lastModified() < cutoff) {
+            QFile::remove(fi.absoluteFilePath());
+            continue;
+        }
+        keepList.append(fi);
+        totalBytes += fi.size();
+    }
+
+    // ---------- 第二轮：超 200MB 从最旧的开始删 ----------
+    if (totalBytes > MAX_TOTAL_BYTES) {
+        for (int i = keepList.size() - 1; i >= 0 && totalBytes > MAX_TOTAL_BYTES; --i) {
+            const QFileInfo &fi = keepList[i];
+            totalBytes -= fi.size();
             QFile::remove(fi.absoluteFilePath());
         }
     }
+
+    qDebug() << "缩略图磁盘缓存清理完成，当前大小:"
+             << totalBytes / 1024.0 / 1024.0 << "MB"
+             << "，文件数:" << dir.entryList(QDir::Files).size();
 }

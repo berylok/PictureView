@@ -34,6 +34,7 @@ public:
 
         int imageCacheCount = 0;    // 主图缓存张数；0 = 自动（= preloadRange*2+6）
         int pixmapCacheCount = 0;   // QPixmap 缓存张数；0 = 自动
+        int thumbCacheMB = 300;   // 缩略图内存缓存上限（MB）
 
         // 外观
         QString highlightColor = "#00A0E9";   // 默认蓝色（原来是 0,120,215）

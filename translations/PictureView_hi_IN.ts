@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/imagewidget_help.cpp" line="116"/>
         <location filename="../src/imagewidget_help.cpp" line="312"/>
-        <location filename="../src/imagewidget_menu.cpp" line="331"/>
+        <location filename="../src/imagewidget_menu.cpp" line="682"/>
         <source>帮助</source>
         <translation>सहायता</translation>
     </message>
@@ -224,7 +224,7 @@
         <translation>एकल छवि खोलें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="95"/>
+        <location filename="../src/imagewidget_file.cpp" line="126"/>
         <location filename="../src/imagewidget_help.cpp" line="268"/>
         <location filename="../src/imagewidget_shortcuts.cpp" line="23"/>
         <source>保存图片</source>
@@ -305,14 +305,14 @@
     <message>
         <location filename="../src/imagewidget_help.cpp" line="288"/>
         <location filename="../src/imagewidget_help.cpp" line="293"/>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="87"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="81"/>
         <source>垂直镜像</source>
         <translation>ऊर्ध्वाधर दर्पण</translation>
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="289"/>
         <location filename="../src/imagewidget_help.cpp" line="292"/>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="79"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="73"/>
         <source>水平镜像</source>
         <translation>क्षैतिज दर्पण</translation>
     </message>
@@ -515,13 +515,12 @@
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="367"/>
-        <location filename="../src/imagewidget_menu.cpp" line="218"/>
+        <location filename="../src/imagewidget_menu.cpp" line="250"/>
         <source>窗口置顶</source>
         <translation>शीर्ष पर बनाए रखें</translation>
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="368"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="180"/>
         <source>透明背景</source>
         <translation>पारदर्शी पृष्ठभूमि</translation>
     </message>
@@ -832,17 +831,17 @@
         <translation>छवि फ़ोल्डर चुनें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="72"/>
+        <location filename="../src/imagewidget_file.cpp" line="77"/>
         <source>打开图片或压缩包</source>
         <translation>छवि या संग्रह खोलें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="172"/>
+        <location filename="../src/imagewidget_file.cpp" line="220"/>
         <source>启动失败</source>
         <translation>प्रारंभ विफल</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="173"/>
+        <location filename="../src/imagewidget_file.cpp" line="221"/>
         <source>无法启动新窗口。
 请检查程序路径：
 %1</source>
@@ -866,27 +865,41 @@
         <translation>छवि चिपकाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="62"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="56"/>
         <source>顺时针旋转</source>
         <translation>दक्षिणावर्त घुमाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="70"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="64"/>
         <source>逆时针旋转</source>
         <translation>वामावर्त घुमाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="95"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="89"/>
         <source>重置变换</source>
         <translation>परिवर्तन रीसेट करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="110"/>
-        <source>沉浸模式</source>
-        <translation>तल्लीनता मोड</translation>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="98"/>
+        <source>黑色沉浸模式</source>
+        <translation>काला तल्लीनता मोड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="40"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="107"/>
+        <source>透明沉浸模式</source>
+        <translation>पारदर्शी तल्लीनता मोड</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="122"/>
+        <source>切换包围盒模式</source>
+        <translation>बाउंडिंग बॉक्स मोड बदलें</translation>
+    </message>
+    <message>
+        <source>沉浸模式</source>
+        <translation type="vanished">तल्लीनता मोड</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="52"/>
         <source>返回上级目录 (ESC)</source>
         <translation>ऊपर जाएँ (ESC)</translation>
     </message>
@@ -895,335 +908,586 @@
         <translation type="vanished">विंडो छोटी करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="47"/>
+        <location filename="../src/imagewidget_menu.cpp" line="59"/>
         <source>返回缩略图(Enter)</source>
         <translation>थंबनेल पर लौटें (Enter)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="51"/>
+        <location filename="../src/imagewidget_menu.cpp" line="63"/>
         <source>上一张 (←)</source>
         <translation>पिछला (←)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="52"/>
+        <location filename="../src/imagewidget_menu.cpp" line="64"/>
         <source>下一张 (→)</source>
         <translation>अगला (→)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="55"/>
+        <location filename="../src/imagewidget_menu.cpp" line="67"/>
         <source>合适大小 (↑)</source>
         <translation>विंडो में फ़िट करें (↑)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="56"/>
+        <location filename="../src/imagewidget_menu.cpp" line="68"/>
         <source>实际大小 (↓)</source>
         <translation>वास्तविक आकार (↓)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="60"/>
+        <location filename="../src/imagewidget_menu.cpp" line="72"/>
         <source>编辑</source>
         <translation>संपादित करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="61"/>
+        <location filename="../src/imagewidget_menu.cpp" line="73"/>
         <source>旋转</source>
         <translation>घुमाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="62"/>
+        <location filename="../src/imagewidget_menu.cpp" line="74"/>
         <source>逆时针90° (PageUp)</source>
         <translation>90° वामावर्त (PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="63"/>
+        <location filename="../src/imagewidget_menu.cpp" line="75"/>
         <source>顺时针90° (PageDown)</source>
         <translation>90° दक्षिणावर्त (PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="64"/>
+        <location filename="../src/imagewidget_menu.cpp" line="76"/>
         <source>180°</source>
         <translation>180°</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="66"/>
+        <location filename="../src/imagewidget_menu.cpp" line="78"/>
         <source>镜像</source>
         <translation>दर्पण</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="67"/>
+        <location filename="../src/imagewidget_menu.cpp" line="79"/>
         <source>垂直镜像 (Ctrl+PageUp)</source>
         <translation>ऊर्ध्वाधर दर्पण (Ctrl+PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="68"/>
+        <location filename="../src/imagewidget_menu.cpp" line="80"/>
         <source>水平镜像 (Ctrl+PageDown)</source>
         <translation>क्षैतिज दर्पण (Ctrl+PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="72"/>
+        <location filename="../src/imagewidget_menu.cpp" line="84"/>
         <source>重置变换 (Ctrl+0)</source>
         <translation>परिवर्तन रीसेट करें (Ctrl+0)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="78"/>
+        <location filename="../src/imagewidget_menu.cpp" line="90"/>
         <source>解锁变换</source>
         <translation>परिवर्तन अनलॉक करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="78"/>
+        <location filename="../src/imagewidget_menu.cpp" line="90"/>
         <source>锁定变换</source>
         <translation>परिवर्तन लॉक करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="86"/>
+        <location filename="../src/imagewidget_menu.cpp" line="98"/>
         <source>删除当前图片 (Del)</source>
         <translation>वर्तमान छवि हटाएँ (Del)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="96"/>
+        <location filename="../src/imagewidget_menu.cpp" line="108"/>
         <source>窗口最小化(Ctrl+M)</source>
         <translation>विंडो छोटी करें (Ctrl+M)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="100"/>
+        <location filename="../src/imagewidget_menu.cpp" line="112"/>
         <source>打开图片(Enter)</source>
         <translation>छवि खोलें (Enter)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="101"/>
+        <location filename="../src/imagewidget_menu.cpp" line="113"/>
         <source>删除选中图片 (Del)</source>
         <translation>चयनित छवि हटाएँ (Del)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="108"/>
+        <location filename="../src/imagewidget_menu.cpp" line="120"/>
         <source>文件...</source>
         <translation>फ़ाइल...</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="117"/>
+        <location filename="../src/imagewidget_menu.cpp" line="256"/>
+        <source>透明背景（APP需重开）</source>
+        <translation>पारदर्शी पृष्ठभूमि (ऐप को फिर से खोलना होगा)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="116"/>
         <source>在新窗口打开图片</source>
         <translation>नई विंडो में छवि खोलें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="153"/>
-        <location filename="../src/imagewidget_menu.cpp" line="159"/>
-        <location filename="../src/imagewidget_menu.cpp" line="174"/>
+        <location filename="../src/imagewidget_file.cpp" line="201"/>
+        <location filename="../src/imagewidget_menu.cpp" line="173"/>
+        <location filename="../src/imagewidget_menu.cpp" line="188"/>
         <source>没有可用的图片文件</source>
         <translation>कोई छवि फ़ाइल उपलब्ध नहीं है</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="165"/>
+        <location filename="../src/imagewidget_menu.cpp" line="181"/>
         <source>打开图片所在文件夹</source>
         <translation>छवि वाला फ़ोल्डर खोलें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="133"/>
+        <location filename="../src/imagewidget_menu.cpp" line="145"/>
         <source>打开文件夹 (Ctrl+O)</source>
         <translation>फ़ोल्डर खोलें (Ctrl+O)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="138"/>
+        <location filename="../src/imagewidget_menu.cpp" line="150"/>
         <source>打开图片 (Ctrl+Shift+O)</source>
         <translation>छवि खोलें (Ctrl+Shift+O)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="185"/>
+        <location filename="../src/imagewidget_menu.cpp" line="199"/>
         <source>保存图片 (Ctrl+S)</source>
         <translation>छवि सहेजें (Ctrl+S)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="191"/>
+        <location filename="../src/imagewidget_menu.cpp" line="205"/>
         <source>拷贝图片至剪切板 (Ctrl+C)</source>
         <translation>छवि को क्लिपबोर्ड पर कॉपी करें (Ctrl+C)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="196"/>
+        <location filename="../src/imagewidget_menu.cpp" line="210"/>
         <source>粘贴剪切板图片 (Ctrl+V)</source>
         <translation>क्लिपबोर्ड से छवि चिपकाएँ (Ctrl+V)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="202"/>
+        <location filename="../src/imagewidget_menu.cpp" line="216"/>
         <source>窗口</source>
         <translation>विंडो</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="213"/>
+        <location filename="../src/imagewidget_menu.cpp" line="224"/>
+        <source>退出黑色沉浸 (Ctrl+F)</source>
+        <translation>काला तल्लीनता मोड से बाहर निकलें (Ctrl+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="225"/>
+        <source>黑色沉浸模式 (Ctrl+F)</source>
+        <translation>काला तल्लीनता मोड (Ctrl+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="231"/>
+        <source>退出透明沉浸 (Ctrl+Shift+F)</source>
+        <translation>पारदर्शी तल्लीनता मोड से बाहर निकलें (Ctrl+Shift+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="232"/>
+        <source>透明沉浸模式 (Ctrl+Shift+F)</source>
+        <translation>पारदर्शी तल्लीनता मोड (Ctrl+Shift+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="242"/>
+        <source>经典窗口控制</source>
+        <translation>क्लासिक विंडो नियंत्रण</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="245"/>
         <source>隐藏标题栏</source>
         <translation>शीर्षक पट्टी छिपाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="213"/>
+        <location filename="../src/imagewidget_menu.cpp" line="245"/>
         <source>显示标题栏</source>
         <translation>शीर्षक पट्टी दिखाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="218"/>
+        <location filename="../src/imagewidget_menu.cpp" line="250"/>
         <source>取消置顶</source>
         <translation>शीर्ष से हटाएँ</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="224"/>
         <source>透明背景（最大化+隐藏标题+透明背景+设置后重开程序）</source>
-        <translation>पारदर्शी पृष्ठभूमि (अधिकतम करें + शीर्षक छिपाएँ + पारदर्शी पृष्ठभूमि + सेटिंग के बाद पुनः आरंभ करें)</translation>
+        <translation type="vanished">पारदर्शी पृष्ठभूमि (अधिकतम करें + शीर्षक छिपाएँ + पारदर्शी पृष्ठभूमि + सेटिंग के बाद पुनः आरंभ करें)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="341"/>
+        <location filename="../src/imagewidget_menu.cpp" line="692"/>
         <source>退出（Esc）</source>
         <translation>बाहर निकलें (Esc)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="223"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="181"/>
+        <location filename="../src/imagewidget_menu.cpp" line="255"/>
         <source>黑色背景</source>
         <translation>काली पृष्ठभूमि</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="45"/>
+        <location filename="../src/imagewidget_menu.cpp" line="57"/>
         <source>窗口最小化 (Ctrl+M)</source>
         <translation>विंडो छोटी करें (Ctrl+M)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="145"/>
+        <location filename="../src/imagewidget_menu.cpp" line="163"/>
         <source>在新窗口打开图片(Ctrl+N)</source>
         <translation>नई विंडो में छवि खोलें (Ctrl+N)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="207"/>
         <source>退出沉浸模式 (Ctrl+F)</source>
-        <translation>तल्लीनता मोड से बाहर निकलें (Ctrl+F)</translation>
+        <translation type="vanished">तल्लीनता मोड से बाहर निकलें (Ctrl+F)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="207"/>
         <source>沉浸模式 (Ctrl+F)</source>
-        <translation>तल्लीनता मोड (Ctrl+F)</translation>
+        <translation type="vanished">तल्लीनता मोड (Ctrl+F)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="229"/>
+        <location filename="../src/imagewidget_menu.cpp" line="263"/>
         <source>透明度</source>
         <translation>पारदर्शिता</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="230"/>
+        <location filename="../src/imagewidget_menu.cpp" line="264"/>
         <source>100% - 不透明</source>
         <translation>100% - अपारदर्शी</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="282"/>
+        <location filename="../src/imagewidget_menu.cpp" line="316"/>
         <source>退出画布模式 (ESC/Insert)</source>
         <translation>कैनवास मोड से बाहर निकलें (ESC/Insert)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="286"/>
+        <location filename="../src/imagewidget_menu.cpp" line="320"/>
         <source>增加透明度 (PageUp)</source>
         <translation>पारदर्शिता बढ़ाएँ (PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="287"/>
+        <location filename="../src/imagewidget_menu.cpp" line="321"/>
         <source>减少透明度 (PageDown)</source>
         <translation>पारदर्शिता घटाएँ (PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="290"/>
+        <location filename="../src/imagewidget_menu.cpp" line="324"/>
         <source>进入画布模式 (Insert)</source>
         <translation>कैनवास मोड में प्रवेश करें (Insert)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="297"/>
+        <location filename="../src/imagewidget_menu.cpp" line="331"/>
         <source>幻灯功能</source>
         <translation>स्लाइडशो</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="299"/>
+        <location filename="../src/imagewidget_menu.cpp" line="333"/>
         <source>停止幻灯</source>
         <translation>स्लाइडशो रोकें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="299"/>
+        <location filename="../src/imagewidget_menu.cpp" line="333"/>
         <source>开始幻灯</source>
         <translation>स्लाइडशो शुरू करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="305"/>
+        <location filename="../src/imagewidget_menu.cpp" line="342"/>
+        <source>缩放方式（Ctrl+B）</source>
+        <translation>ज़ूम विधि (Ctrl+B)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="344"/>
+        <source>完整适应窗口</source>
+        <translation>विंडो में पूरी तरह फ़िट करें</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="345"/>
+        <source>统一包围盒</source>
+        <translation>एकीकृत बाउंडिंग बॉक्स</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="372"/>
+        <source>高亮颜色</source>
+        <translation>हाइलाइट रंग</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="379"/>
+        <source>蓝色（默认）</source>
+        <translation>नीला (डिफ़ॉल्ट)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="380"/>
+        <source>琥珀色</source>
+        <translation>एम्बर</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="381"/>
+        <source>橙红色</source>
+        <translation>नारंगी-लाल</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="382"/>
+        <source>暖金色</source>
+        <translation>गर्म सुनहरा</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="383"/>
+        <source>蜜桃色</source>
+        <translation>आड़ू रंग</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="384"/>
+        <source>珊瑚色</source>
+        <translation>मूँगा रंग</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="385"/>
+        <source>青绿色</source>
+        <translation>फ़िरोज़ी हरा</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="386"/>
+        <source>紫色</source>
+        <translation>बैंगनी</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="387"/>
+        <source>粉色</source>
+        <translation>गुलाबी</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="388"/>
+        <source>灰白色</source>
+        <translation>धूसर-सफ़ेद</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="415"/>
+        <source>自定义...</source>
+        <translation>कस्टम...</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="419"/>
+        <source>选择高亮颜色</source>
+        <translation>हाइलाइट रंग चुनें</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="431"/>
+        <source>图片解码尺寸</source>
+        <translation>छवि डिकोड आकार</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="433"/>
+        <source>1000 像素 (极速)</source>
+        <translation>1000 पिक्सेल (अधिकतम गति)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="434"/>
+        <source>2000 像素 (高速)</source>
+        <translation>2000 पिक्सेल (उच्च गति)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="435"/>
+        <source>4000 像素 (推荐)</source>
+        <translation>4000 पिक्सेल (अनुशंसित)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="436"/>
+        <source>8000 像素 (高清晰)</source>
+        <translation>8000 पिक्सेल (उच्च स्पष्टता)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="437"/>
+        <source>不限制 (可能很慢)</source>
+        <translation>कोई सीमा नहीं (बहुत धीमा हो सकता है)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="507"/>
+        <source>预加载范围</source>
+        <translation>प्रीलोड सीमा</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="509"/>
+        <source>0 张 (省内存)</source>
+        <translation>0 छवियाँ (मेमोरी बचत)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="510"/>
+        <source>前后各 3 张 (推荐)</source>
+        <translation>पहले और बाद में 3-3 छवियाँ (अनुशंसित)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="511"/>
+        <source>前后各 5 张</source>
+        <translation>पहले और बाद में 5-5 छवियाँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="512"/>
+        <source>前后各 10 张</source>
+        <translation>पहले और बाद में 10-10 छवियाँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="513"/>
+        <source>前后各 20 张 (吃内存)</source>
+        <translation>पहले और बाद में 20-20 छवियाँ (मेमोरी खपत)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="542"/>
+        <source>缓存图片数</source>
+        <translation>कैश छवि संख्या</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="543"/>
+        <source>不缓存 (最省内存)</source>
+        <translation>कैश नहीं (अधिकतम मेमोरी बचत)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="544"/>
+        <source>10 张 (低内存)</source>
+        <translation>10 छवियाँ (कम मेमोरी)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="545"/>
+        <source>30 张</source>
+        <translation>30 छवियाँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="546"/>
+        <source>50 张</source>
+        <translation>50 छवियाँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="547"/>
+        <source>100 张</source>
+        <translation>100 छवियाँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="548"/>
+        <source>200 张 (高内存)</source>
+        <translation>200 छवियाँ (उच्च मेमोरी)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="588"/>
+        <source>缩略图缓存</source>
+        <translation>थंबनेल कैश</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="590"/>
+        <source>50 MB (省内存)</source>
+        <translation>50 MB (मेमोरी बचत)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="591"/>
+        <source>100 MB</source>
+        <translation>100 MB</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="592"/>
+        <source>300 MB (推荐)</source>
+        <translation>300 MB (अनुशंसित)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="593"/>
+        <source>500 MB (大目录)</source>
+        <translation>500 MB (बड़ी निर्देशिकाएँ)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="622"/>
+        <source>显示插值</source>
+        <translation>इंटरपोलेशन दिखाएँ</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="624"/>
+        <source>平滑插值（推荐）</source>
+        <translation>स्मूथ इंटरपोलेशन (अनुशंसित)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="625"/>
+        <source>像素（最近邻）</source>
+        <translation>पिक्सेल (निकटतम पड़ोसी)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="650"/>
+        <source>当前：包围盒</source>
+        <translation>वर्तमान: बाउंडिंग बॉक्स</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="650"/>
+        <source>当前：完整适应</source>
+        <translation>वर्तमान: पूर्ण फ़िट</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="655"/>
         <source>切换间隔</source>
         <translation>अंतराल बदलें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="306"/>
+        <location filename="../src/imagewidget_menu.cpp" line="656"/>
         <source>1秒</source>
         <translation>1 सेकंड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="307"/>
+        <location filename="../src/imagewidget_menu.cpp" line="657"/>
         <source>2秒</source>
         <translation>2 सेकंड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="308"/>
+        <location filename="../src/imagewidget_menu.cpp" line="658"/>
         <source>3秒</source>
         <translation>3 सेकंड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="309"/>
+        <location filename="../src/imagewidget_menu.cpp" line="659"/>
         <source>5秒</source>
         <translation>5 सेकंड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="310"/>
+        <location filename="../src/imagewidget_menu.cpp" line="660"/>
         <source>10秒</source>
         <translation>10 सेकंड</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="332"/>
+        <location filename="../src/imagewidget_menu.cpp" line="683"/>
         <source>关于 (F1)</source>
         <translation>के बारे में (F1)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="336"/>
+        <location filename="../src/imagewidget_menu.cpp" line="687"/>
         <source>快捷键帮助</source>
         <translation>शॉर्टकट सहायता</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="153"/>
-        <location filename="../src/imagewidget_fileops.cpp" line="390"/>
-        <location filename="../src/imagewidget_fileops.cpp" line="474"/>
-        <location filename="../src/imagewidget_menu.cpp" line="159"/>
-        <location filename="../src/imagewidget_menu.cpp" line="174"/>
+        <location filename="../src/imagewidget_file.cpp" line="201"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="497"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="594"/>
+        <location filename="../src/imagewidget_menu.cpp" line="173"/>
+        <location filename="../src/imagewidget_menu.cpp" line="188"/>
         <source>警告</source>
         <translation>चेतावनी</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="390"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="497"/>
         <source>没有可删除的图片</source>
         <translation>हटाने के लिए कोई छवि नहीं</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="401"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="508"/>
         <source>确认删除</source>
         <translation>हटाने की पुष्टि करें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="402"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="509"/>
         <source>确定要将图片 &apos;%1&apos; 移动到回收站吗？</source>
         <translation>क्या आप वाकई छवि &apos;%1&apos; को रीसायकल बिन में ले जाना चाहते हैं?</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="408"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="515"/>
         <source>不再询问</source>
         <translation>दोबारा न पूछें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="458"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="120"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="533"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="127"/>
         <source>错误</source>
         <translation>त्रुटि</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="458"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="533"/>
         <source>移动图片到回收站失败</source>
         <translation>छवि को रीसायकल बिन में ले जाने में विफल</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="474"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="594"/>
         <source>请先选择要删除的图片</source>
         <translation>कृपया पहले हटाने के लिए एक छवि चुनें</translation>
     </message>
@@ -1240,7 +1504,7 @@
         <translation type="vanished">छवि हटाने में विफल। संभवतः अनुमति नहीं है या फ़ाइल उपयोग में है।</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_view.cpp" line="35"/>
+        <location filename="../src/imagewidget_view.cpp" line="38"/>
         <source>没有图片或图片加载失败</source>
         <translation>कोई छवि नहीं या लोड करने में विफल</translation>
     </message>
@@ -1253,51 +1517,59 @@
         <translation type="vanished">छवि स्केल करने में विफल</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="121"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="128"/>
         <source>无法打开压缩包文件: %1</source>
         <translation>संग्रह फ़ाइल खोलने में असमर्थ: %1</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="178"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="211"/>
+        <source>APP需要重启</source>
+        <translation>ऐप को पुनः आरंभ करना होगा</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_viewmode.cpp" line="212"/>
+        <source>透明背景首次切换需要重启程序才能完全生效。
+
+如果不重启，可能会有残影。确定立即重启APP？</source>
+        <translation>पारदर्शी पृष्ठभूमि पर पहली बार स्विच करने के लिए पूर्ण प्रभाव के लिए प्रोग्राम को पुनः आरंभ करना होगा।
+
+यदि पुनः आरंभ नहीं किया जाता, तो छवि के अवशेष दिख सकते हैं। क्या आप ऐप को अभी पुनः आरंभ करना चाहते हैं?</translation>
+    </message>
+    <message>
         <source>选择沉浸背景</source>
-        <translation>तल्लीनता पृष्ठभूमि चुनें</translation>
+        <translation type="vanished">तल्लीनता पृष्ठभूमि चुनें</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="179"/>
         <source>请选择沉浸模式的背景类型：</source>
-        <translation>कृपया तल्लीनता मोड के लिए पृष्ठभूमि प्रकार चुनें:</translation>
+        <translation type="vanished">कृपया तल्लीनता मोड के लिए पृष्ठभूमि प्रकार चुनें:</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="232"/>
         <source>透明背景需要重启程序才能完全生效。是否立即重启？</source>
-        <translation>पारदर्शी पृष्ठभूमि को पूर्ण प्रभाव में आने के लिए प्रोग्राम को पुनः आरंभ करना होगा। अभी पुनः आरंभ करें?</translation>
+        <translation type="vanished">पारदर्शी पृष्ठभूमि को पूर्ण प्रभाव में आने के लिए प्रोग्राम को पुनः आरंभ करना होगा। अभी पुनः आरंभ करें?</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="288"/>
+        <location filename="../src/imagewidget_config.cpp" line="308"/>
         <source>重启失败</source>
         <translation>पुनः आरंभ विफल</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="289"/>
+        <location filename="../src/imagewidget_config.cpp" line="309"/>
         <source>无法启动新实例，请手动重启程序。</source>
         <translation>नया इंस्टेंस प्रारंभ नहीं कर सका, कृपया प्रोग्राम को मैन्युअली पुनः आरंभ करें।</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="313"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="231"/>
         <source>需要重启</source>
-        <translation>पुनः आरंभ आवश्यक</translation>
+        <translation type="vanished">पुनः आरंभ आवश्यक</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="314"/>
         <source>开启透明背景需要重启程序才能完全生效。是否立即重启？</source>
-        <translation>पारदर्शी पृष्ठभूमि सक्षम करने के लिए प्रोग्राम को पुनः आरंभ करना होगा। अभी पुनः आरंभ करें?</translation>
+        <translation type="vanished">पारदर्शी पृष्ठभूमि सक्षम करने के लिए प्रोग्राम को पुनः आरंभ करना होगा। अभी पुनः आरंभ करें?</translation>
     </message>
 </context>
 <context>
     <name>ThumbnailWidget</name>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="416"/>
+        <location filename="../src/thumbnailwidget.cpp" line="376"/>
         <source>欢迎使用PictureView！
 
 使用方法：
@@ -1326,12 +1598,12 @@ F1 查看帮助 或右键弹出菜单使用</source>
 सहायता के लिए F1 दबाएँ या राइट-क्लिक मेनू का उपयोग करें</translation>
     </message>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="465"/>
+        <location filename="../src/thumbnailwidget.cpp" line="441"/>
         <source>Loading: %1/%2</source>
         <translation>लोड हो रहा है: %1/%2</translation>
     </message>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="508"/>
+        <location filename="../src/thumbnailwidget.cpp" line="468"/>
         <source>加载中...</source>
         <translation>लोड हो रहा है...</translation>
     </message>

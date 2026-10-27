@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/imagewidget_help.cpp" line="116"/>
         <location filename="../src/imagewidget_help.cpp" line="312"/>
-        <location filename="../src/imagewidget_menu.cpp" line="331"/>
+        <location filename="../src/imagewidget_menu.cpp" line="682"/>
         <source>帮助</source>
         <translation>說明</translation>
     </message>
@@ -224,7 +224,7 @@
         <translation>開啟單張圖片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="95"/>
+        <location filename="../src/imagewidget_file.cpp" line="126"/>
         <location filename="../src/imagewidget_help.cpp" line="268"/>
         <location filename="../src/imagewidget_shortcuts.cpp" line="23"/>
         <source>保存图片</source>
@@ -305,14 +305,14 @@
     <message>
         <location filename="../src/imagewidget_help.cpp" line="288"/>
         <location filename="../src/imagewidget_help.cpp" line="293"/>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="87"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="81"/>
         <source>垂直镜像</source>
         <translation>垂直鏡像</translation>
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="289"/>
         <location filename="../src/imagewidget_help.cpp" line="292"/>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="79"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="73"/>
         <source>水平镜像</source>
         <translation>水平鏡像</translation>
     </message>
@@ -515,13 +515,12 @@
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="367"/>
-        <location filename="../src/imagewidget_menu.cpp" line="218"/>
+        <location filename="../src/imagewidget_menu.cpp" line="250"/>
         <source>窗口置顶</source>
         <translation>視窗保持在最上層</translation>
     </message>
     <message>
         <location filename="../src/imagewidget_help.cpp" line="368"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="180"/>
         <source>透明背景</source>
         <translation>透明背景</translation>
     </message>
@@ -832,17 +831,17 @@
         <translation>選擇圖片資料夾</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="72"/>
+        <location filename="../src/imagewidget_file.cpp" line="77"/>
         <source>打开图片或压缩包</source>
         <translation>開啟圖片或壓縮檔</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="172"/>
+        <location filename="../src/imagewidget_file.cpp" line="220"/>
         <source>启动失败</source>
         <translation>啟動失敗</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="173"/>
+        <location filename="../src/imagewidget_file.cpp" line="221"/>
         <source>无法启动新窗口。
 请检查程序路径：
 %1</source>
@@ -864,27 +863,41 @@
         <translation>貼上圖片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="62"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="56"/>
         <source>顺时针旋转</source>
         <translation>順時針旋轉</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="70"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="64"/>
         <source>逆时针旋转</source>
         <translation>逆時針旋轉</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="95"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="89"/>
         <source>重置变换</source>
         <translation>重設變更</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="110"/>
-        <source>沉浸模式</source>
-        <translation>沉浸模式</translation>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="98"/>
+        <source>黑色沉浸模式</source>
+        <translation>黑色沉浸模式</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="40"/>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="107"/>
+        <source>透明沉浸模式</source>
+        <translation>透明沉浸模式</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="122"/>
+        <source>切换包围盒模式</source>
+        <translation>切換包圍盒模式</translation>
+    </message>
+    <message>
+        <source>沉浸模式</source>
+        <translation type="vanished">沉浸模式</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="52"/>
         <source>返回上级目录 (ESC)</source>
         <translation>回到上一層 (ESC)</translation>
     </message>
@@ -893,340 +906,591 @@
         <translation type="vanished">最小化視窗</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="47"/>
+        <location filename="../src/imagewidget_menu.cpp" line="59"/>
         <source>返回缩略图(Enter)</source>
         <translation>回到縮圖 (Enter)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="51"/>
+        <location filename="../src/imagewidget_menu.cpp" line="63"/>
         <source>上一张 (←)</source>
         <translation>上一張 (←)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="52"/>
+        <location filename="../src/imagewidget_menu.cpp" line="64"/>
         <source>下一张 (→)</source>
         <translation>下一張 (→)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="55"/>
+        <location filename="../src/imagewidget_menu.cpp" line="67"/>
         <source>合适大小 (↑)</source>
         <translation>符合視窗 (↑)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="56"/>
+        <location filename="../src/imagewidget_menu.cpp" line="68"/>
         <source>实际大小 (↓)</source>
         <translation>實際大小 (↓)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="60"/>
+        <location filename="../src/imagewidget_menu.cpp" line="72"/>
         <source>编辑</source>
         <translation>編輯</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="61"/>
+        <location filename="../src/imagewidget_menu.cpp" line="73"/>
         <source>旋转</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="62"/>
+        <location filename="../src/imagewidget_menu.cpp" line="74"/>
         <source>逆时针90° (PageUp)</source>
         <translation>逆時針 90° (PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="63"/>
+        <location filename="../src/imagewidget_menu.cpp" line="75"/>
         <source>顺时针90° (PageDown)</source>
         <translation>順時針 90° (PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="64"/>
+        <location filename="../src/imagewidget_menu.cpp" line="76"/>
         <source>180°</source>
         <translation>180°</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="66"/>
+        <location filename="../src/imagewidget_menu.cpp" line="78"/>
         <source>镜像</source>
         <translation>鏡像</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="67"/>
+        <location filename="../src/imagewidget_menu.cpp" line="79"/>
         <source>垂直镜像 (Ctrl+PageUp)</source>
         <translation>垂直鏡像 (Ctrl+PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="68"/>
+        <location filename="../src/imagewidget_menu.cpp" line="80"/>
         <source>水平镜像 (Ctrl+PageDown)</source>
         <translation>水平鏡像 (Ctrl+PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="72"/>
+        <location filename="../src/imagewidget_menu.cpp" line="84"/>
         <source>重置变换 (Ctrl+0)</source>
         <translation>重設變更 (Ctrl+0)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="78"/>
+        <location filename="../src/imagewidget_menu.cpp" line="90"/>
         <source>解锁变换</source>
         <translation>解除鎖定變更</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="78"/>
+        <location filename="../src/imagewidget_menu.cpp" line="90"/>
         <source>锁定变换</source>
         <translation>鎖定變更</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="86"/>
+        <location filename="../src/imagewidget_menu.cpp" line="98"/>
         <source>删除当前图片 (Del)</source>
         <translation>刪除目前圖片 (Del)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="100"/>
+        <location filename="../src/imagewidget_menu.cpp" line="112"/>
         <source>打开图片(Enter)</source>
         <translation>開啟圖片 (Enter)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="101"/>
+        <location filename="../src/imagewidget_menu.cpp" line="113"/>
         <source>删除选中图片 (Del)</source>
         <translation>刪除選取的圖片 (Del)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="108"/>
+        <location filename="../src/imagewidget_menu.cpp" line="120"/>
         <source>文件...</source>
         <translation>檔案...</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_shortcuts.cpp" line="117"/>
+        <location filename="../src/imagewidget_menu.cpp" line="224"/>
+        <source>退出黑色沉浸 (Ctrl+F)</source>
+        <translation>離開黑色沉浸 (Ctrl+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="225"/>
+        <source>黑色沉浸模式 (Ctrl+F)</source>
+        <translation>黑色沉浸模式 (Ctrl+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="231"/>
+        <source>退出透明沉浸 (Ctrl+Shift+F)</source>
+        <translation>離開透明沉浸 (Ctrl+Shift+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="232"/>
+        <source>透明沉浸模式 (Ctrl+Shift+F)</source>
+        <translation>透明沉浸模式 (Ctrl+Shift+F)</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="242"/>
+        <source>经典窗口控制</source>
+        <translation>經典視窗控制</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="256"/>
+        <source>透明背景（APP需重开）</source>
+        <translation>透明背景（APP 需重開）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_shortcuts.cpp" line="116"/>
         <source>在新窗口打开图片</source>
         <translation>在新視窗開啟圖片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="153"/>
-        <location filename="../src/imagewidget_menu.cpp" line="159"/>
-        <location filename="../src/imagewidget_menu.cpp" line="174"/>
+        <location filename="../src/imagewidget_file.cpp" line="201"/>
+        <location filename="../src/imagewidget_menu.cpp" line="173"/>
+        <location filename="../src/imagewidget_menu.cpp" line="188"/>
         <source>没有可用的图片文件</source>
         <translation>沒有可用的圖片檔案</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="165"/>
+        <location filename="../src/imagewidget_menu.cpp" line="181"/>
         <source>打开图片所在文件夹</source>
         <translation>開啟圖片所在的資料夾</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="133"/>
+        <location filename="../src/imagewidget_menu.cpp" line="145"/>
         <source>打开文件夹 (Ctrl+O)</source>
         <translation>開啟資料夾 (Ctrl+O)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="45"/>
+        <location filename="../src/imagewidget_menu.cpp" line="57"/>
         <source>窗口最小化 (Ctrl+M)</source>
         <translation>視窗最小化 (Ctrl+M)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="96"/>
+        <location filename="../src/imagewidget_menu.cpp" line="108"/>
         <source>窗口最小化(Ctrl+M)</source>
         <translation>視窗最小化 (Ctrl+M)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="138"/>
+        <location filename="../src/imagewidget_menu.cpp" line="150"/>
         <source>打开图片 (Ctrl+Shift+O)</source>
         <translation>開啟圖片 (Ctrl+Shift+O)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="145"/>
+        <location filename="../src/imagewidget_menu.cpp" line="163"/>
         <source>在新窗口打开图片(Ctrl+N)</source>
         <translation>在新視窗開啟圖片 (Ctrl+N)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="185"/>
+        <location filename="../src/imagewidget_menu.cpp" line="199"/>
         <source>保存图片 (Ctrl+S)</source>
         <translation>儲存圖片 (Ctrl+S)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="191"/>
+        <location filename="../src/imagewidget_menu.cpp" line="205"/>
         <source>拷贝图片至剪切板 (Ctrl+C)</source>
         <translation>複製圖片到剪貼簿 (Ctrl+C)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="196"/>
+        <location filename="../src/imagewidget_menu.cpp" line="210"/>
         <source>粘贴剪切板图片 (Ctrl+V)</source>
         <translation>從剪貼簿貼上圖片 (Ctrl+V)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="202"/>
+        <location filename="../src/imagewidget_menu.cpp" line="216"/>
         <source>窗口</source>
         <translation>視窗</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="207"/>
         <source>退出沉浸模式 (Ctrl+F)</source>
-        <translation>退出沉浸模式 (Ctrl+F)</translation>
+        <translation type="vanished">退出沉浸模式 (Ctrl+F)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="207"/>
         <source>沉浸模式 (Ctrl+F)</source>
-        <translation>沉浸模式 (Ctrl+F)</translation>
+        <translation type="vanished">沉浸模式 (Ctrl+F)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="213"/>
+        <location filename="../src/imagewidget_menu.cpp" line="245"/>
         <source>隐藏标题栏</source>
         <translation>隱藏標題列</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="213"/>
+        <location filename="../src/imagewidget_menu.cpp" line="245"/>
         <source>显示标题栏</source>
         <translation>顯示標題列</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="218"/>
+        <location filename="../src/imagewidget_menu.cpp" line="250"/>
         <source>取消置顶</source>
         <translation>取消保持在最上層</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="223"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="181"/>
+        <location filename="../src/imagewidget_menu.cpp" line="255"/>
         <source>黑色背景</source>
         <translation>黑色背景</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="224"/>
         <source>透明背景（最大化+隐藏标题+透明背景+设置后重开程序）</source>
-        <translation>透明背景（最大化＋隱藏標題列＋透明背景＋設定後重開程式）</translation>
+        <translation type="vanished">透明背景（最大化＋隱藏標題列＋透明背景＋設定後重開程式）</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="229"/>
+        <location filename="../src/imagewidget_menu.cpp" line="263"/>
         <source>透明度</source>
         <translation>透明度</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="230"/>
+        <location filename="../src/imagewidget_menu.cpp" line="264"/>
         <source>100% - 不透明</source>
         <translation>100% - 不透明</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="282"/>
+        <location filename="../src/imagewidget_menu.cpp" line="316"/>
         <source>退出画布模式 (ESC/Insert)</source>
         <translation>離開畫布模式 (ESC/Insert)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="286"/>
+        <location filename="../src/imagewidget_menu.cpp" line="320"/>
         <source>增加透明度 (PageUp)</source>
         <translation>增加透明度 (PageUp)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="287"/>
+        <location filename="../src/imagewidget_menu.cpp" line="321"/>
         <source>减少透明度 (PageDown)</source>
         <translation>減少透明度 (PageDown)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="290"/>
+        <location filename="../src/imagewidget_menu.cpp" line="324"/>
         <source>进入画布模式 (Insert)</source>
         <translation>進入畫布模式 (Insert)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="297"/>
+        <location filename="../src/imagewidget_menu.cpp" line="331"/>
         <source>幻灯功能</source>
         <translation>幻燈片功能</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="299"/>
+        <location filename="../src/imagewidget_menu.cpp" line="333"/>
         <source>停止幻灯</source>
         <translation>停止幻燈片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="299"/>
+        <location filename="../src/imagewidget_menu.cpp" line="333"/>
         <source>开始幻灯</source>
         <translation>開始幻燈片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="305"/>
+        <location filename="../src/imagewidget_menu.cpp" line="342"/>
+        <source>缩放方式（Ctrl+B）</source>
+        <translation>縮放方式（Ctrl+B）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="344"/>
+        <source>完整适应窗口</source>
+        <translation>完整適應視窗</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="345"/>
+        <source>统一包围盒</source>
+        <translation>統一包圍盒</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="372"/>
+        <source>高亮颜色</source>
+        <translation>高亮顏色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="379"/>
+        <source>蓝色（默认）</source>
+        <translation>藍色（預設）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="380"/>
+        <source>琥珀色</source>
+        <translation>琥珀色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="381"/>
+        <source>橙红色</source>
+        <translation>橙紅色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="382"/>
+        <source>暖金色</source>
+        <translation>暖金色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="383"/>
+        <source>蜜桃色</source>
+        <translation>蜜桃色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="384"/>
+        <source>珊瑚色</source>
+        <translation>珊瑚色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="385"/>
+        <source>青绿色</source>
+        <translation>青綠色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="386"/>
+        <source>紫色</source>
+        <translation>紫色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="387"/>
+        <source>粉色</source>
+        <translation>粉色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="388"/>
+        <source>灰白色</source>
+        <translation>灰白色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="415"/>
+        <source>自定义...</source>
+        <translation>自訂...</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="419"/>
+        <source>选择高亮颜色</source>
+        <translation>選擇高亮顏色</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="431"/>
+        <source>图片解码尺寸</source>
+        <translation>圖片解碼尺寸</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="433"/>
+        <source>1000 像素 (极速)</source>
+        <translation>1000 像素（極速）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="434"/>
+        <source>2000 像素 (高速)</source>
+        <translation>2000 像素（高速）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="435"/>
+        <source>4000 像素 (推荐)</source>
+        <translation>4000 像素（推薦）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="436"/>
+        <source>8000 像素 (高清晰)</source>
+        <translation>8000 像素（高清晰）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="437"/>
+        <source>不限制 (可能很慢)</source>
+        <translation>不限制（可能很慢）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="507"/>
+        <source>预加载范围</source>
+        <translation>預先載入範圍</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="509"/>
+        <source>0 张 (省内存)</source>
+        <translation>0 張（省記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="510"/>
+        <source>前后各 3 张 (推荐)</source>
+        <translation>前後各 3 張（推薦）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="511"/>
+        <source>前后各 5 张</source>
+        <translation>前後各 5 張</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="512"/>
+        <source>前后各 10 张</source>
+        <translation>前後各 10 張</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="513"/>
+        <source>前后各 20 张 (吃内存)</source>
+        <translation>前後各 20 張（吃記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="542"/>
+        <source>缓存图片数</source>
+        <translation>快取圖片數</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="543"/>
+        <source>不缓存 (最省内存)</source>
+        <translation>不快取（最省記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="544"/>
+        <source>10 张 (低内存)</source>
+        <translation>10 張（低記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="545"/>
+        <source>30 张</source>
+        <translation>30 張</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="546"/>
+        <source>50 张</source>
+        <translation>50 張</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="547"/>
+        <source>100 张</source>
+        <translation>100 張</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="548"/>
+        <source>200 张 (高内存)</source>
+        <translation>200 張（高記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="588"/>
+        <source>缩略图缓存</source>
+        <translation>縮圖快取</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="590"/>
+        <source>50 MB (省内存)</source>
+        <translation>50 MB（省記憶體）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="591"/>
+        <source>100 MB</source>
+        <translation>100 MB</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="592"/>
+        <source>300 MB (推荐)</source>
+        <translation>300 MB（推薦）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="593"/>
+        <source>500 MB (大目录)</source>
+        <translation>500 MB（大目錄）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="622"/>
+        <source>显示插值</source>
+        <translation>顯示插值</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="624"/>
+        <source>平滑插值（推荐）</source>
+        <translation>平滑插值（推薦）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="625"/>
+        <source>像素（最近邻）</source>
+        <translation>像素（最近鄰）</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="650"/>
+        <source>当前：包围盒</source>
+        <translation>目前：包圍盒</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="650"/>
+        <source>当前：完整适应</source>
+        <translation>目前：完整適應</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_menu.cpp" line="655"/>
         <source>切换间隔</source>
         <translation>切換間隔</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="306"/>
+        <location filename="../src/imagewidget_menu.cpp" line="656"/>
         <source>1秒</source>
         <translation>1 秒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="307"/>
+        <location filename="../src/imagewidget_menu.cpp" line="657"/>
         <source>2秒</source>
         <translation>2 秒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="308"/>
+        <location filename="../src/imagewidget_menu.cpp" line="658"/>
         <source>3秒</source>
         <translation>3 秒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="309"/>
+        <location filename="../src/imagewidget_menu.cpp" line="659"/>
         <source>5秒</source>
         <translation>5 秒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="310"/>
+        <location filename="../src/imagewidget_menu.cpp" line="660"/>
         <source>10秒</source>
         <translation>10 秒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="332"/>
+        <location filename="../src/imagewidget_menu.cpp" line="683"/>
         <source>关于 (F1)</source>
         <translation>關於 (F1)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="336"/>
+        <location filename="../src/imagewidget_menu.cpp" line="687"/>
         <source>快捷键帮助</source>
         <translation>快速鍵說明</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_menu.cpp" line="341"/>
+        <location filename="../src/imagewidget_menu.cpp" line="692"/>
         <source>退出（Esc）</source>
         <translation>離開 (Esc)</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_file.cpp" line="153"/>
-        <location filename="../src/imagewidget_fileops.cpp" line="390"/>
-        <location filename="../src/imagewidget_fileops.cpp" line="474"/>
-        <location filename="../src/imagewidget_menu.cpp" line="159"/>
-        <location filename="../src/imagewidget_menu.cpp" line="174"/>
+        <location filename="../src/imagewidget_file.cpp" line="201"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="497"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="594"/>
+        <location filename="../src/imagewidget_menu.cpp" line="173"/>
+        <location filename="../src/imagewidget_menu.cpp" line="188"/>
         <source>警告</source>
         <translation>警告</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="390"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="497"/>
         <source>没有可删除的图片</source>
         <translation>沒有可以刪除的圖片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="401"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="508"/>
         <source>确认删除</source>
         <translation>確認刪除</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="402"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="509"/>
         <source>确定要将图片 &apos;%1&apos; 移动到回收站吗？</source>
         <translation>確定要把圖片 &apos;%1&apos; 移到資源回收筒嗎？</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="408"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="515"/>
         <source>不再询问</source>
         <translation>不要再問我</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="458"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="120"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="533"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="127"/>
         <source>错误</source>
         <translation>錯誤</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="458"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="533"/>
         <source>移动图片到回收站失败</source>
         <translation>沒辦法把圖片移到資源回收筒</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_fileops.cpp" line="474"/>
+        <location filename="../src/imagewidget_fileops.cpp" line="594"/>
         <source>请先选择要删除的图片</source>
         <translation>請先選取要刪除的圖片</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_view.cpp" line="35"/>
+        <location filename="../src/imagewidget_view.cpp" line="38"/>
         <source>没有图片或图片加载失败</source>
         <translation>沒有圖片或圖片載入失敗</translation>
     </message>
@@ -1239,51 +1503,59 @@
         <translation type="vanished">圖片縮放失敗</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="121"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="128"/>
         <source>无法打开压缩包文件: %1</source>
         <translation>無法開啟壓縮檔：%1</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="178"/>
+        <location filename="../src/imagewidget_viewmode.cpp" line="211"/>
+        <source>APP需要重启</source>
+        <translation>APP 需要重新啟動</translation>
+    </message>
+    <message>
+        <location filename="../src/imagewidget_viewmode.cpp" line="212"/>
+        <source>透明背景首次切换需要重启程序才能完全生效。
+
+如果不重启，可能会有残影。确定立即重启APP？</source>
+        <translation>透明背景首次切換需要重新啟動程式才能完全生效。
+
+如果不重新啟動，可能會有殘影。確定要立即重新啟動 APP 嗎？</translation>
+    </message>
+    <message>
         <source>选择沉浸背景</source>
-        <translation>選擇沉浸背景</translation>
+        <translation type="vanished">選擇沉浸背景</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="179"/>
         <source>请选择沉浸模式的背景类型：</source>
-        <translation>請選擇沉浸模式的背景類型：</translation>
+        <translation type="vanished">請選擇沉浸模式的背景類型：</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_viewmode.cpp" line="232"/>
         <source>透明背景需要重启程序才能完全生效。是否立即重启？</source>
-        <translation>透明背景需重新啟動程式才能完全生效。是否立即重新啟動？</translation>
+        <translation type="vanished">透明背景需重新啟動程式才能完全生效。是否立即重新啟動？</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="288"/>
+        <location filename="../src/imagewidget_config.cpp" line="308"/>
         <source>重启失败</source>
         <translation>重新啟動失敗</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="289"/>
+        <location filename="../src/imagewidget_config.cpp" line="309"/>
         <source>无法启动新实例，请手动重启程序。</source>
         <translation>無法啟動新實例，請手動重新啟動程式。</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="313"/>
-        <location filename="../src/imagewidget_viewmode.cpp" line="231"/>
         <source>需要重启</source>
-        <translation>需要重新啟動</translation>
+        <translation type="vanished">需要重新啟動</translation>
     </message>
     <message>
-        <location filename="../src/imagewidget_config.cpp" line="314"/>
         <source>开启透明背景需要重启程序才能完全生效。是否立即重启？</source>
-        <translation>開啟透明背景需重新啟動程式才能完全生效。是否立即重新啟動？</translation>
+        <translation type="vanished">開啟透明背景需重新啟動程式才能完全生效。是否立即重新啟動？</translation>
     </message>
 </context>
 <context>
     <name>ThumbnailWidget</name>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="416"/>
+        <location filename="../src/thumbnailwidget.cpp" line="376"/>
         <source>欢迎使用PictureView！
 
 使用方法：
@@ -1312,12 +1584,12 @@ F1 查看帮助 或右键弹出菜单使用</source>
 按 F1 看說明，或按右鍵使用選單</translation>
     </message>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="465"/>
+        <location filename="../src/thumbnailwidget.cpp" line="441"/>
         <source>Loading: %1/%2</source>
         <translation>加載中: %1/%2</translation>
     </message>
     <message>
-        <location filename="../src/thumbnailwidget.cpp" line="508"/>
+        <location filename="../src/thumbnailwidget.cpp" line="468"/>
         <source>加载中...</source>
         <translation>載入中...</translation>
     </message>

@@ -15,14 +15,15 @@
 #endif
 
 #include <QFileInfo>
-
+#include <QWindow>
 
 void ImageWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     QPainter painter(this);
 
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    // ★ 拖动时关平滑，松手后恢复
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, !isPanningImage);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
     // 1. 背景填充
@@ -54,33 +55,18 @@ void ImageWidget::paintEvent(QPaintEvent *event)
     QRectF  sourceRectF(srcTopLeft, srcSize);
 
     // ==================== 绘制 ====================
-    // ★ 图比窗口小 且 正在拖动：用缓存，1:1 贴
-    bool imageSmallerThanWindow = (scaledSize.width()  <= width() &&
-                                   scaledSize.height() <= height());
-
-    if (isPanningImage && imageSmallerThanWindow) {
-        // 缓存失效就重建（scaleFactor 变了就重建）
-        if (m_dragCache.isNull() || m_dragCacheScale != scaleFactor) {
-            m_dragCache = pixmap.scaled(scaledSize.toSize(),
-                                        Qt::IgnoreAspectRatio,
-                                        Qt::FastTransformation);
-            m_dragCacheScale = scaleFactor;
-        }
-        painter.drawPixmap(offset, m_dragCache);
-    }
-    // 平滑模式：一步到位
-    else if (currentConfig.smoothScaling) {
+    if (isPanningImage) {
+        // 拖动：render hint 已关，直接 Fast 绘制可见区
         painter.drawPixmap(visibleRectF, pixmap, sourceRectF);
-    }
-    // 像素模式：手动 Fast
-    else {
+    } else if (currentConfig.smoothScaling) {
+        painter.drawPixmap(visibleRectF, pixmap, sourceRectF);
+    } else {
         QPixmap piece = pixmap.copy(sourceRectF.toRect())
-                            .scaled(visibleRectF.size().toSize(),
-                                    Qt::IgnoreAspectRatio,
-                                    Qt::FastTransformation);
+        .scaled(visibleRectF.size().toSize(),
+                Qt::IgnoreAspectRatio,
+                Qt::FastTransformation);
         painter.drawPixmap(visibleRectF.topLeft(), piece);
     }
-
     // 5. 变换状态提示
     if (isTransformed()) {
         painter.setPen(Qt::yellow);
@@ -240,6 +226,11 @@ void ImageWidget::wheelEvent(QWheelEvent *event)
     currentViewStateType = ManualAdjustment;
     m_maskDirty = true;
     update();
+
+    // ★ 启动延迟更新，滚轮停止 50ms 后重建 mask
+    if (!m_wheelTimer.isActive()) {
+        m_wheelTimer.start(50);
+    }
 }
 
 void ImageWidget::resizeEvent(QResizeEvent *event)
@@ -248,9 +239,11 @@ void ImageWidget::resizeEvent(QResizeEvent *event)
 
     if (currentViewMode == ThumbnailView) {
         thumbnailWidget->update();
-        // 强制清除掩码和 X11 形状，防止单图模式残留
         clearMask();
-        clearX11Shape();      // ★ 新增
+        clearX11Shape();
+        if (isWayland()) {
+            QWidget::repaint();   // ★ 提交
+        }
     } else if (currentViewMode == SingleView) {
         if (currentViewStateType == FitToWindow && !pixmap.isNull()) {
             fitToWindow();
@@ -264,6 +257,19 @@ void ImageWidget::resizeEvent(QResizeEvent *event)
 void ImageWidget::updateMask()
 {
     m_maskDirty = false;
+
+    qDebug() << "[updateMask] enter"
+             << "panning:" << isPanningImage
+             << "mode:" << currentViewMode
+             << "pixmap:" << !pixmap.isNull()
+             << "translucent:" << testAttribute(Qt::WA_TranslucentBackground);
+
+    // ★ 拖动中不设 mask，避免连续拖拽的竞态
+    if (isPanningImage) {
+        clearX11Shape();
+        clearMask();
+        return;
+    }
 
     // 非单图 / 无图 / 非透明背景 → 清除所有形状
     if (currentViewMode != SingleView || pixmap.isNull() ||
@@ -300,7 +306,19 @@ void ImageWidget::updateMask()
 
     // 4. 无透明通道 → 直接用矩形（极速）
     if (!pixmap.hasAlphaChannel()) {
-        setX11ShapeRect(visibleRect);
+        if (isWayland()) {
+            qDebug() << "[updateMask] setMask (no alpha), rect:" << visibleRect;
+            QWidget::clearMask();
+            QWidget::repaint();
+            QWidget::setMask(QRegion(visibleRect));
+            QWidget::update(QRect(0, 0, width(), height()));
+            QWidget::repaint();
+            if (windowHandle()) {
+                windowHandle()->requestUpdate();   // ★ 新增
+            }
+        } else {
+            setX11ShapeRect(visibleRect);
+        }
         return;
     }
 
@@ -341,6 +359,22 @@ void ImageWidget::updateMask()
 
     QRegion finalMask;
     finalMask += QRegion(maskBitmap).translated(visibleRect.topLeft());
+
+    if (isWayland()) {
+        qDebug() << "[updateMask] setMask (alpha), maskRect:" << finalMask.boundingRect();
+        QWidget::clearMask();
+        QWidget::repaint();
+        if (!finalMask.isEmpty()) {
+            QWidget::setMask(finalMask);
+            QWidget::update(QRect(0, 0, width(), height()));
+            QWidget::repaint();
+            if (windowHandle()) {
+                windowHandle()->requestUpdate();   // ★ 新增
+            }
+        }
+        return;
+    }
+
     setX11Shape(finalMask);
 }
 

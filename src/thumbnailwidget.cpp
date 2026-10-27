@@ -72,7 +72,7 @@ ThumbnailWidget::ThumbnailWidget(ImageWidget *imageWidget, QWidget *parent)
     qDebug() << "缩略图线程池大小:" << m_pool->maxThreadCount();
 
     // 延迟 8 秒清理磁盘缓存（不抢启动资源）
-    QTimer::singleShot(8000, this, [this]() {
+    QTimer::singleShot(18000, this, [this]() {
         cleanupOldCache();
     });
 
@@ -945,40 +945,40 @@ void ThumbnailWidget::mousePressEvent(QMouseEvent *event)
 
 void ThumbnailWidget::cleanupOldCache()
 {
-    QDir dir(m_thumbCacheDir);
-    if (!dir.exists()) return;
+    const QString dirPath = m_thumbCacheDir;
 
-    const qint64 MAX_TOTAL_BYTES = 200LL * 1024 * 1024;   // 200 MB
-    const int    MAX_AGE_DAYS    = 7;                     // 7 天
+    // ★ 后台线程执行，不阻塞主线程
+    QtConcurrent::run([dirPath]() {
+        QDir dir(dirPath);
+        if (!dir.exists()) return;
 
-    // 按修改时间排序，最新在前
-    QFileInfoList files = dir.entryInfoList(QDir::Files, QDir::Time);
+        const qint64 MAX_TOTAL_BYTES = 200LL * 1024 * 1024;
+        const int MAX_AGE_DAYS = 7;
 
-    QDateTime cutoff = QDateTime::currentDateTime().addDays(-MAX_AGE_DAYS);
+        QFileInfoList files = dir.entryInfoList(QDir::Files, QDir::Time);
+        QDateTime cutoff = QDateTime::currentDateTime().addDays(-MAX_AGE_DAYS);
 
-    QFileInfoList keepList;
-    qint64 totalBytes = 0;
+        QFileInfoList keepList;
+        qint64 totalBytes = 0;
 
-    // ---------- 第一轮：删超龄的 ----------
-    for (const QFileInfo &fi : files) {
-        if (fi.lastRead() < cutoff && fi.lastModified() < cutoff) {
-            QFile::remove(fi.absoluteFilePath());
-            continue;
+        for (const QFileInfo &fi : files) {
+            if (fi.lastRead() < cutoff && fi.lastModified() < cutoff) {
+                QFile::remove(fi.absoluteFilePath());
+                continue;
+            }
+            keepList.append(fi);
+            totalBytes += fi.size();
         }
-        keepList.append(fi);
-        totalBytes += fi.size();
-    }
 
-    // ---------- 第二轮：超 200MB 从最旧的开始删 ----------
-    if (totalBytes > MAX_TOTAL_BYTES) {
-        for (int i = keepList.size() - 1; i >= 0 && totalBytes > MAX_TOTAL_BYTES; --i) {
-            const QFileInfo &fi = keepList[i];
-            totalBytes -= fi.size();
-            QFile::remove(fi.absoluteFilePath());
+        if (totalBytes > MAX_TOTAL_BYTES) {
+            for (int i = keepList.size() - 1; i >= 0 && totalBytes > MAX_TOTAL_BYTES; --i) {
+                const QFileInfo &fi = keepList[i];
+                totalBytes -= fi.size();
+                QFile::remove(fi.absoluteFilePath());
+            }
         }
-    }
 
-    qDebug() << "缩略图磁盘缓存清理完成，当前大小:"
-             << totalBytes / 1024.0 / 1024.0 << "MB"
-             << "，文件数:" << dir.entryList(QDir::Files).size();
+        qDebug() << "缩略图磁盘缓存清理完成，当前大小:"
+                 << totalBytes / 1024.0 / 1024.0 << "MB";
+    });
 }

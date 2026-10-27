@@ -7,6 +7,10 @@
 #ifdef Q_OS_LINUX
 #endif
 
+#include <QWindow>
+#include <QApplication>
+#include <QEventLoop>
+
 void ImageWidget::mousePressEvent(QMouseEvent *event)
 {
     // 在画布模式下，只响应右键点击显示菜单
@@ -47,9 +51,16 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
             }
 
             if (event->button() == Qt::LeftButton) {
-                // 直接进入拖拽，不再创建缓存
                 isPanningImage = true;
                 panStartPosition = event->pos();
+
+                if (isWayland()) {
+                    QWidget::clearMask();
+                    // ★ 立即提交一次，确保 mask 真的清掉了
+                    if (windowHandle()) {
+                        windowHandle()->requestUpdate();
+                    }
+                }
             }
         }
     }
@@ -66,10 +77,9 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *event)
         QPointF delta = event->pos() - panStartPosition;
         panOffset += delta;
         panStartPosition = event->pos();
-        update();
 
-        // ✅ 只标记，不更新
-        m_maskDirty = true;
+        update();              // 全窗口重绘（mask 已清）
+        m_maskDirty = true;    // 保留，松手时用
     }
 }
 
@@ -80,18 +90,39 @@ void ImageWidget::mouseReleaseEvent(QMouseEvent *event)
     } else if (event->button() == Qt::LeftButton) {
         isPanningImage = false;
 
-        // ★ 清缓存
         m_dragCache = QPixmap();
         m_dragCacheScale = -1.0;
 
-        update();   // 触发重绘，让画面切回平滑高质量
+        if (isWayland()) {
+            // 第一次：立即设（99% 情况生效）
+            updateMask();
+            if (windowHandle()) {
+                windowHandle()->requestUpdate();
+            }
+            update();
 
-        if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
-            m_maskDirty = true;
+            // ★ 兜底：50ms 后再设一次（修复合成器延迟的 1%）
+            QTimer::singleShot(50, this, [this]() {
+                if (isPanningImage) return;
+                if (currentViewMode != SingleView) return;
+                if (!testAttribute(Qt::WA_TranslucentBackground)) return;
+                if (pixmap.isNull()) return;
+
+                updateMask();
+                if (windowHandle()) {
+                    windowHandle()->requestUpdate();
+                    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+                }
+            });
+        } else {
+            update();
+            if (testAttribute(Qt::WA_TranslucentBackground) && !pixmap.isNull()) {
+                m_maskDirty = true;
+            }
         }
     }
 
-    if (m_maskDirty) {
+    if (m_maskDirty && !isWayland()) {
         updateMask();
     }
 }

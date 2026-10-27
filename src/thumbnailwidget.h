@@ -94,8 +94,6 @@ private:
     int currentBatchIndex;
 
     // 性能配置
-    // thumbnailwidget.h
-
     struct PerformanceConfig {
         int maxCacheMemoryMB = 300;           // 最大缓存内存 100MB (改为MB单位)
         int batchLoadSize = 1;         // ★ 1 → 12（每批 12 张）

@@ -16,6 +16,14 @@
 
 int main(int argc, char *argv[])
 {
+    // ★ Wayland 下强制使用 XWayland，确保穿透可靠
+    if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+        if (qgetenv("XDG_SESSION_TYPE") == "wayland") {
+            qputenv("QT_QPA_PLATFORM", "xcb");
+            qDebug() << "Wayland detected, forcing XWayland (xcb) for reliable mouse passthrough";
+        }
+    }
+
     // === 在创建QApplication之前先检测环境变量 ===
     //qDebug() << "=== 程序启动 - 环境检测 ===";
     //qDebug() << "命令行参数:";

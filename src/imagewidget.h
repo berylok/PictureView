@@ -22,6 +22,12 @@
 #include "canvasoverlay.h"
 #include <QCache>
 
+#include <QGuiApplication>
+
+inline bool isWayland()
+{
+    return QGuiApplication::platformName().startsWith("wayland", Qt::CaseInsensitive);
+}
 
 class ImageWidget : public QWidget
 {

@@ -155,9 +155,14 @@ ImageWidget::ImageWidget(QWidget *parent) : QWidget(parent),
 
     setMouseTracking(true);
 
-    connect(&m_wheelTimer, &QTimer::timeout, this, [this](){
-        if (m_maskDirty)
+    m_wheelTimer.setSingleShot(true);
+    m_wheelTimer.setInterval(50);
+
+    connect(&m_wheelTimer, &QTimer::timeout, this, [this]() {
+        if (m_maskDirty) {
             updateMask();
+            update();
+        }
     });
 
     // 初始重绘以确保无残影

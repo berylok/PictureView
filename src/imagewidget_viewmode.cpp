@@ -12,6 +12,12 @@ void ImageWidget::switchToThumbnailView()
     // 关闭透明背景属性
     setAttribute(Qt::WA_TranslucentBackground, false);
 
+    // ★ Wayland：立即清 mask + 提交，防止旧输入区域残留
+    if (isWayland()) {
+        QWidget::clearMask();
+        QWidget::repaint();
+    }
+
     m_dragCache = QPixmap();
 
     scrollArea->show();
@@ -42,6 +48,10 @@ void ImageWidget::switchToThumbnailView()
             clearX11Shape();
             clearMask();
 
+            // ★ Wayland：再次提交，确保输入区域已清
+            if (isWayland()) {
+                QWidget::repaint();
+            }
             //qDebug() << "终极清除：窗口已重新映射，形状应已恢复";
         }
     });

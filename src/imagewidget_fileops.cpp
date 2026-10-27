@@ -166,15 +166,12 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
     // 保存原始图片
     originalPixmap = loadedPixmap;
 
-    // 如果锁定状态，需要重新应用变换
+    // ★ 先更新 pixmap（新图）
     if (transformLocked) {
         applyTransformations();
     } else {
         pixmap = loadedPixmap;
     }
-    //qDebug() << "图片设置完成";
-
-
 
     // 设置视图状态
     switch (currentViewStateType) {
@@ -185,9 +182,7 @@ bool ImageWidget::loadImage(const QString &filePath, bool fromCache)
         actualSize();
         break;
     case ManualAdjustment:
-        // 保持当前的缩放和偏移
-
-
+        updateMask();      // ★ 兜底：ManualAdjustment 也要更新 mask
         break;
     }
 

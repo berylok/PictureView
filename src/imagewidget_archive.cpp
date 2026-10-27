@@ -174,6 +174,7 @@ bool ImageWidget::loadImageFromArchive(const QString &filePath)
         actualSize();
         break;
     case ManualAdjustment:
+        updateMask();
         break;
     }
 

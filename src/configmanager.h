@@ -26,15 +26,15 @@ public:
         int lastImageIndex;      // 最后查看的图片索引
         QString lastImagePath;   // 最后查看的图片路径（备用）
 
-
+        //确认ini路径：cat ~/.config/用户名/PictureView/image_viewer_config.ini
         // 图片解码
-        int maxDecodeSize = 4000;   // 0 = 不限制；否则最长边上限（像素）
-        int pixmapCacheSize = 30;      // ★ 本次要加的
-        int preloadRange = 2;    // ★ 前后各预加载几张（0 = 禁用）
+        int maxDecodeSize = 4000;   // 0 = 不限制；默认最长边上限4000（像素）
+        int pixmapCacheSize = 0;      // 默认缓存0不缓存
+        int preloadRange = 1;    // 默认前后各预加载1张（0 = 禁用）
 
         int imageCacheCount = 0;    // 主图缓存张数；0 = 自动（= preloadRange*2+6）
         int pixmapCacheCount = 0;   // QPixmap 缓存张数；0 = 自动
-        int thumbCacheMB = 300;   // 缩略图内存缓存上限（MB）
+        int thumbCacheMB = 300;   // 默认缩略图内存缓存上限（MB）
 
         // 外观
         QString highlightColor = "#00A0E9";   // 默认蓝色（原来是 0,120,215）

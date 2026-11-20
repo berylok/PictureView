@@ -526,57 +526,81 @@ void ImageWidget::deleteCurrentImage()
 
 void ImageWidget::performDeleteCurrentImage()
 {
-    QString imageToDelete = currentImagePath;
-    int indexToDelete = currentImageIndex;
+    // qDebug() << "currentDir      =" << currentDir;
+    // qDebug() << "currentImagePath=" << currentImagePath;
+    // qDebug() << "isAbsolute      =" << QFileInfo(currentImagePath).isAbsolute();
+    // qDebug() << "exists          =" << QFileInfo::exists(currentImagePath);
 
-    if (!moveFileToRecycleBin(imageToDelete)) {
-        QMessageBox::critical(this, tr("错误"), tr("移动图片到回收站失败"));
+    if (currentImageIndex < 0 || currentImageIndex >= imageList.size())
+        return;
+
+    // 以 imageList + currentDir 为准，拼出绝对路径
+    const QString fileName = imageList.at(currentImageIndex);
+    const QString imageToDelete = QDir(currentDir).absoluteFilePath(fileName);
+    const int indexToDelete = currentImageIndex;
+
+    if (!QFileInfo::exists(imageToDelete)) {
+        QMessageBox::critical(this, tr("错误"),
+                              tr("文件不存在：\n%1").arg(imageToDelete));
         return;
     }
 
-    // ★ 锁只包住 map 的 remove，立刻释放
+    if (!moveFileToRecycleBin(imageToDelete)) {
+        auto btn = QMessageBox::warning(
+            this, tr("无法移动到回收站"),
+            tr("该文件所在位置不支持回收站，或回收站目录不可用。\n\n"
+               "是否永久删除此文件？\n%1").arg(imageToDelete),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No
+            );
+        if (btn != QMessageBox::Yes) return;
+
+        if (!QFile::remove(imageToDelete)) {
+            QMessageBox::critical(this, tr("错误"), tr("永久删除文件失败"));
+            return;
+        }
+    }
+
+    // 锁只包住 map 的 remove，立刻释放
     {
         QMutexLocker locker(&cacheMutex);
         imageCache.remove(imageToDelete);
-        archiveImageCache.remove(imageToDelete);   // 如果删的是压缩包内图，也清
+        archiveImageCache.remove(imageToDelete);
     }
 
-    // ★ QCache 是主线程专用，无需锁
-    pixmapCache.remove(imageToDelete);
+    pixmapCache.remove(imageToDelete);   // QCache 主线程专用，无需锁
 
-    // ★ 缩略图缓存
     if (thumbnailWidget) {
         thumbnailWidget->clearThumbnailCacheForImage(imageToDelete);
     }
 
-    if (indexToDelete >= 0 && indexToDelete < imageList.size()) {
-        imageList.removeAt(indexToDelete);
+    imageList.removeAt(indexToDelete);
+    if (thumbnailWidget) {
         thumbnailWidget->setImageList(imageList, currentDir);
+    }
 
-        if (imageList.isEmpty()) {
-            pixmap = QPixmap();
-            currentImagePath.clear();
-            currentImageIndex = -1;
-            if (currentViewMode == SingleView) {
-                switchToThumbnailView();
-            }
+    if (imageList.isEmpty()) {
+        pixmap = QPixmap();
+        currentImagePath.clear();
+        currentImageIndex = -1;
+        if (currentViewMode == SingleView) {
+            switchToThumbnailView();
+        }
+    } else {
+        int newIndex = qMin(indexToDelete, imageList.size() - 1);
+
+        if (currentViewMode == SingleView) {
+            loadImageByIndex(newIndex);      // 内部会锁 cacheMutex，此时已释放 ✓
         } else {
-            int newIndex = indexToDelete;
-            if (newIndex >= imageList.size()) {
-                newIndex = imageList.size() - 1;
-            }
-
-            if (currentViewMode == SingleView) {
-                loadImageByIndex(newIndex);      // 这里会再锁 cacheMutex，但现在锁已释放 ✓
-            } else {
-                currentImageIndex = newIndex;
+            currentImageIndex = newIndex;
+            currentImagePath = imageList.at(newIndex);   // ★ 补上，避免悬空路径
+            if (thumbnailWidget) {
                 thumbnailWidget->setSelectedIndex(newIndex);
             }
         }
-
-        update();
-        updateWindowTitle();
     }
+
+    update();
+    updateWindowTitle();
 }
 
 void ImageWidget::deleteSelectedThumbnail()

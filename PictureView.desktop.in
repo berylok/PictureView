@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PictureView
+Comment=基于 Qt6 的轻量级图片查看器
+Exec=@CMAKE_BINARY_DIR@/PictureView
+Icon=@CMAKE_CURRENT_SOURCE_DIR@/icons/PictureView.png
+Terminal=false
+Categories=Graphics;Viewer;
+StartupWMClass=PictureView

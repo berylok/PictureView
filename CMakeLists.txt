@@ -230,3 +230,16 @@ set_target_properties(PictureView PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/PictureView.desktop.in
+    ${CMAKE_BINARY_DIR}/PictureView.desktop
+    @ONLY
+)
+
+add_custom_command(TARGET PictureView POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/PictureView.desktop
+        $ENV{HOME}/.local/share/applications/PictureView.desktop
+    COMMENT "Installing .desktop to ~/.local/share/applications"
+)

@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
     app.setApplicationVersion("1.6.0");
     app.setOrganizationName("berylok");
 
+    app.setDesktopFileName("PictureView");//显式设置 App ID，确保与PictureView.desktop 文件名对应
+
     // 打印环境信息
     //qDebug() << "=== 环境检测结果 ===";
     //qDebug() << "Qt运行平台:" << QGuiApplication::platformName();
